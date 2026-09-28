@@ -65,12 +65,8 @@
   .mimg.hasimg{background:none;border:none;border-radius:0;overflow:visible;}
   .mimg.hasimg img{filter:drop-shadow(0 6px 8px rgba(0,0,0,.75));}
   /* 遭遇の演出 */
-  .encfx{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;pointer-events:none;animation:encbg .9s ease-out forwards;}
-  .encfx.boss{animation-duration:1.3s;}
-  @keyframes encbg{0%{background:rgba(255,255,255,.95);}12%{background:rgba(255,255,255,.15);}100%{background:rgba(20,0,0,.55);}}
-  .encfx svg{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:rgba(255,255,255,.9);stroke-width:.5;filter:drop-shadow(0 0 1.5px #bfe6ff);animation:enccrack .9s forwards;}
-  .encfx.boss svg{animation-duration:1.3s;}
-  @keyframes enccrack{0%{opacity:0;}8%{opacity:1;}70%{opacity:.85;}100%{opacity:0;}}
+  .encfx{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+  .encfx canvas{position:absolute;inset:0;width:100%;height:100%;}
   html.stdfont body{font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;}
   html.stdfont .encfx b{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:900;}
   .encfx b{position:relative;font:30px/1 "DotGothic16",sans-serif;color:#fff;letter-spacing:3px;
@@ -81,8 +77,10 @@
   @keyframes stshake{15%{transform:translate(-5px,2px);}35%{transform:translate(5px,-2px);}55%{transform:translate(-3px,1px);}75%{transform:translate(2px,0);}}
   .mimg .kari{position:absolute;right:4px;top:3px;font-size:9px;font-style:normal;color:#fff8;background:#0006;border-radius:4px;padding:0 4px;}
   .mg.hit .mimg{animation:mhit .18s;}
+  .mimg img,.mimg .glyph{transition:filter .15s;} #party{transition:box-shadow .15s;}
+  .mg.tint .mimg img,.mg.tint .mimg .glyph{filter:var(--tf) drop-shadow(0 0 10px var(--tc)) !important;}
   .ftxt{position:fixed;z-index:60;transform:translate(-50%,-50%);font-size:24px;color:#fff;text-shadow:0 0 4px #000,0 2px 0 #000,2px 0 0 #000,-2px 0 0 #000;pointer-events:none;animation:ftxt .85s ease-out forwards;white-space:nowrap;}
-  .ftxt.spell{color:#bfdbfe;} .ftxt.crit{color:#fde68a;font-size:26px;} .ftxt.hurt{color:#fca5a5;font-size:18px;}
+  .ftxt.spell{color:#bfdbfe;} .ftxt.crit{color:#fde68a;font-size:26px;} .ftxt.hurt{color:#fca5a5;font-size:18px;} .ftxt.heal{color:#86efac;font-size:18px;}
   @keyframes ftxt{0%{opacity:0;transform:translate(-50%,-30%) scale(.6);}15%{opacity:1;transform:translate(-50%,-50%) scale(1.15);}30%{transform:translate(-50%,-60%) scale(1);}100%{opacity:0;transform:translate(-50%,-150%);}}
   @keyframes mhit{0%{transform:translateX(0);filter:brightness(2.2);}50%{transform:translateX(-5px);}100%{transform:translateX(0);}}
   .mname{font-size:11px;font-weight:700;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}

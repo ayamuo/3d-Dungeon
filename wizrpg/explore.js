@@ -952,7 +952,7 @@ const f_isDark = () => { const f = FL(S.pos.f); return !!f.dark[cidx(S.pos.x, S.
 function flashView(col) {
   drawView();
   const cv = $("view"), g = cv.getContext("2d");
-  g.save(); g.globalAlpha = 0.35; g.fillStyle = col; g.fillRect(0, 0, cv.width, cv.height); g.restore();
+  g.save(); g.globalAlpha = 0.2; g.fillStyle = col; g.fillRect(0, 0, cv.width, cv.height); g.restore(); // 光過敏への配慮で薄めにする
   setTimeout(() => { if (document.body.dataset.mode === "maze") drawView(); }, 120);
 }
 function sizeCanvas(cv) {

@@ -69,20 +69,110 @@ async function encounterFx(boss) {
   const st = $("stage");
   const fx = document.createElement("div");
   fx.className = "encfx" + (boss ? " boss" : "");
-  // 中心から放射状に走るひび（毎回少し形を変える）
-  let lines = "";
-  for (let i = 0; i < 9; i++) {
-    const a = (i / 9) * Math.PI * 2 + Math.random() * 0.5;
-    let x = 50, y = 50, pts = "50,50";
-    for (let j = 0; j < 4; j++) { const r = 9 + Math.random() * 10; x += Math.cos(a + (Math.random() - 0.5) * 0.7) * r; y += Math.sin(a + (Math.random() - 0.5) * 0.7) * r * 0.62; pts += ` ${x.toFixed(1)},${y.toFixed(1)}`; }
-    lines += `<polyline points="${pts}"/>`;
-  }
-  fx.innerHTML = `<svg viewBox="0 0 100 100" preserveAspectRatio="none">${lines}</svg><b>${boss ? "BOSS BATTLE!" : "ENCOUNTER!"}</b>`;
+  fx.innerHTML = `<canvas></canvas><b>${boss ? "BOSS BATTLE!" : "ENCOUNTER!"}</b>`;
   st.appendChild(fx);
+  const T = boss ? 1300 : 900;
+  glassShatter(fx.firstChild, st, T);
+  if (BT) renderBattle(); // 割れたガラスの奥に戦闘画面を用意しておく（破片が落ちると見える）
   st.classList.remove("encshake"); void st.offsetWidth; st.classList.add("encshake");
   Snd.play("encounter"); vibrate(boss ? 150 : 70);
-  await sleep(boss ? 1300 : 900);
+  await sleep(T);
   fx.remove(); st.classList.remove("encshake");
+}
+/* 画面のガラスが割れる演出。
+   当たった点から放射状のひびと同心円状のひびを走らせ、ひびで区切られた破片ごとに景色を少しずらして映す（本物のガラスの屈折っぽく見える）。
+   最後は破片が落ちて、その奥の戦闘画面に切り替わる。光過敏への配慮で、白く光らせる量はごく控えめにする */
+function glassShatter(cv, st, T) {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const W = cv.width = Math.round(st.clientWidth * dpr), H = cv.height = Math.round(st.clientHeight * dpr);
+  const g = cv.getContext("2d"); if (!g || !W || !H) return;
+  // 割れる前の迷宮の画面を写しておく
+  const snap = document.createElement("canvas"); snap.width = W; snap.height = H;
+  try { snap.getContext("2d").drawImage($("view"), 0, 0, W, H); } catch (e) { }
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const cx = W * rnd(0.44, 0.56), cy = H * rnd(0.42, 0.56), D = Math.hypot(W, H) * 0.62;
+  const NR = 16 + Math.floor(Math.random() * 5), RING = [0.04, 0.1, 0.2, 0.36, 0.6, 1.4];
+  const ang = Array.from({ length: NR }, (_, i) => (i + rnd(-0.3, 0.3)) / NR * Math.PI * 2);
+  // p[i][k]：i本目の放射状のひびと、k番目の輪の交わる点（少しずつ揺らして手で割ったような形にする）
+  const p = ang.map(a => RING.map(r => { const rr = r * D * rnd(r < 0.15 ? 0.85 : 0.65, r < 0.15 ? 1.15 : 1.35), aa = a + rnd(-0.1, 0.1); return [cx + Math.cos(aa) * rr, cy + Math.sin(aa) * rr]; }));
+  const jag = (a, b, amt) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1, s = rnd(-amt, amt) * l; return [(a[0] + b[0]) / 2 - dy / l * s, (a[1] + b[1]) / 2 + dx / l * s]; };
+  const rm = p.map((row) => row.map((pt, k) => k ? jag(row[k - 1], pt, 0.12) : jag([cx, cy], pt, 0.12))); // 放射状のひびの途中の折れ目
+  const gm = p.map((row, i) => row.map((pt, k) => jag(pt, p[(i + 1) % NR][k], 0.1)));                    // 輪のひびの途中の折れ目
+  const ringOn = p.map(() => RING.map((_, k) => Math.random() < [1, 0.7, 0.4, 0.25, 0.15, 0][k]));
+  // 破片（2本の放射状のひびと2つの輪で囲まれた部分）
+  const shards = [];
+  for (let i = 0; i < NR; i++) {
+    const j = (i + 1) % NR;
+    for (let k = 0; k < RING.length; k++) {
+      const poly = k === 0 ? [[cx, cy], rm[i][0], p[i][0], gm[i][0], p[j][0], rm[j][0]]
+        : [p[i][k - 1], rm[i][k], p[i][k], gm[i][k], p[j][k], rm[j][k], p[j][k - 1], gm[i][k - 1]];
+      const mx = poly.reduce((s, q) => s + q[0], 0) / poly.length, my = poly.reduce((s, q) => s + q[1], 0) / poly.length;
+      const out = Math.atan2(my - cy, mx - cx);
+      const xs = poly.map(q => q[0]), ys = poly.map(q => q[1]);
+      const bx = Math.max(0, Math.floor(Math.min(...xs)) - 4), by = Math.max(0, Math.floor(Math.min(...ys)) - 4);
+      const bw = Math.min(W, Math.ceil(Math.max(...xs)) + 4) - bx, bh = Math.min(H, Math.ceil(Math.max(...ys)) + 4) - by;
+      if (bw > 0 && bh > 0) shards.push({ poly, mx, my, k, bx, by, bw, bh, dx: rnd(-3, 3) * dpr, dy: rnd(-3, 3) * dpr, lite: rnd(-0.12, 0.1),
+        vx: Math.cos(out) * rnd(20, 90) * dpr, vy: Math.sin(out) * rnd(10, 60) * dpr - rnd(0, 40) * dpr, vr: rnd(-3, 3), delay: rnd(0, 0.25) });
+    }
+  }
+  // ひびの線（太さは中心ほど太く、外ほど細い）
+  const cracks = [];
+  for (let i = 0; i < NR; i++) for (let k = 0; k < RING.length; k++) {
+    cracks.push({ pts: [k ? p[i][k - 1] : [cx, cy], rm[i][k], p[i][k]], r: k ? RING[k - 1] : 0, w: 1.5 - k * 0.15, a: rnd(0.5, 0.85) });
+    if (ringOn[i][k]) cracks.push({ pts: [p[i][k], gm[i][k], p[(i + 1) % NR][k]], r: RING[k], w: 0.9, a: rnd(0.4, 0.7) });
+    // 放射状のひびから枝分かれする短いひび（規則的なクモの巣に見えないように）
+    if (k >= 2 && k < RING.length - 1 && Math.random() < 0.35) {
+      const [x, y] = rm[i][k], a = ang[i] + (Math.random() < 0.5 ? -1 : 1) * rnd(0.3, 0.7), l = rnd(0.05, 0.12) * D;
+      cracks.push({ pts: [[x, y], jag([x, y], [x + Math.cos(a) * l, y + Math.sin(a) * l], 0.15), [x + Math.cos(a) * l, y + Math.sin(a) * l]], r: RING[k - 1], w: 0.7, a: rnd(0.35, 0.6) });
+    }
+  }
+  // 当たった点のまわりの細かいひび
+  const bits = Array.from({ length: 26 }, () => { const a = rnd(0, 7), r = rnd(2, RING[1] * D); return [[cx + Math.cos(a) * r, cy + Math.sin(a) * r], [cx + Math.cos(a + rnd(-1, 1)) * (r + rnd(4, 12) * dpr), cy + Math.sin(a + rnd(-1, 1)) * (r + rnd(4, 12) * dpr)]]; });
+  // 破片の中に、少しずらした景色を映す（重くならないよう、破片のまわりの範囲だけ写す）
+  const paint = (s) => g.drawImage(snap, s.bx, s.by, s.bw, s.bh, s.bx + s.dx, s.by + s.dy, s.bw, s.bh);
+  const path = (poly) => { g.beginPath(); poly.forEach((q, n) => n ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.closePath(); };
+  const line = (pts, w, col) => { g.beginPath(); pts.forEach((q, n) => n ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1])); g.lineWidth = Math.max(0.6, w) * dpr; g.strokeStyle = col; g.stroke(); };
+  const GROW = 150, FALL = T - 420, t0 = performance.now(); let still = null;
+  g.lineJoin = g.lineCap = "round";
+  (function frame(now) {
+    if (!cv.isConnected) return;
+    const t = now - t0, reach = Math.min(1, t / GROW) * 1.1; // ひびが中心から外へ広がる
+    g.clearRect(0, 0, W, H);
+    if (t < FALL && still) g.drawImage(still, 0, 0);
+    else if (t < FALL) {
+      g.drawImage(snap, 0, 0);
+      // 割れた破片ごとに、景色を少しずらして映す
+      for (const s of shards) {
+        if ((s.k ? RING[s.k - 1] : 0) > reach) continue;
+        g.save(); path(s.poly); g.clip();
+        paint(s);
+        g.fillStyle = s.lite > 0 ? `rgba(210,230,255,${s.lite})` : `rgba(0,0,10,${-s.lite})`; g.fill();
+        g.restore();
+      }
+      for (const c of cracks) {
+        if (c.r > reach) continue;
+        const sh = c.pts.map(q => [q[0] + dpr, q[1] + dpr]);
+        line(sh, c.w + 0.6, "rgba(0,0,0,.45)");          // ひびの影
+        line(c.pts, c.w + 1.4, "rgba(190,220,255,.1)"); // ひびのまわりのにじみ
+        line(c.pts, c.w, `rgba(245,250,255,${c.a})`); // ひびの筋
+      }
+      for (const b of bits) line(b, 0.8, "rgba(240,248,255,.7)");
+      if (t >= GROW) { still = document.createElement("canvas"); still.width = W; still.height = H; still.getContext("2d").drawImage(cv, 0, 0); }
+    } else {
+      // 破片が外へはじけながら落ちる
+      const ft = (t - FALL) / 1000;
+      for (const s of shards) {
+        const u = Math.max(0, ft - s.delay * 0.4); if (!u) { g.save(); path(s.poly); g.clip(); paint(s); g.restore(); continue; }
+        const ox = s.vx * u, oy = s.vy * u + 1400 * dpr * u * u, rot = s.vr * u;
+        g.save(); g.globalAlpha = Math.max(0, 1 - u * 2.6);
+        g.translate(s.mx + ox, s.my + oy); g.rotate(rot); g.translate(-s.mx, -s.my);
+        path(s.poly); g.save(); g.clip(); paint(s); g.fillStyle = s.lite > 0 ? `rgba(210,230,255,${s.lite + 0.05})` : `rgba(0,0,10,${-s.lite})`; g.fill(); g.restore();
+        g.lineWidth = dpr; g.strokeStyle = "rgba(235,245,255,.6)"; g.stroke();
+        g.restore();
+      }
+    }
+    requestAnimationFrame(frame);
+  })(t0);
 }
 
 /* ────────── 表示 ────────── */
@@ -97,7 +187,8 @@ function renderBattle() {
     const img = MON_MISS.has(id) ? "" : `<img src="wizrpg/monsters/${id}.png" alt="" onload="MON_OK.add('${id}');this.parentNode.classList.add('hasimg')" onerror="MON_MISS.add('${id}');this.remove()">`;
     const lv = livingMs(g).length, ab = ableMs(g).length;
     const hit = BT.hitFx && BT.hitFx.g === i && Date.now() < BT.hitFx.until ? " hit" : "";
-    return `<div class="mg${hit}" data-g="${i}"><div class="mimg${MON_OK.has(id) ? " hasimg" : ""}" style="--mc:${g.def.col}"><span class="glyph">${g.def.g}</span>${img}<i class="kari">仮</i></div>
+    const tint = BT.tint && BT.tint.on && BT.tint.gs.includes(i);
+    return `<div class="mg${hit}${tint ? " tint" : ""}" data-g="${i}"${tint ? ` style="--tf:${BT.tint.f};--tc:${BT.tint.c}"` : ""}><div class="mimg${MON_OK.has(id) ? " hasimg" : ""}" style="--mc:${g.def.col}"><span class="glyph">${g.def.g}</span>${img}<i class="kari">仮</i></div>
       <div class="mname">${i + 1}) ${esc(gName(g))}</div>${g.ident ? monIcons(g.def) : `<div class="micons"></div>`}<div class="mcnt">×${lv}<small>（${ab}）</small>${g.ms.some(m => m.hp > 0 && m.status === "sleep") ? " 💤" : ""}${g.silenced ? " 🤐" : ""}</div></div>`;
   }).join("")}</div>`;
   $("hud").innerHTML = BT.boss ? "⚔️ 決戦" : "⚔️ 戦闘中";
@@ -120,9 +211,9 @@ function popDmgs(gi, list, cls) {
   const r = el.getBoundingClientRect(), n = Math.min(list.length, 6), step = Math.min(30, r.width / (n + 1));
   list.slice(0, n).forEach((v, i) => setTimeout(() => floatText(r.left + r.width / 2 + (i - (n - 1) / 2) * step, r.top + r.height * (0.3 + 0.12 * (i % 2)), String(v), cls), i * 110));
 }
-function popParty(id, text) {
+function popParty(id, text, cls) {
   const el = document.querySelector(`#party .prow[data-id="${id}"]`); if (!el) return;
-  const r = el.getBoundingClientRect(); floatText(r.right - 34, r.top + r.height / 2, text, "hurt"); // HPの数字に重ならないよう、右端の状態の欄に出す
+  const r = el.getBoundingClientRect(); floatText(r.right - 34, r.top + r.height / 2, text, cls || "hurt"); // HPの数字に重ならないよう、右端の状態の欄に出す
 }
 function stageShake() { const st = $("stage"); st.classList.remove("encshake"); void st.offsetWidth; st.classList.add("encshake"); }
 function hitFx(gi) {
@@ -422,13 +513,14 @@ async function playerAct(c, act) {
 async function spellEffect(c, sp, tgt, fromItem) {
   Snd.play(ITEM_SND[fromItem] || SPELL_SND[sp.id] || "light");
   const resist = (g) => g.def.mr && chance(g.def.mr / 100);
+  const kind = spellFxKind(sp);
   switch (sp.eff) {
     case "dmg": case "undead": {
-            flashScene(sp.elem);
       let targets;
       if (sp.tgt === "enemy1") { const g = targetGroup(tgt); if (!g) return null; targets = [[g, [pick(livingMs(g))]]]; }
       else if (sp.tgt === "group") { const g = targetGroup(tgt); if (!g) return null; targets = [[g, livingMs(g)]]; }
       else targets = BT.groups.map(g => [g, livingMs(g)]);
+      tintGroups(targets.filter(([g]) => sp.eff !== "undead" || g.def.type === "undead").map(([g]) => groupIdx(g)), kind);
       for (const [g, ms] of targets) {
         if (sp.eff === "undead" && g.def.type !== "undead") { await bmsg(`${gName(g)}には効果がない！`); continue; }
         let tot = 0, kills = 0, blocked = 0; const each = [];
@@ -450,7 +542,8 @@ async function spellEffect(c, sp, tgt, fromItem) {
       return null;
     }
     case "sleep": case "silence": case "suffocate": {
-            const g = targetGroup(tgt); if (!g) return null;
+      const g = targetGroup(tgt); if (!g) return null;
+      tintGroups([groupIdx(g)], kind);
       let n = 0;
       for (const m of livingMs(g)) {
         if (resist(g) || g.def.boss) continue;
@@ -464,7 +557,7 @@ async function spellEffect(c, sp, tgt, fromItem) {
       return null;
     }
     case "slay": {
-      flashScene("nuke");
+      tintGroups(BT.groups.map((g, i) => i), kind);
       let n = 0;
       for (const g of BT.groups) if (g.def.lv <= sp.val && !g.def.boss) for (const m of livingMs(g)) { if (!resist(g)) { killMon(g, m); n++; c.kills++; } }
       await bmsg(n ? `${n}体の怪物が消し飛んだ！` : "効果がなかった。");
@@ -472,7 +565,8 @@ async function spellEffect(c, sp, tgt, fromItem) {
       return null;
     }
     case "death": {
-            const g = targetGroup(tgt); if (!g) return null;
+      const g = targetGroup(tgt); if (!g) return null;
+      tintGroups([groupIdx(g)], kind);
       const m = pick(livingMs(g));
       if (!g.def.boss && !resist(g) && chance(clamp(0.8 - g.def.lv * 0.04, 0.05, 0.8))) { killMon(g, m); c.kills++; await bmsg(`${gName(g)}の心臓が止まった！`); }
       else await bmsg("効果がなかった。");
@@ -480,7 +574,8 @@ async function spellEffect(c, sp, tgt, fromItem) {
       return null;
     }
     case "drain": {
-            const g = targetGroup(tgt); if (!g) return null;
+      const g = targetGroup(tgt); if (!g) return null;
+      tintGroups([groupIdx(g)], kind);
       const m = pick(livingMs(g));
       if (resist(g)) { await bmsg(`${gName(g)}は呪文を無効化した！`); return null; }
       const left = rr(1, 4); const got = Math.max(0, m.hp - left);
@@ -488,12 +583,12 @@ async function spellEffect(c, sp, tgt, fromItem) {
       await bmsg(`${gName(g)}の生命力を吸い取った！（${got}）`);
       return null;
     }
-    case "eac": { const g = targetGroup(tgt); if (!g) return null; g.acMod += sp.val; await bmsg(`${gName(g)}は闇に包まれた。`); return null; }
+    case "eac": { const g = targetGroup(tgt); if (!g) return null; tintGroups([groupIdx(g)], kind); g.acMod += sp.val; await bmsg(`${gName(g)}は闇に包まれた。`); return null; }
     case "ac": { c.bac = (c.bac || 0) + sp.val; await bmsg(`${c.name}の守りが固くなった。`); return null; }
     case "pac": { partyChars().forEach(x => x.bac = (x.bac || 0) + sp.val); await bmsg("パーティ全員の守りが固くなった。"); return null; }
     case "heal": case "fullheal": case "cure": {
       const t = charById(tgt); if (!t || !isAlive(t)) { await bmsg("効果がなかった。"); return null; }
-            if (sp.eff === "heal") { const n = healAmount(sp, c, t, fromItem); t.hp = Math.min(t.maxhp, t.hp + n); await bmsg(`${t.name}のHPが${n}回復した。`); }
+      if (sp.eff === "heal") { const n = healAmount(sp, c, t, fromItem); t.hp = Math.min(t.maxhp, t.hp + n); popParty(t.id, "+" + n, "heal"); await bmsg(`${t.name}のHPが${n}回復した。`); }
       else if (sp.eff === "fullheal") { t.hp = t.maxhp; t.poison = 0; t.status = "ok"; await bmsg(`${t.name}は完全に回復した！`); }
       else { if (sp.cures.includes("poison")) t.poison = 0; if (sp.cures.includes(t.status)) t.status = "ok"; await bmsg(`${t.name}は治った。`); }
       return null;
@@ -516,11 +611,48 @@ async function spellEffect(c, sp, tgt, fromItem) {
   await bmsg("何も起こらなかった。");
   return null;
 }
-function flashScene(elem) {
-  const col = { fire: "rgba(255,120,40,.45)", cold: "rgba(120,200,255,.45)", nuke: "rgba(255,255,255,.7)", elec: "rgba(255,240,120,.45)" }[elem] || "rgba(180,140,255,.35)";
-  const sc = $("scene"); sc.style.boxShadow = `inset 0 0 0 999px ${col}`;
-  setTimeout(() => sc.style.boxShadow = "", 160);
+/* 呪文の見た目：系統ごとに画面を光らせる色(c)と、当たった敵の絵を染める色(f) */
+const SPELL_FX = {
+  fire:    { c: "rgba(255,110,40,.45)",  f: "sepia(1) saturate(8) hue-rotate(-35deg) brightness(1.15)" },
+  cold:    { c: "rgba(120,200,255,.45)", f: "sepia(1) saturate(4) hue-rotate(165deg) brightness(1.35)" },
+  elec:    { c: "rgba(255,240,120,.5)",  f: "sepia(1) saturate(6) hue-rotate(10deg) brightness(1.7)" },
+  nuke:    { c: "rgba(255,255,255,.7)",  f: "grayscale(1) brightness(3)" },
+  holy:    { c: "rgba(255,236,170,.45)", f: "sepia(.8) saturate(2) brightness(2)" },
+  dark:    { c: "rgba(120,50,170,.45)",  f: "sepia(1) saturate(4) hue-rotate(225deg) brightness(.7)" },
+  sleep:   { c: "rgba(150,120,255,.35)", f: "sepia(1) saturate(3) hue-rotate(200deg) brightness(.8)" },
+  silence: { c: "rgba(160,160,180,.35)", f: "grayscale(1) brightness(.7)" },
+  air:     { c: "rgba(140,220,170,.35)", f: "sepia(1) saturate(3) hue-rotate(90deg) brightness(.85)" },
+  heal:    { c: "rgba(120,255,150,.35)" },
+  guard:   { c: "rgba(140,190,255,.3)" },
+  light:   { c: "rgba(255,255,230,.45)" },
+  magic:   { c: "rgba(180,140,255,.35)", f: "sepia(1) saturate(3) hue-rotate(230deg) brightness(1.3)" },
+};
+function spellFxKind(sp) {
+  if (sp.elem) return sp.elem;
+  return { dmg: "holy", undead: "holy", slay: "nuke", sleep: "sleep", silence: "silence", suffocate: "air", death: "dark", drain: "dark", eac: "dark",
+    heal: "heal", fullheal: "heal", cure: "heal", ac: "guard", pac: "guard" }[sp.eff] || "light";
 }
+// 光の強さを変えずに色だけ取り出す（敵の絵のまわりの光に使う）
+const fxGlow = (c) => c.replace(/[\d.]+\)$/, ".9)");
+// 当たった敵のグループの絵を、呪文の色に1回だけ染めて、まわりをその色でぼんやり光らせる。
+// 光過敏への配慮で、画面全体は光らせず、点滅もさせない。途中で描き直されても続くよう、状態は BT に持たせる
+function tintGroups(gis, kind) {
+  const fx = SPELL_FX[kind]; if (!BT || !fx || !fx.f || !gis.length) return;
+  const t = BT.tint = { gs: gis, f: fx.f, c: fxGlow(fx.c), on: true };
+  const apply = () => document.querySelectorAll("#scene .mg").forEach(el => {
+    const on = t.on && gis.includes(+el.dataset.g); el.classList.toggle("tint", on);
+    if (on) { el.style.setProperty("--tf", t.f); el.style.setProperty("--tc", t.c); }
+  });
+  apply();
+  setTimeout(() => { if (!BT || BT.tint !== t) return; t.on = false; apply(); BT.tint = null; }, 450);
+}
+// 敵の呪文や息がパーティに当たったときは、パーティ表の枠だけをその色でぼんやり光らせる
+function glowParty(kind) {
+  const el = $("party"); if (!el) return;
+  el.style.boxShadow = `inset 0 0 14px ${fxGlow((SPELL_FX[kind] || SPELL_FX.magic).c)}`;
+  setTimeout(() => el.style.boxShadow = "", 450);
+}
+const groupIdx = (g) => BT.groups.indexOf(g);
 
 /* ────────── 怪物の行動 ────────── */
 const MON_SPELLS = {
@@ -563,7 +695,7 @@ async function monsterAct(g, m) {
   // ブレス
   if (def.breath && chance(0.4)) {
     Snd.play(def.breath === "fire" ? "breath_fire" : def.breath === "cold" ? "breath_ice" : "breath_gas");
-    flashScene(def.breath === "gas" ? "" : def.breath);
+    glowParty(def.breath === "gas" ? "air" : def.breath);
     await bmsg(`${nm}は${{ fire: "炎", cold: "冷気", gas: "毒の息" }[def.breath]}を吐いた！`, 550);
     const base = Math.max(2, Math.floor(m.hp / 3));
     const lines = [];
@@ -614,7 +746,7 @@ async function monsterSpell(def, sp) {
   Snd.play(SPELL_SND[sp.id] || "light");
   const monDice = { tiltwaita: "6d8", malikta: "6d6", madarta: "5d6", darta: "4d6", laharita: "4d6", maharita: "3d6", morita: "2d6", litocana: "2d8" }; // 怪物が唱える全体呪文はパーティ全員に当たるので弱めにする
   if (sp.eff === "dmg") {
-        flashScene(sp.elem); shakeParty(); vibrate(80);
+    glowParty(spellFxKind(sp)); shakeParty(); vibrate(80);
     const targets = sp.tgt === "enemy1" ? [pick(alive)] : alive;
     const lines = []; let tot = 0;
     for (const c of targets) {
