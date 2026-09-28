@@ -1,0 +1,21 @@
+# 作業用
+.claude/
+
+# 効果音の元素材一式（ゲームでは使わない。配布もしない）
+wizrpg/battle_SE/
+
+# 効果音の元ファイル（ゲーム用に英数字の名前でコピー済み）と、ゲームで使っていない音
+wizrpg/se/ガラスが割れる2.mp3
+wizrpg/se/ドアを開ける1.mp3
+wizrpg/se/バスのドアが開く1.mp3
+wizrpg/se/家の階段を下りる.mp3
+wizrpg/se/椅子に座る2.mp3
+wizrpg/se/block.mp3
+wizrpg/se/trap_bomb.mp3
+
+# ゲームで使っていないBGM
+wizrpg/bgm/maou_game_battle17.mid
+wizrpg/bgm/maou_game_battle21.mid
+wizrpg/bgm/maou_game_castle02.mid
+wizrpg/bgm/maou_game_lastboss04.mid
+wizrpg/bgm/maou_game_town07.mid

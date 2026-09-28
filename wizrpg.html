@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<title>星灯の迷宮</title>
+<style>
+  /* 文字はレトロなドット文字（DotGothic16・SIL Open Font License。wizrpg/font/OFL.txt） */
+  @font-face{font-family:"DotGothic16";src:url("wizrpg/font/DotGothic16-Regular.ttf") format("truetype");font-display:swap;}
+  :root{--bg:#0b0c12;--panel:#1a1d28;--panel2:#232838;--line:#2c3244;--text:#e8e8ee;--dim:#8890a0;--accent:#e2b85c;--ok:#4ade80;--bad:#f87171;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{background:radial-gradient(ellipse 700px 380px at 50% -10%,rgba(226,184,92,.10),transparent 60%),linear-gradient(180deg,#10111a,#07080c);color:var(--text);
+    font-family:"DotGothic16",system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;max-width:480px;margin:0 auto;padding:4px 8px calc(6px + env(safe-area-inset-bottom));
+    user-select:none;-webkit-user-select:none;touch-action:manipulation;display:flex;flex-direction:column;min-height:100%;overflow-x:hidden;}
+  header{display:flex;align-items:center;gap:8px;padding:4px 2px 6px;}
+  header a{color:var(--dim);text-decoration:none;font-size:13px;white-space:nowrap;}
+  h1{font-size:16px;color:var(--accent);flex:1;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  h1 small{font-size:11px;color:var(--dim);font-weight:400;margin-left:6px;letter-spacing:0;}
+  #goldTag{font-size:12px;color:#fcd34d;white-space:nowrap;}
+  #helpBtn,#muteBtn,#logBtn{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:#aab;font-size:14px;flex:0 0 30px;}
+
+  /* 表示窓（3D迷宮・町・戦闘） */
+  /* 画面が縦に収まらないときに、各欄が押しつぶされて重ならないようにする（はみ出した分はスクロール） */
+  header,#stage,#msg,#cmd,#party{flex-shrink:0;}
+  #stage{position:relative;width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:#000;border:1px solid #2a2f3d;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.5);flex:0 0 auto;}
+  #view{position:absolute;inset:0;width:100%;height:100%;display:block;}
+  #hud{position:absolute;left:8px;top:6px;font-size:12px;color:#cfd6e6;text-shadow:0 1px 2px #000;pointer-events:none;z-index:3;}
+  #hud b{color:var(--accent);}
+  #scene{position:absolute;inset:0;display:none;z-index:2;transition:box-shadow .15s;}
+  #scene.on{display:flex;align-items:center;justify-content:center;}
+  #scene.town,#scene.chest,#scene.wipe{background:radial-gradient(ellipse at 50% 40%,#2a2536,#0d0c13 75%);}
+  #scene.title{background:radial-gradient(ellipse at 50% 30%,#3a2a1a,#0b0a0e 70%);}
+  #scene.wipe{background:radial-gradient(ellipse at 50% 40%,#3a1016,#08050a 75%);}
+  /* 背景画像（wizrpg/bg/*.jpg）があるとき：絵を見せ、施設名は下の帯に出す */
+  #scene.hasbg{background-size:cover !important;background-position:center !important;}
+  #scene.hasbg:not(.title){align-items:flex-end;}
+  #scene.hasbg .plc{width:100%;padding:18px 10px 8px;background:linear-gradient(transparent,rgba(0,0,0,.75));}
+  #scene.hasbg .plc .pg{display:none;}
+  #scene.hasbg .plc .pn,#scene.hasbg .plc .pd,#scene.hasbg .ttl{text-shadow:0 2px 6px #000,0 0 2px #000;}
+  #scene.hasbg .plc .pd{color:#dde3f0;margin:4px auto 0;}
+  .plc{text-align:center;padding:10px;}
+  .plc .pg{font-size:52px;line-height:1.1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6));}
+  .plc .pn{font-size:19px;font-weight:800;color:var(--accent);margin-top:6px;letter-spacing:2px;}
+  .plc .pd{font-size:12px;color:#b8bfd0;margin-top:6px;line-height:1.5;max-width:320px;}
+  .ttl{text-align:center;}
+  .ttl .t1{font-size:34px;font-weight:900;color:#f3cf7a;letter-spacing:6px;text-shadow:0 0 18px rgba(243,180,80,.45),0 3px 0 #5a3a10;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;}
+  .ttl .t2{font-size:14px;color:#e8d8b8;margin-top:8px;letter-spacing:3px;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;}
+  .ttl .t3{font-size:9px;color:#8a7a60;margin-top:10px;letter-spacing:2px;}
+  /* 戦闘 */
+  #scene.battle{background:radial-gradient(ellipse at 50% 60%,#2a1418,#08060a 80%);align-items:flex-end;padding:26px 6px 8px;}
+  .mgs{display:grid;gap:6px;width:100%;height:100%;}
+  .mgs.n1{grid-template-columns:minmax(0,200px);justify-content:center;}
+  .mgs.n2{grid-template-columns:1fr 1fr;} .mgs.n3{grid-template-columns:1fr 1fr 1fr;} .mgs.n4{grid-template-columns:1fr 1fr 1fr 1fr;}
+  /* 3〜4グループのときは列が細くなるので、絵だけ列の幅をはみ出して大きく描く（隣と少し重なってよい） */
+  .mgs.n3 .mimg.hasimg img{left:-20%;width:140%;} .mgs.n4 .mimg.hasimg img{left:-35%;width:170%;}
+  .mgs.n3 .mimg .glyph,.mgs.n4 .mimg .glyph{font-size:min(13vw,48px);}
+  .mg{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;min-width:0;}
+  .mimg{position:relative;width:100%;flex:1;min-height:0;border-radius:10px;background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--mc) 55%,transparent),rgba(0,0,0,.2) 70%);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.08);overflow:hidden;}
+  .mimg .glyph{font-size:min(15vw,54px);filter:drop-shadow(0 4px 6px rgba(0,0,0,.7));}
+  .mgs.n1 .mimg .glyph{font-size:72px;}
+  .mimg img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
+  .mimg.hasimg .glyph,.mimg.hasimg .kari{display:none;}
+  /* 画像があるときは枠と背景の光を消して、絵だけを見せる（足元に影を付けて浮かないように） */
+  .mimg.hasimg{background:none;border:none;border-radius:0;overflow:visible;}
+  .mimg.hasimg img{filter:drop-shadow(0 6px 8px rgba(0,0,0,.75));}
+  /* 遭遇の演出 */
+  .encfx{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;pointer-events:none;animation:encbg .9s ease-out forwards;}
+  .encfx.boss{animation-duration:1.3s;}
+  @keyframes encbg{0%{background:rgba(255,255,255,.95);}12%{background:rgba(255,255,255,.15);}100%{background:rgba(20,0,0,.55);}}
+  .encfx svg{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke:rgba(255,255,255,.9);stroke-width:.5;filter:drop-shadow(0 0 1.5px #bfe6ff);animation:enccrack .9s forwards;}
+  .encfx.boss svg{animation-duration:1.3s;}
+  @keyframes enccrack{0%{opacity:0;}8%{opacity:1;}70%{opacity:.85;}100%{opacity:0;}}
+  html.stdfont body{font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;}
+  html.stdfont .encfx b{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:900;}
+  .encfx b{position:relative;font:30px/1 "DotGothic16",sans-serif;color:#fff;letter-spacing:3px;
+    text-shadow:0 0 10px #ff5a3c,0 0 22px #ff2a10,0 3px 0 #5a0a00;animation:enctext .9s cubic-bezier(.2,1.5,.4,1) forwards;white-space:nowrap;}
+  .encfx.boss b{color:#ffe08a;font-size:28px;animation-duration:1.3s;}
+  @keyframes enctext{0%{transform:scale(2.6);opacity:0;}22%{transform:scale(1);opacity:1;}80%{transform:scale(1.04);opacity:1;}100%{transform:scale(1.1);opacity:0;}}
+  #stage.encshake{animation:stshake .35s;}
+  @keyframes stshake{15%{transform:translate(-5px,2px);}35%{transform:translate(5px,-2px);}55%{transform:translate(-3px,1px);}75%{transform:translate(2px,0);}}
+  .mimg .kari{position:absolute;right:4px;top:3px;font-size:9px;font-style:normal;color:#fff8;background:#0006;border-radius:4px;padding:0 4px;}
+  .mg.hit .mimg{animation:mhit .18s;}
+  .ftxt{position:fixed;z-index:60;transform:translate(-50%,-50%);font-size:24px;color:#fff;text-shadow:0 0 4px #000,0 2px 0 #000,2px 0 0 #000,-2px 0 0 #000;pointer-events:none;animation:ftxt .85s ease-out forwards;white-space:nowrap;}
+  .ftxt.spell{color:#bfdbfe;} .ftxt.crit{color:#fde68a;font-size:26px;} .ftxt.hurt{color:#fca5a5;font-size:18px;}
+  @keyframes ftxt{0%{opacity:0;transform:translate(-50%,-30%) scale(.6);}15%{opacity:1;transform:translate(-50%,-50%) scale(1.15);}30%{transform:translate(-50%,-60%) scale(1);}100%{opacity:0;transform:translate(-50%,-150%);}}
+  @keyframes mhit{0%{transform:translateX(0);filter:brightness(2.2);}50%{transform:translateX(-5px);}100%{transform:translateX(0);}}
+  .mname{font-size:11px;font-weight:700;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  .micons{font-size:12px;line-height:1.2;min-height:15px;letter-spacing:1px;white-space:nowrap;overflow:hidden;max-width:100%;}
+  .mcnt{font-size:12px;color:#fca5a5;}
+  .mcnt small{color:var(--dim);}
+
+  /* メッセージ */
+  #msg{margin-top:6px;min-height:62px;max-height:62px;overflow:hidden;background:#0d0f16;border:1px solid var(--line);border-radius:10px;padding:5px 10px;font-size:13px;line-height:1.45;position:relative;}
+  #msg .ln{animation:fadeIn .15s;}
+  #msg .more{position:absolute;right:8px;bottom:4px;color:var(--accent);animation:blink 1s infinite;}
+  @keyframes blink{50%{opacity:.2;}} @keyframes fadeIn{from{opacity:0;transform:translateY(3px);}}
+  body[data-mode="maze"] #msg,#msg:has(.more){max-height:none;}
+
+  /* コマンド */
+  #cmd{margin-top:6px;min-height:120px;}
+  .ctitle{font-size:12px;color:var(--accent);margin:0 2px 5px;font-weight:700;}
+  .cgrid{display:grid;gap:6px;}
+  .cgrid.c1{grid-template-columns:1fr;} .cgrid.c2{grid-template-columns:1fr 1fr;} .cgrid.c3{grid-template-columns:1fr 1fr 1fr;}
+  #cmd button,.sheet button{font:inherit;color:var(--text);background:var(--panel2);border:1px solid #384058;border-radius:10px;padding:9px 6px;font-size:14px;font-weight:700;line-height:1.2;}
+  #cmd button:active{transform:scale(.97);}
+  #cmd button small{display:block;font-size:10px;color:var(--dim);font-weight:400;margin-top:2px;}
+  #cmd button:disabled,.sheet button:disabled{opacity:.35;}
+  .sheet button.danger{background:#5a1f24;color:#fecaca;border-color:#9b2c33;}
+  .sheet p.warn{color:var(--bad);font-size:13px;}
+  #cmd button.pri,.sheet button.pri{background:linear-gradient(180deg,#e9c46a,#c9962e);color:#2a1a02;border-color:#e9c46a;}
+  #cmd button.pri small{color:#5a3c08;}
+  #cmd button.back{background:#1a1d28;color:var(--dim);}
+  #cmd button.wide2{grid-column:1/-1;} #cmd button.span2{grid-column:span 2;}
+  #cmd button.wide{width:100%;padding:12px;}
+  .cgrid.c1 button{text-align:left;padding:10px 12px;}
+  .pad{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:6px;}
+  .pad button{padding:8px 4px !important;font-size:20px !important;}
+  .pad button small{font-size:10px !important;}
+  .pad button.sm{font-size:16px !important;}
+  .pad .camp{grid-column:1/-1;font-size:14px !important;padding:9px !important;}
+  .pad .camp.half{grid-column:span 1;}
+  .pad .camp.half.pri{grid-column:span 2;}
+
+  /* パーティ表 */
+  #party{margin-top:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px 8px;font-size:15px;}
+  .prow{display:grid;grid-template-columns:1fr 50px 32px 84px 46px;gap:4px;align-items:center;padding:4px 2px;border-bottom:1px solid #222838;min-height:30px;}
+  .prow:last-child{border-bottom:none;}
+  .prow.phead{color:var(--dim);font-size:11.5px;min-height:0;padding:2px 2px;}
+  .prow.back1{border-top:1px dashed #3a4258;}
+  .prow .pn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;}
+  .prow .pc{color:#b9c1d6;} .prow .pa{text-align:right;color:#b9c1d6;}
+  .prow .ph{text-align:right;} .prow .ph small{color:var(--dim);}
+  .prow .ps{font-size:13px;text-align:center;font-weight:700;}
+  .prow .ph b{font-size:16px;} .prow .ph small{font-size:12px;}
+  .prow.dead{color:#7a6f75;} .prow.dead .ps{color:var(--bad);}
+  .prow.bad .ps{color:#fbbf24;} .prow.poi .ps{color:#a3e635;}
+  .prow.empty{color:#444a5c;}
+  .prow.cur{background:rgba(226,184,92,.15);border-radius:6px;outline:1px solid rgba(226,184,92,.5);}
+  .prow.shake,#party.shake{animation:shk .3s;}
+  @keyframes shk{20%{transform:translateX(-4px);background:rgba(248,113,113,.25);}60%{transform:translateX(4px);}}
+  .hon{color:#fcd34d;font-style:normal;margin-right:2px;}
+  /* 迷宮の中では名前の前にレベルを出す */
+  .prow .plv{font-style:normal;font-size:12px;font-weight:800;color:#fcd34d;margin-right:5px;letter-spacing:0;}
+
+  /* オーバーレイ（リスト・ダイアログ） */
+  #ov{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:20;padding:14px;}
+  #ov.on{display:flex;}
+  .sheet{background:var(--panel);border:1px solid #384058;border-radius:14px;width:100%;max-width:440px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;animation:pop .15s ease-out;}
+  .sheet.small{max-width:360px;}
+  @keyframes pop{from{transform:scale(.96);opacity:0;}}
+  .shead{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);font-size:14px;gap:8px;}
+  .shead b{color:var(--accent);} .shead span{font-size:12px;color:#fcd34d;white-space:nowrap;}
+  .snote{font-size:11px;color:var(--dim);padding:6px 14px 0;}
+  .slist{overflow-y:auto;padding:6px 8px;flex:1;-webkit-overflow-scrolling:touch;}
+  .srow{display:flex;width:100%;justify-content:space-between;align-items:center;gap:8px;text-align:left;margin:4px 0;padding:9px 10px !important;font-weight:400 !important;font-size:13.5px !important;}
+  .srow .l{flex:1;min-width:0;} .srow .l small{color:var(--dim);font-size:11px;} .srow .r{font-size:12px;color:#cbd5e1;white-space:nowrap;}
+  .hpv{display:inline-block;text-align:right;min-width:62px;} .hpv b{font-size:17px;} .hpv small{font-size:12px;color:var(--dim);}
+  .hpbar{display:block;height:3px;background:#2c3244;border-radius:2px;margin-top:2px;overflow:hidden;} .hpbar i{display:block;height:100%;}
+  #cmd button small .hpv{min-width:0;display:block;text-align:center;} #cmd button small .hpv b{font-size:15px;}
+  #cmd button small small{display:inline;margin:0;font-size:11px;} #cmd button small .hpbar{width:70%;margin:3px auto 0;}
+  .pst{font-style:normal;color:var(--bad);font-size:12px;font-weight:700;}
+  .slist.g2{display:grid;grid-template-columns:1fr 1fr;column-gap:6px;} .slist.g2 .srow{padding:8px !important;}
+  .srow .ng{color:var(--bad);font-style:normal;margin-right:4px;}
+  .empty{color:var(--dim);text-align:center;padding:18px;font-size:13px;}
+  .sbody{padding:12px 14px;overflow-y:auto;font-size:13.5px;line-height:1.65;flex:1;}
+  .sbody h4{color:var(--accent);font-size:13px;margin:10px 0 2px;}
+  .sbody input{width:100%;font:inherit;font-size:16px;padding:10px;border-radius:8px;border:1px solid #475069;background:#0f121a;color:var(--text);margin-top:8px;user-select:text;-webkit-user-select:text;}
+  .sfoot{display:flex;gap:8px;padding:10px 14px;border-top:1px solid var(--line);}
+  .sfoot button{flex:1;white-space:nowrap;padding:9px 4px !important;font-size:13px !important;}
+  .rulebox{background:var(--panel2);border-radius:8px;padding:8px 10px;margin-top:8px;font-size:12.5px;}
+  .king{background:#221c10;border:1px solid #5a4620;border-radius:8px;padding:8px 10px;color:#f5e3b5;}
+  .spd{display:flex;gap:6px;margin-top:4px;} .spd button{flex:1;padding:7px 2px !important;font-size:12px !important;}
+  .lvlist{list-style:none;margin-top:6px;} .lvlist li{padding:3px 0;border-bottom:1px solid #262b3a;font-size:12.5px;}
+  .lvlist li.up{color:#fcd34d;font-weight:700;} .lvlist li.sp{color:#93c5fd;}
+  .riddle{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;color:#f0e0c0;}
+  .end{text-align:center;} .end .big{font-size:18px;color:#fcd34d;font-weight:900;} .end .thx{color:var(--dim);margin-top:10px;}
+  /* 能力値割り振り */
+  .bpleft{text-align:center;margin-bottom:8px;} .bpleft b{font-size:22px;color:var(--accent);} .lucky{color:#f472b6;font-weight:900;}
+  .bprow{display:grid;grid-template-columns:1fr 44px 44px 44px;align-items:center;gap:6px;margin:5px 0;}
+  .bprow b{text-align:center;font-size:18px;}
+  .bprow button{padding:6px 0 !important;font-size:18px !important;}
+  .bpcls{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;}
+  .bpcls span{font-size:11.5px;padding:3px 8px;border-radius:999px;background:#1a1d28;color:#555c70;border:1px solid #2c3244;}
+  .bpcls span.ok{background:#1e3a2a;color:#86efac;border-color:#2f6b45;}
+  .bpwarn{color:var(--bad);font-size:12px;margin-top:6px;min-height:1em;}
+  /* キャラクター画面 */
+  .cs .cshead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+  .cs .nm{font-size:20px;display:block;} .cs .cshead span{font-size:13px;color:var(--dim);}
+  .cs .lv{font-size:12px;color:var(--dim);} .cs .lv b{font-size:26px;color:var(--accent);margin-left:2px;}
+  .csgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;font-size:14.5px;}
+  .csgrid>div{background:var(--panel2);border-radius:6px;padding:4px 6px;} .csgrid .w2{grid-column:span 2;}
+  .csst{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:6px;text-align:center;}
+  .csst div{background:#141722;border-radius:6px;padding:4px 0;} .csst small{display:block;font-size:11.5px;color:var(--dim);} .csst b{font-size:19px;}
+  .csmp{font-size:14px;margin-top:6px;color:#93c5fd;}
+  .spl{font-size:13px;margin-top:4px;line-height:1.8;} .spl b{color:var(--accent);margin-right:4px;} .spl span{display:inline-block;background:#1c2233;border-radius:4px;padding:0 5px;margin:1px;}
+  .csit{margin-top:8px;} .csh{font-size:12px;color:var(--accent);margin-bottom:3px;}
+  .itm{display:flex;justify-content:space-between;gap:6px;padding:5px 6px;border-bottom:1px solid #262b3a;font-size:14.5px;}
+  .itm small{color:var(--dim);font-size:12px;text-align:right;}
+  .itm .ng{color:var(--bad);font-style:normal;margin-right:3px;} .itm.eq span{color:#fde68a;} .itm.cur span{color:var(--bad);}
+  .csdesc{font-size:12.5px;color:var(--dim);margin-top:8px;}
+  /* 地図 */
+  #amap{display:block;margin:6px auto;border-radius:6px;}
+  .mapnav{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12.5px;}
+  .mapnav button{padding:4px 12px !important;}
+  .maplegend{font-size:10.5px;color:var(--dim);text-align:center;}
+  /* 遊び方 */
+  /* 蘇生の儀式 */
+  .ritual{position:absolute;inset:0;z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 50%,rgba(14,20,48,.94),rgba(0,0,0,.96) 75%);animation:rfade .4s;}
+  @keyframes rfade{from{opacity:0;}}
+  .ritual .rl{font:700 20px/1.35 "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;color:#dfe8ff;letter-spacing:5px;text-shadow:0 0 10px #7da2ff;opacity:0;animation:rline .7s forwards;}
+  .ritual .rl.last{font-size:27px;color:#fff6cf;text-shadow:0 0 16px #ffd36b,0 0 4px #fff;margin-top:4px;}
+  @keyframes rline{from{opacity:0;transform:translateY(6px) scale(1.08);filter:blur(3px);}to{opacity:1;transform:none;filter:none;}}
+  .ritual .rres{margin-top:10px;font:900 22px/1.3 "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;letter-spacing:2px;opacity:0;animation:rline .5s .15s forwards;}
+  .ritual .rres.ok{color:#fff3b0;text-shadow:0 0 14px #ffcf4a;}
+  .ritual .rres.ash,.ritual .rres.lost{color:#ff9a9a;text-shadow:0 0 12px #b01010;}
+  .ritual.win{animation:rwin 1.2s;}
+  @keyframes rwin{0%{background-color:rgba(255,245,200,.9);}100%{background-color:transparent;}}
+  .ritual.fail{animation:rfail 1.2s;}
+  @keyframes rfail{0%{background-color:rgba(120,0,0,.8);}100%{background-color:transparent;}}
+  /* 渡す相手の持ち物 */
+  .gvl{font-size:12px;color:var(--dim);line-height:1.45;margin-top:2px;white-space:normal;}
+  /* バックログ */
+  .backlog{font-size:14px;line-height:1.55;}
+  .backlog .bl{padding:2px 0;border-bottom:1px solid #20263a;}
+  .backlog .bl.bad{color:#fca5a5;font-weight:700;}
+  .backlog .blsep{margin:10px 0 4px;color:var(--accent);font-size:12px;text-align:center;letter-spacing:2px;}
+  /* キーボード・コントローラーで選んでいる項目 */
+  .gfocus{outline:3px solid #7dd3fc !important;outline-offset:2px;box-shadow:0 0 14px rgba(125,211,252,.75) !important;position:relative;z-index:1;}
+  #helpOv{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:30;padding:16px;}
+  #helpOv.on{display:flex;}
+  #helpOv .hbox{background:var(--panel);border:1px solid #384058;border-radius:14px;max-width:440px;width:100%;max-height:86vh;display:flex;flex-direction:column;}
+  #helpOv .htabs{display:flex;flex-wrap:wrap;gap:4px;padding:10px 12px;border-bottom:1px solid var(--line);}
+  #helpOv .htabs button{flex:1 0 auto;font:inherit;font-size:12px;padding:5px 8px;border-radius:999px;border:1px solid #384058;background:var(--panel2);color:#cbd5e1;}
+  #helpOv .htabs button.on{background:var(--accent);color:#2a1a02;border-color:var(--accent);font-weight:800;}
+  #helpOv .hpages{overflow-y:auto;padding:12px 16px;font-size:13px;line-height:1.75;flex:1;}
+  #helpOv .hpage{display:none;} #helpOv .hpage.on{display:block;}
+  #helpOv h3{font-size:14px;color:var(--accent);margin:10px 0 2px;} #helpOv h3:first-child{margin-top:0;}
+  #helpOv table{border-collapse:collapse;width:100%;font-size:11.5px;margin:4px 0;} #helpOv td,#helpOv th{border:1px solid #2c3244;padding:3px 5px;text-align:left;vertical-align:top;}
+  #helpOv th{color:var(--accent);background:#1e2230;}
+  #helpOv .hfoot{padding:10px 14px;border-top:1px solid var(--line);}
+  #helpOv .hfoot button{width:100%;font:inherit;font-weight:800;padding:10px;border:none;border-radius:10px;background:var(--accent);color:#2a1a02;}
+  @media (max-height:700px){ #stage{aspect-ratio:16/9;} #msg{min-height:56px;max-height:56px;font-size:12.5px;} #cmd{min-height:100px;} #cmd button{padding:7px 5px;} .prow{min-height:26px;padding:2px;} }
+</style>
+<script>
+/* 文字の種類（設定で「ドット」「標準」を切り替え。端末ごとに覚える）。画面を描く前に決めておく */
+try { if (localStorage.getItem("wizrpg_font") === "std") document.documentElement.classList.add("stdfont"); } catch (e) { }
+/* ファイルを直接開いたときは @font-face が使えないので、埋め込んだフォントを読み込んで使う（ドット文字のときだけ） */
+window.loadDotFont = () => {
+  if (location.protocol !== "file:" || window.loadDotFont.done) return;
+  window.loadDotFont.done = true;
+  const sc = document.createElement("script"); sc.src = "wizrpg/font/font_data.js";
+  sc.onload = () => { try {
+    const bin = Uint8Array.from(atob(window.FONT_DOTGOTHIC16), ch => ch.charCodeAt(0));
+    new FontFace("DotGothic16", bin.buffer).load().then(ff => document.fonts.add(ff)).catch(() => { });
+  } catch (e) { } };
+  document.head.appendChild(sc);
+};
+if (!document.documentElement.classList.contains("stdfont")) window.loadDotFont();
+</script>
+</head>
+<body data-mode="title">
+<header><a href="index.html">← もどる</a><h1 id="ttl">星灯の迷宮<small id="loc"></small></h1><span id="goldTag"></span><button id="muteBtn">🔊</button><button id="logBtn">📜</button><button id="helpBtn">？</button></header>
+<div id="stage"><canvas id="view"></canvas><div id="scene"></div><div id="hud"></div></div>
+<div id="msg"></div>
+<div id="cmd"></div>
+<div id="party"></div>
+<div id="ov"></div>
+<div id="helpOv"><div class="hbox">
+  <div class="htabs"></div>
+  <div class="hpages">
+    <div class="hpage" data-t="はじめに">
+      <h3>目的</h3>
+      鉱山町グレイヴンの坑道の底には、「星喰い」を封じる十層の封印迷宮がある。封印の要〈星灯〉が、かつての守り人・灰の司祭モルヴァンに奪われた。<b>地下10階の封印の間</b>へたどり着き、モルヴァンを倒して星灯を祭壇に戻そう。
+      <h3>遊びかた</h3>
+      ①<b>訓練所</b>で冒険者を作る（おすすめの6人でも始められる）<br>
+      ②<b>酒場</b>で最大6人のパーティを組む<br>
+      ③<b>商店</b>で装備を整え、各キャラの画面で装備する<br>
+      ④<b>迷宮</b>で怪物を倒し、経験値とお金・宝を集める<br>
+      ⑤町へ戻ったら<b>宿屋</b>で休む。経験値が貯まっていればここでレベルが上がる<br>
+      ⑥死んだ仲間は<b>聖堂</b>で蘇生してもらう
+      <h3>パーティの並び</h3>
+      前の3人が<b>前列</b>。前列だけが武器で攻撃でき、敵の打撃も前列が受ける。後列には魔術師や僧侶を置こう。
+      <h3>記録</h3>
+      ゲームは自動で記録される。迷宮の中で中断しても、同じ場所から再開できる（キャンプ→中断）。<br>
+      記録は3つまで持てる。タイトル画面で記録1〜3を選ぶと、それぞれ別の冒険として遊べる。
+      <h3>設定</h3>
+      町の評議会か、迷宮のキャンプ→設定で変えられる（文字・歩く動き・呪文の説明は、タイトル画面の⚙設定でも変えられる）。<br>
+      ・文字：ドット文字が読みにくいときは<b>標準</b>に切り替えられる<br>
+      ・歩く動き：迷宮で歩く・向きを変えるときの動き。<b>なし</b>にすると一番テンポよく進める<br>
+      ・呪文の説明：<b>表示しない</b>にすると、呪文の一覧が名前だけの2列になり、スクロールせずに選べる（説明はこのヘルプの「呪文」で見られる）
+      <h3>クレジット</h3>
+      効果音：効果音ラボ（soundeffect-lab.info）<br>
+      BGM：魔王魂（maou.audio）<br>
+      フォント：DotGothic16（Fontworks・SIL Open Font License 1.1）
+    </div>
+    <div class="hpage" data-t="迷宮">
+      <h3>操作</h3>
+      ▲前進 / ↰↱ 向きを変える / ⟲ 振り返る<br>
+      表示窓をタップでも前進。左右にスワイプで向きを変える。<br>
+      パソコンでは矢印キー（またはWASD）、Cでキャンプ、Mで地図、Enterで階段・昇降機。
+      <h3>調べる</h3>
+      正面の壁を調べる。<b>隠し扉</b>が見つかることがある。「灯り」の呪文（または灯りの巻物）を使うと、見えている範囲の隠し扉が自動で見つかる。<br>
+      各階には、<b>隠されたお金や品物</b>もいくつかある。行き止まりのような場所で調べると見つかることがある。「透視」の呪文を使うと、近くに隠された場所があれば地図に ✦ で印が付く。
+      <h3>キャンプ</h3>
+      迷宮の中で、装備の変更・呪文（回復など）・並び替えができる。パーティ表の名前をタップしてもキャラクター画面が開く。<br>
+      「鑑定」は、司教が仲間にいると使える。パーティ全員の未鑑定の品をまとめて鑑定できる（司教が複数いるときは、並びが上の人が鑑定する）。
+      <h3>迷宮の仕掛け</h3>
+      <b>暗闇</b>：何も見えず、地図にも記録されない<br>
+      <b>回転床</b>：知らないうちに向きが変わる<br>
+      <b>落とし穴・落とし戸</b>：ダメージを受けたり、下の階へ落ちたり<br>
+      <b>転移床</b>：別の場所へ飛ばされる<br>
+      <b>魔法封じ</b>：呪文が打ち消される<br>
+      <b>一方通行の扉</b>：反対側からは壁に見える<br>
+      <b>鍵のかかった扉</b>：どこかで手に入る「大事なもの」が必要<br>
+      <b>昇降機</b>：一度たどり着いた階へ一気に移動できる<br>
+      ※落とし穴・落とし戸・転移床は、一度かかると地図に印が付く。回転床は気付けないので、魔術師の呪文「透視」で見つけよう（自分のまわり3×3マスの地形と罠を地図に書き込む）
+      <h3>地図の印</h3>
+      地図のマスをタップすると、自分用の印（！→？→★→✕→消す）を付けられる。怪しい場所や、後で来たい場所のメモに使おう。
+      <h3>全滅すると</h3>
+      本格ルールでは遺体が迷宮に残る。別のパーティで同じ場所へ行けば、遺体を回収できる（地図に✝で表示）。
+    </div>
+    <div class="hpage" data-t="戦闘">
+      <h3>コマンド</h3>
+      <b>戦う</b>：前列のみ。前から2グループまでを攻撃できる<br>
+      <b>呪文</b>：呪文レベルごとに回数がある。宿屋で休むと回復<br>
+      <b>身を守る</b>：そのターン攻撃を受けにくくなる<br>
+      <b>使う</b>：道具や、魔力のこもった品を使う<br>
+      <b>ディスペル</b>：僧侶・司教・君主が不死の怪物を消し去る<br>
+      <b>逃げる</b>：成功すると1つ前のマスへ戻る<br>
+      <b>おまかせ攻撃</b>：全員の行動を一度に決める。前列は1番目のグループを攻撃し、後列は身を守る
+      <h3>メッセージの読み返し</h3>
+      画面右上の <b>📜</b> で、これまでのメッセージを読み返せる。仲間がやられた行は赤く表示される。戦闘中でも開ける
+      <h3>不意打ち</h3>
+      戦闘の始まりに、どちらかが不意をつくことがある。こちらが不意をつけば、敵が気付く前に1回行動できる。<br>
+      不意をつかれると、敵が先に1回行動する（動くのは前の2グループまで）。<br>
+      盗賊・忍者が仲間にいると、不意をつかれにくく、先手も取りやすい。パーティの素早さが高いほど、不意をつかれにくい。
+      <h3>怪物の正体</h3>
+      最初は「ローブの男」のように正体がわからないことがある。戦っているうちに判明する。「正体看破」の呪文で見抜ける。<br>
+      正体がわかると、名前の下に危険な能力の印が出る。<br>
+      👻不死（ディスペルが効く）　✨呪文　🔥炎の息　❄️冷気の息　💨毒の息　🔪首をはねる　🧪毒　⚡麻痺　🗿石化　😪眠らせる　🩸レベルを吸い取る　📣仲間を呼ぶ　♻️傷が治る　🚫呪文が効きにくい<br>
+      ディスペルは、正体がわかった不死の怪物にだけ使える。<br>
+      怪物名の「×3（2）」は、生きている数（そのうち行動できる数）。
+      <h3>宝箱</h3>
+      罠が仕掛けられていることが多い。盗賊（忍者）に<b>調べさせ</b>、罠の名前を選んで<b>外す</b>のが基本。名前を間違えると罠が作動する。「罠見破り」の呪文ならほぼ確実に罠がわかる。
+      <h3>岩の中</h3>
+      迷宮には、ところどころ歩けない<b>岩</b>がある。テレポーターの罠や「瞬間移動」の呪文で岩の中に出てしまうと、本格ルールではパーティは二度と戻らない（救済ルールでは全滅と同じ扱い）。瞬間移動の行き先は、地図で確かめてから選ぼう。「透視」の呪文を使うと、地図に岩が表示される。
+      <h3>状態異常</h3>
+      毒：歩くたびにHPが減る（町へ戻ると治る）<br>
+      眠り：行動できない（戦闘後に目覚める）<br>
+      麻痺：聖堂か「気付け」「完全回復」の呪文で治す<br>石化：聖堂か「完全回復」の呪文で治す<br>
+      死亡→灰→消失：蘇生に失敗すると悪化していく
+    </div>
+    <div class="hpage" data-t="職業">
+      <table>
+        <tr><th>職業</th><th>性格</th><th>必要な能力</th></tr>
+        <tr><td>戦士</td><td>善中悪</td><td>力11</td></tr>
+        <tr><td>魔術師</td><td>善中悪</td><td>知恵11</td></tr>
+        <tr><td>僧侶</td><td>善・悪</td><td>信仰11</td></tr>
+        <tr><td>盗賊</td><td>中・悪</td><td>素早さ11</td></tr>
+        <tr><td>司教</td><td>善・悪</td><td>知恵12 信仰12</td></tr>
+        <tr><td>侍</td><td>善・中</td><td>力14 知恵12 信仰9 生命13 素早12</td></tr>
+        <tr><td>君主</td><td>善</td><td>力14 知恵11 信仰14 生命14 素早12 運13</td></tr>
+        <tr><td>忍者</td><td>悪</td><td>力15 知恵14 信仰12 生命14 素早17 運15</td></tr>
+      </table>
+      <h3>ボーナスポイント</h3>
+      キャラ作成時に振られる。多いほど上級職を狙いやすい。何度でも振り直せる。
+      <h3>転職</h3>
+      条件を満たせば訓練所で転職できる。レベル1・種族の初期能力値に戻るが、覚えた呪文と回数、最大HPは引き継がれる。
+      <h3>性格</h3>
+      善と悪は同じパーティに入れない。友好的な怪物を襲うと心が悪に傾くことも……。<br>
+      迷宮では、行き倒れの冒険者に出会うことがある。助ければ心は善に、身ぐるみを剥げば悪に傾くことがある。ただし、助けを求める声が罠のこともある。
+    </div>
+    <div class="hpage" data-t="装備・町">
+      <h3>AC（アーマークラス）</h3>
+      敵の攻撃の<b>当たりにくさ</b>を表す数字。<b>小さいほど攻撃が当たりにくい</b>。<br>
+      何も着ていないと10。良い装備ほど下がり、マイナスにもなる。<br>
+      受けるダメージを減らす効果はなく、当たるかどうかだけが決まる。当たりにくければ、首をはねられる危険も減る。<br>
+      忍者は、鎧と盾を着けていないとレベルに応じてACが良くなる。
+      <h3>持ち物の一覧の見方</h3>
+      ・名前の下：種類 / 能力 / 装備できる職業<br>
+      ・装備できる職業は頭文字で表示（戦＝戦士、魔＝魔術師、僧＝僧侶、盗＝盗賊、司＝司教、侍＝侍、君＝君主、忍＝忍者）<br>
+      ・<b style="color:#f87171">✕</b>：そのキャラクターは装備できない<br>
+      ・装備画面の右側：今の装備と比べた変化（<b>↑</b>良くなる　<b>↓</b>悪くなる）<br>
+      ・未鑑定の品は能力が分からない。商店か司教で鑑定しよう
+      <h3>装備の変更・町での呪文</h3>
+      町の<b>🎒 冒険者</b>から冒険者を選ぶと、装備の変更、持ち物の受け渡し、呪文（回復など）ができる。パーティ表の名前をタップしても同じ画面が開く。
+      <h3>商店</h3>
+      売値は買値の半分。未鑑定の品は1Gでしか売れない。<br>
+      呪われた品は装備すると外せない。商店で呪いを解くと、品物は失われる。<br>
+      司教の鑑定は失敗することがあり、失敗すると呪いの品を身につけてしまうことがある。
+      <h3>聖堂</h3>
+      蘇生は失敗することがある。失敗すると死者は灰になり、灰の蘇生に失敗すると永遠に失われる。<br>
+      蘇生に成功すると、代償に生命力が1下がる。
+      <h3>宿屋</h3>
+      泊まるとHPと呪文の回数が回復する。経験値が貯まっていればレベルが上がる（レベルは宿屋でしか上がらない）。
+      <h3>酒場</h3>
+      善と悪の者は同じパーティに入れない（中立はどちらとも組める）。
+      <h3>難しさ</h3>
+      本格（コア向け）：全滅すると遺体が迷宮に残る。宿屋での回復が少なく、魔法の品や薬は高い。<br>
+      救済（カジュアル）：全滅すると町へ運ばれる（所持金は半分）。宿屋や品物は安め。
+    </div>
+    <div class="hpage" data-t="操作">
+      <h3>画面をタップ（スマホ）</h3>
+      ボタンをタップして操作する。迷宮では、表示窓をタップで前進、左右スワイプで向きを変える。
+      <h3>コントローラー（パソコン）</h3>
+      <table>
+        <tr><th>ボタン</th><th>迷宮の中</th><th>メニュー・戦闘</th></tr>
+        <tr><td>十字キー／左スティック</td><td>↑前進（押しっぱなしで歩き続ける）<br>←→向きを変える　↓振り返る</td><td>項目を選ぶ</td></tr>
+        <tr><td>A</td><td>階段・昇降機を使う（無ければ調べる）</td><td>決定</td></tr>
+        <tr><td>B</td><td>―</td><td>戻る・閉じる</td></tr>
+        <tr><td>X</td><td>地図</td><td>―</td></tr>
+        <tr><td>Y／START</td><td>キャンプ</td><td>―</td></tr>
+        <tr><td>LB／RB</td><td>向きを変える</td><td>―</td></tr>
+        <tr><td>SELECT</td><td colspan="2">遊び方を開く</td></tr>
+      </table>
+      Xbox・PlayStation系など、ブラウザが認識する一般的なコントローラーで使える。選んでいる項目は青い枠で表示される。<br>
+      ※ブラウザの仕様で、音はマウスのクリックかキーボードを1回操作するまで鳴らない。
+      <h3>キーボード（パソコン）</h3>
+      迷宮：矢印キー（またはWASD）で移動、Enterで階段・昇降機、Fで調べる、Mで地図、Cでキャンプ<br>
+      メニュー：矢印キーで選ぶ、Enter／Space／Zで決定、Esc／Xで戻る
+    </div>
+    <div class="hpage" data-t="呪文" id="helpSpells"></div>
+  </div>
+  <div class="hfoot"><button id="helpClose">とじる</button></div>
+</div></div>
+<script src="sfx.js"></script>
+<script src="wizrpg/data.js"></script>
+<script src="wizrpg/maze.js"></script>
+<script src="wizrpg/midi.js"></script>
+<script src="wizrpg/bgm/bgm_data.js"></script>
+<script src="wizrpg/core.js"></script>
+<script src="wizrpg/town.js"></script>
+<script src="wizrpg/explore.js"></script>
+<script src="wizrpg/battle.js"></script>
+<script src="wizrpg/input.js"></script>
+<script>
+"use strict";
+(function () {
+  // 遊び方
+  const ov = $("helpOv"), tabs = ov.querySelector(".htabs"), pages = [...ov.querySelectorAll(".hpage")];
+  $("helpSpells").innerHTML = ["M", "P"].map(sc => `<h3>${sc === "M" ? "魔術師系" : "僧侶系"}の呪文</h3><table>${SPELLS.filter(s => s.sc === sc).map(s => `<tr><td>Lv${s.lv}</td><td><b>${s.name}</b></td><td>${esc(s.desc)}</td></tr>`).join("")}</table>`).join("");
+  pages.forEach((p, i) => {
+    const b = document.createElement("button"); b.textContent = p.dataset.t;
+    b.onclick = () => { pages.forEach(x => x.classList.toggle("on", x === p)); tabs.querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); ov.querySelector(".hpages").scrollTop = 0; };
+    tabs.appendChild(b); if (!i) b.click();
+  });
+  $("helpBtn").onclick = () => ov.classList.add("on");
+  $("logBtn").onclick = () => { if (!$("ov").classList.contains("on")) showBacklog(); };
+  $("helpClose").onclick = () => ov.classList.remove("on");
+  ov.onclick = e => { if (e.target === ov) ov.classList.remove("on"); };
+  // 音のオン/オフ（sfx.jsがあればそちらのボタン処理に任せる）
+  const refresh = () => { $("muteBtn").textContent = Snd.muted() ? "🔇" : "🔊"; };
+  if (!window.SFX) $("muteBtn").onclick = () => { try { localStorage.setItem("asobi_muted", Snd.muted() ? "0" : "1"); } catch (e) { } refresh(); };
+  $("muteBtn").addEventListener("click", () => setTimeout(() => Bgm.sync(), 0)); // 音のオン/オフをBGMにも反映
+  // アプリを切り替えたり画面を閉じたりしたら音を止め、戻ったら再開する
+  // 画面を離れる・閉じるときは、保存待ちの分もすぐ書き込む
+  document.addEventListener("visibilitychange", () => { if (document.hidden) saveGame(true); const c = Snd.ac(); if (!c) return; if (document.hidden) c.suspend(); else c.resume(); });
+  window.addEventListener("pagehide", () => saveGame(true));
+  refresh();
+  // 最初のタップ・キー操作で音を使える状態にし、効果音を先読みする
+  const unlock = () => { Snd.ac(); Snd.preloadAll(); Object.keys(BGM_LIST).forEach(k => Bgm.load(k)); document.removeEventListener("pointerdown", unlock); document.removeEventListener("keydown", unlock); };
+  document.addEventListener("pointerdown", unlock); document.addEventListener("keydown", unlock);
+  window.addEventListener("unhandledrejection", e => { if (e.reason instanceof ToTown) e.preventDefault(); else console.error(e.reason); });
+  titleScreen();
+})();
+</script>
+</body>
+</html>

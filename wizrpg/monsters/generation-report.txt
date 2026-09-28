@@ -1,0 +1,99 @@
+モンスター画像 作成記録
+作成日: 2026-09-26
+保存先: wizrpg/monsters/
+作成済み: 現在のREADME.txt記載の全63体（旧仕様の4枚も別名のまま保持）
+未作成: 0体
+生成方法: 内蔵 image_gen（CLI/APIは使用していません）
+納品形式: 512×512px 透過PNG。PNGパレット最適化、透過余白付き。
+README.txt、HTML、JSは変更していません。
+
+作成したファイルと個別のデザイン指定
+slime.png — 半透明の緑の泡状スライム。ぷくぷくと泡を立てている
+rat.png — 赤い目をした大型のドブネズミ
+kobold.png — 犬の頭をした小柄な亜人。錆びた短剣と粗末な革鎧
+orc.png — 豚鼻の緑肌の亜人戦士。棍棒と木の盾
+bat.png — 翼を広げた大きな黒いコウモリ
+acolyte.png — フードを被った若い僧侶。聖印を掲げている
+apprent.png — ローブ姿の若い魔術師。杖の先に小さな火
+bushwack.png — 無精ひげの山賊。短剣を構えている
+skeleton.png — 錆びた剣と丸盾を持つ骸骨の戦士
+minerghost.png — 坑道で命を落とした坑夫の霊。つるはしを持ち、青白く透けている
+banditboss.png — 大柄な山賊の頭目。眼帯、両手斧、毛皮のマント
+zombie.png — ぼろ布をまとった腐敗した死体。両腕を前に伸ばす
+highway.png — 黒い頭巾の追い剥ぎ。細身の剣
+leech.png — 人ほどの大きさの赤黒い巨大ヒル。円形の口に牙
+hound.png — よだれを垂らした痩せた狂犬
+dwarfwar.png — 兜と鎖かたびらのドワーフ戦士。大きな戦斧
+priestess.png — 白と紫の法衣の女司祭。錫杖を持つ
+gascloud.png — 黄緑色に濁った有毒ガスの雲。中に不気味な顔の輪郭
+koboldking.png — 王冠をかぶった大柄なコボルド。毛皮のマントと大剣
+coins.png — 意思を持って這い回る金貨の山。金貨の間に小さな目
+beetle.png — 装甲のような甲殻を持つ巨大な穴掘り甲虫。大顎
+wererat.png — 二足で立つネズミ人間。ぼろ服、鋭い爪
+vbat.png — 赤い体色の吸血コウモリ。鋭い牙
+ninjaapp.png — 黒装束の若い忍者。短刀を逆手に構える
+mage.png — 深い青のローブの魔術師。手元に魔法陣の光
+hellhound.png — 口から炎を漏らす黒い魔犬
+bonelord.png — 朽ちた甲冑を着た骸骨の騎士。大剣を掲げる。目に青い炎
+gargoyle.png — 翼と角を持つ灰色の石像の魔物
+werewolf.png — 吠える狼男。筋肉質で鋭い爪
+ogre.png — 巨体の人食い鬼。大きな木の棍棒
+dpuppy.png — 大型犬ほどの大きさの若い緑の竜。小さな翼
+knight.png — 全身鎧の騎士。長剣とカイトシールド
+guard.png — 揃いの鎧の警備兵。槍と盾
+watcher.png — 古い鎧兜に身を包んだ大男の番兵長。大剣を構える
+bladefox.png — 尾が刃物のように鋭く光る小型の狐
+harpy.png — 鳥の翼と鉤爪の脚を持つ女の魔物
+wight.png — 黒いぼろ布をまとった干からびた死霊。光る目
+hmage.png — 金の刺繍のローブの上位魔術師。浮遊する魔法書
+foxlord.png — 刃尾ギツネの長。ひと回り大きく、刃の尾が三本ある
+golem.png — 粘土でできた巨人。胸に魔法文字
+troll.png — 緑灰色の肌の細長い巨人。長い腕と大きな鼻
+medusa.png — 髪が生きた蛇の女。下半身は蛇。光る目
+chimera.png — 獅子・山羊・蛇の頭を持つ合成獣
+ninja.png — 黒装束の熟練忍者。二刀流
+hpriest.png — 豪華な法衣の高司祭。聖なる光をまとう
+vampire.png — 黒いマントに蒼白い顔の吸血鬼の貴族
+poisongiant.png — 紫がかった肌の巨人。口と体から毒の煙
+succubus.png — コウモリの翼と角を持つ女悪魔（露出は控えめに）
+wraith.png — フードの奥が闇だけの霊体。鎖を引きずる
+wyvern.png — 二本脚と翼、尾に毒針を持つ飛竜
+swampking.png — 沼の主の巨大なワニの怪物。苔と藻に覆われている
+firegiant.png — 赤銅色の肌、炎の髪を持つ巨人。大剣
+gdemon.png — 山羊の角と黒い翼の上級悪魔。筋骨隆々
+frostgiant.png — 青白い肌、氷の髭を持つ巨人。氷の斧
+reddragon.png — 真紅の鱗の巨竜。口から炎がこぼれる
+mninja.png — 覆面の奥の鋭い目。黒と赤の装束の上忍
+archmage.png — 白髭の老魔術師。周りに浮かぶ複数の光球
+firekeeper.png — 炎をまとう巨人の宝物庫の番人。腰に鎖付きの大きな鍵束
+sphinx.png — 人の顔と獅子の体、鷲の翼を持つスフィンクス
+demonlord.png — 星喰いの眷属。紫の炎をまとう異形の魔物。星空のような模様の翼
+royalguard.png — 灰色の鎧に身を包んだ司祭の親衛兵。ハルバード
+vlord.png — 真紅の礼服の吸血鬼の王。長いマント、周りにコウモリ
+morvan.png — ラスボス。灰色の法衣の司祭。灰のような白髪、星の紋章の錫杖、背後に崩れかけた魔法陣
+
+共通生成プロンプト（SUBJECTに上記の個別指定を挿入）
+Use case: stylized-concept. Create ONE isolated full-body monster game sprite. SUBJECT: {description}
+Style: Hand-painted dark fantasy bestiary illustration, homage to 1980s classic first-person dungeon RPGs, strong ink-like outlines, restrained painterly texture, earthy jewel colors. Readable silhouette at 100px on dark red-black. Upper-left light, brighter rim edges. Composition: centered whole body facing viewer or slight front three-quarter, all feet wings tail and equipment entirely visible, 10% empty margin on every side. Square 512x512 PNG with real fully transparent alpha background. No background scenery, floor, ground, cast shadow, text, logo, signature or border. Exactly one monster, no group. Family-friendly, no gore or excessive exposure. Match a consistent monster set. {extra}
+
+個別の補足
+slime: Use case: stylized-concept. Create ONE game monster sprite, bubbly slime: a semi-transparent green slime body with many bubbling lobes. Hand-painted dark fantasy illustration, homage to 1980s classic first-person dungeon RPG bestiaries, defined ink-like outlines and restrained painterly texture, readable at 100px. Full body centered, front-facing slightly three-quarter, all extremities inside canvas with 8% clear margin. Upper-left light, bright readable rim edges for a dark red-black game screen. Exactly 512x512 square PNG with genuine fully transparent alpha background. No background, ground, floor, cast shadow, text, lettering, logo, signature, border or other creature. Family-friendly. This is slime.png in a consistent 63-monster set.
+golem: Chest has abstract fictional magical rune markings intrinsic to the creature, no readable text.
+vlord: The tiny bats are decorative magical silhouettes around the one vampire boss.
+werdona: The ominous magic circle is a floating magical effect with transparent empty space around it, no scenery.
+
+最終修正の生成指示（対象以外の画風・構図・透過を保持）
+banditboss.png: Has two one-handed axes; replace with one large two-handed battleaxe held by both hands.
+koboldking.png: Must be a large DOG-HEADED furry kobold, consistent with kobold.png, not a reptilian scaled kobold. Keep crown fur cloak greatsword.
+harpy.png: Replace bikini-style top and bare abdomen with fully covering high-neck opaque feathered cuirass chest and abdomen. Family-friendly modest outfit. Preserve all other aspects.
+medusa.png: Replace revealing bikini top and bare abdomen with opaque high-neck green and gold robe or cuirass fully covering chest and entire abdomen, family-friendly modest design. Preserve snake hair, glowing eyes, lower snake body and pose.
+succubus.png: Change costume to elegant opaque high-neck long-sleeved dark burgundy and black full-length gothic gown, fully covered chest and thighs, no cleavage or thigh slits. Preserve face, horns, bat wings, tail, pose and dark fantasy art style.
+wyvern.png: Correct wyvern anatomy: remove BOTH small separate clawed forearms in front of chest. Exactly two hind legs and two wings, four limbs total, NO separate arms/front legs. Wings serve as forelimbs. Keep tail venom stinger, face, wings, two hind legs, body color and style unchanged.
+
+
+追記: 作業中にREADME.txtの指定更新を確認し、minerghost.png、bladefox.png、foxlord.png、morvan.pngを追加。watcher.png、demonlord.png、royalguard.pngを最新仕様に更新しました。
+旧仕様として保持: ghostmonk.png、vorpal.png、bunnyking.png、werdona.png。
+比較用の初版: variants/medusa-original.png、variants/succubus-original.png（512×512透過PNG）。本体はユーザー指定により初版に差し替え済みです。露出を抑えた版は variants/medusa-covered.png と variants/succubus-covered.png に保管しています。
+追加・更新分も内蔵image_genで生成。共通指定は手描きダークファンタジー、全身、左上光、透過背景。個別指定は上記の現在のREADMEに合わせています。
+検証: 現在のREADMEの63体すべてについて512×512px、透過チャンネル、外周5%以上の透明余白、200KB以下を確認しました。
+
