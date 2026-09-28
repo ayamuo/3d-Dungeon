@@ -184,11 +184,11 @@ function renderBattle() {
   sc.innerHTML = `<div class="mgs n${BT.groups.length}">${BT.groups.map((g, i) => {
     const id = g.def.id;
     // 画像(wizrpg/monsters/ID.png)があれば表示し、無ければ絵文字の仮グラフィックのまま
-    const img = MON_MISS.has(id) ? "" : `<img src="wizrpg/monsters/${id}.png" alt="" onload="MON_OK.add('${id}');this.parentNode.classList.add('hasimg')" onerror="MON_MISS.add('${id}');this.remove()">`;
+    const img = MON_MISS.has(id) ? "" : `<img src="wizrpg/monsters/${id}.png" alt="" onload="MON_OK.add('${id}')" onerror="MON_MISS.add('${id}');this.parentNode.classList.remove('hasimg');this.remove()">`;
     const lv = livingMs(g).length, ab = ableMs(g).length;
     const hit = BT.hitFx && BT.hitFx.g === i && Date.now() < BT.hitFx.until ? " hit" : "";
     const tint = BT.tint && BT.tint.on && BT.tint.gs.includes(i);
-    return `<div class="mg${hit}${tint ? " tint" : ""}" data-g="${i}"${tint ? ` style="--tf:${BT.tint.f};--tc:${BT.tint.c}"` : ""}><div class="mimg${MON_OK.has(id) ? " hasimg" : ""}" style="--mc:${g.def.col}"><span class="glyph">${g.def.g}</span>${img}<i class="kari">仮</i></div>
+    return `<div class="mg${hit}${tint ? " tint" : ""}" data-g="${i}"${tint ? ` style="--tf:${BT.tint.f};--tc:${BT.tint.c}"` : ""}><div class="mimg${MON_MISS.has(id) ? "" : " hasimg"}" style="--mc:${g.def.col}"><span class="glyph">${g.def.g}</span>${img}<i class="kari">仮</i></div>
       <div class="mname">${i + 1}) ${esc(gName(g))}</div>${g.ident ? monIcons(g.def) : `<div class="micons"></div>`}<div class="mcnt">×${lv}<small>（${ab}）</small>${g.ms.some(m => m.hp > 0 && m.status === "sleep") ? " 💤" : ""}${g.silenced ? " 🤐" : ""}</div></div>`;
   }).join("")}</div>`;
   $("hud").innerHTML = BT.boss ? "⚔️ 決戦" : "⚔️ 戦闘中";

@@ -737,14 +737,22 @@ function setSceneBg(key) {
     sc.classList.add("hasbg");
   };
   sc.style.backgroundImage = "";
-  sc.classList.remove("hasbg");
-  if (!key || BG_STATE[key] === "ng") return;
-  if (BG_STATE[key] === "ok") { apply(); return; }
+  if (!key || BG_STATE[key] === "ng") { sc.classList.remove("hasbg"); return; }
+  // 読み込み中も絵がある前提の並びにしておき、仮の絵文字は出さない（読み込めなかったときだけ仮の絵に戻す）
+  sc.classList.add("hasbg");
+  preloadBg(key, apply, () => { if (sc.dataset.bg === key) sc.classList.remove("hasbg"); });
+}
+const BG_WAIT = {}; // キー -> 読み込み待ちの処理
+function preloadBg(key, ok, ng) {
+  if (BG_STATE[key] === "ok") { if (ok) ok(); return; }
+  if (BG_STATE[key] === "ng") { if (ng) ng(); return; }
+  const w = BG_WAIT[key] = BG_WAIT[key] || [];
+  if (ok || ng) w.push([ok, ng]);
   if (BG_STATE[key] === "loading") return;
   BG_STATE[key] = "loading";
   const img = new Image();
-  img.onload = () => { BG_STATE[key] = "ok"; apply(); };
-  img.onerror = () => { BG_STATE[key] = "ng"; };
+  img.onload = () => { BG_STATE[key] = "ok"; w.splice(0).forEach(([f]) => f && f()); };
+  img.onerror = () => { BG_STATE[key] = "ng"; w.splice(0).forEach(([, f]) => f && f()); };
   img.src = `wizrpg/bg/${key}.jpg`;
 }
 

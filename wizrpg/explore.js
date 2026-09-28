@@ -30,6 +30,7 @@ async function enterMaze(resume) {
   Bgm.play(floorBgm(S.pos.f));
   $("scene").className = "";
   $("scene").innerHTML = "";
+  await texWait(S.pos.f);
   document.body.dataset.mode = "maze";
   prevCell = cidx(S.pos.x, S.pos.y);
   partyTapHandler = c => { if (inputResolver) inputResolver({ sheet: c.id }); };
@@ -542,7 +543,9 @@ async function changeFloor(n, x, y) {
   Bgm.play(floorBgm(n));
   S.deepest = Math.max(S.deepest, n);
   markExplored();
+  await texWait(n);
   drawView();
+  preloadFloor(n + 1);
   logMsg(`地下${n}階「${FLOORS[n].name}」`);
   saveGame(true);
 }
@@ -1006,6 +1009,15 @@ function texLoad(name) {
   return t.st === "ok" ? t.img : null;
 }
 const texFor = (kind, n) => texLoad(`${kind}_b${n}`) || texLoad(kind);
+/* その階のテクスチャを読み込み終わるまで待つ（読み込み前に描くと、コードで描いた仮の壁が一瞬見えるため）。
+   通信が遅いときに止まったままにならないよう、待つのは長くても ms まで */
+function texWait(n, ms = 2500) {
+  const names = ["wall", "door", "floor", "ceiling"].flatMap(k => [`${k}_b${n}`, k]);
+  names.forEach(texLoad);
+  return Promise.race([new Promise(res => { const chk = () => names.every(nm => TEX[nm].st !== "loading") ? res() : setTimeout(chk, 40); chk(); }), sleep(ms)]);
+}
+// 次に行きそうな階の画像を、裏で先に読み込んでおく
+function preloadFloor(n) { if (!FLOORS[n]) return; texWait(n); preloadMonImgs(n); }
 
 function drawView() {
   if (!S || !S.pos) return;

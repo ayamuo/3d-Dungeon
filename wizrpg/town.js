@@ -26,6 +26,9 @@ async function titleScreen() {
   const sc = $("scene");
   sc.className = "on title";
   setSceneBg("title");
+  // 町の背景・宝箱・地下1階の画像を、タイトルを見ている間に裏で読み込んでおく
+  ["town", "tavern", "inn", "shop", "temple", "train", "castle", "chest", "wipe"].forEach(preloadBg);
+  preloadFloor(1);
   sc.innerHTML = `<div class="ttl"><div class="t1">星灯の迷宮</div><div class="t2">― 十層の封印 ―</div><div class="t3">THE LABYRINTH OF THE STARLIGHT SEAL</div></div>`;
   $("loc").textContent = "";
   clearMsg();
