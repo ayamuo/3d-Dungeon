@@ -264,6 +264,69 @@
     #cmd{margin-top:0;}
   }
   @media (max-height:700px){ #stage{aspect-ratio:16/9;} #msg{min-height:56px;max-height:56px;font-size:12.5px;} #cmd{min-height:100px;} #cmd button{padding:7px 5px;} .prow{min-height:26px;padding:2px;} }
+
+  /* ────────── 昔の家庭用ゲーム機のRPG風の窓 ──────────
+     黒い地に白い太線の枠、角は少しだけ丸く。グラデーション・半透明・光る影は使わない。
+     コマンドは箱のボタンではなく窓の中の文字にし、選んでいる項目の左に ▶ を出す */
+  :root{--panel:#000;--panel2:#000;--line:#fff;--text:#fff;--dim:#9a9a9a;--accent:#fff;}
+  body{background:#000;}
+  #stage,#msg,#party,.sheet,#helpOv .hbox,#cmd:not(:empty){background:#000;border:3px solid #fff;border-radius:8px;box-shadow:0 0 0 2px #000;}
+  #cmd:not(:empty){padding:6px 8px;}
+  #cmd:has(.next){border:none;padding:0;box-shadow:none;background:none;} /* 「つぎへ」だけのときは窓を出さない（メッセージの窓を押して進む） */
+  #msg{padding:6px 12px;}
+  #msg .more{color:#fff;}
+  .ctitle{color:#fff;margin:0 0 4px 2px;}
+  .cgrid{gap:0 6px;}
+  /* コマンドの項目：箱をやめて文字だけ。左に ▶ を出す余白をとる */
+  #cmd button,.sheet button,#helpOv .hfoot button,#helpOv .htabs button,.bprow button,.spd button,.mapnav button{position:relative;background:none !important;border:none !important;border-radius:0 !important;box-shadow:none !important;color:#fff;font-weight:400;padding:8px 6px 8px 22px !important;text-align:left;}
+  .pad button{text-align:center;padding-left:16px !important;padding-right:16px !important;white-space:nowrap;}
+  .pad button::before{left:2px;}
+  #msg{min-height:72px;max-height:72px;}
+  @media (max-height:700px){ #msg{min-height:66px;max-height:66px;} }
+  @media (min-width:760px) and (orientation:landscape){ #msg{min-height:96px;max-height:96px;} }
+  #cmd button small,.srow .l small{color:#bdbdbd;}
+  #cmd button.pri,.sheet button.pri,#cmd button.pri small{color:#fff;}
+  #cmd button.back{color:#bdbdbd;}
+  .sheet button.danger{color:#ff7a7a;}
+  #cmd button:disabled,.sheet button:disabled{opacity:1;color:#5a5a5a !important;}
+  #cmd button:disabled small,.sheet button:disabled small{color:#5a5a5a;}
+  #cmd button:active{transform:none;}
+  button::before{position:absolute;left:5px;top:50%;transform:translateY(-50%);font-size:12px;color:#fff;}
+  button.gfocus::before,button:active::before{content:"▶";}
+  @media (hover:hover){ button:not(:disabled):hover::before{content:"▶";} }
+  /* キーボード・コントローラーで選んでいる項目：光る枠の代わりに ▶（ボタン以外の行は白い細線で囲む） */
+  .gfocus{outline:none !important;box-shadow:none !important;}
+  .prow.gfocus,.prow.cur{outline:1px solid #fff !important;outline-offset:-1px;background:none;border-radius:0;}
+  /* ダイアログ・一覧 */
+  .shead{border-bottom:1px solid #fff;} .shead b{color:#fff;}
+  .sfoot{border-top:1px solid #fff;gap:4px;}
+  .sfoot button{text-align:center;}
+  .srow{margin:0;}
+  .sheet .slist .srow,.sheet .slist.g2 .srow{padding-left:22px !important;} /* 一覧の行も、左に ▶ の場所をとる（呪文などの名前と重ならないように） */
+  .sbody h4,.csh,#helpOv h3,#helpOv th,.backlog .blsep{color:#fff;}
+  .rulebox,.king,.csgrid>div,.csst div,.spl span{background:none;border:1px solid #6a6a6a;border-radius:4px;}
+  .king{color:#fff;}
+  .bpcls span{background:none;border-color:#5a5a5a;color:#5a5a5a;border-radius:4px;}
+  .bpcls span.ok{background:none;color:#fff;border-color:#fff;}
+  .sbody input{background:#000;border:2px solid #fff;border-radius:4px;color:#fff;}
+  /* パーティ表：区切り線は消して、窓の中に並べる */
+  .prow{border-bottom:none;}
+  .prow.back1{border-top:1px dashed #6a6a6a;}
+  .prow.phead{color:#bdbdbd;}
+  .prow .pc,.prow .pa{color:#fff;}
+  /* 画面上のボタン（音・記録・ヘルプ）とヘルプのタブ */
+  #helpBtn,#muteBtn,#logBtn{border:2px solid #fff;border-radius:6px;background:#000;color:#fff;}
+  #helpOv .htabs{border-bottom:1px solid #fff;gap:0;}
+  #helpOv .htabs button{flex:0 0 auto;font-size:12.5px;padding:5px 8px 5px 20px !important;color:#bdbdbd;}
+  #helpOv .htabs button.on{background:none;color:#fff;font-weight:400;}
+  #helpOv .htabs button.on::before{content:"▶";}
+  #helpOv .hfoot{border-top:1px solid #fff;}
+  #helpOv .hfoot button{text-align:center;font-weight:400;}
+  #helpOv td,#helpOv th{border-color:#6a6a6a;background:none;}
+  h1,#goldTag,.hon,.prow .plv{color:#fff;}
+  /* タイトル画面：記録の窓も黒地に白枠（絵の上で読めるよう少しだけ透かす） */
+  body[data-mode="title"] #cmd:not(:empty){background:rgba(0,0,0,.82);}
+  body[data-mode="title"] #cmd button,body[data-mode="title"] #cmd button.pri{background:none;backdrop-filter:none;}
 </style>
 <script>
 /* 文字の種類（設定で「ドット」「標準」を切り替え。端末ごとに覚える）。画面を描く前に決めておく */
@@ -351,7 +414,7 @@ if (!document.documentElement.classList.contains("stdfont")) window.loadDotFont(
       <b>使う</b>：道具や、魔力のこもった品を使う<br>
       <b>ディスペル</b>：僧侶・司教・君主が不死の怪物を消し去る<br>
       <b>逃げる</b>：成功すると1つ前のマスへ戻る<br>
-      <b>おまかせ攻撃</b>：全員の行動を一度に決める。前列は1番目のグループを攻撃し、後列は身を守る
+      <b>おまかせ</b>：全員の行動を一度に決める。前列は1番目のグループを攻撃し、後列は身を守る
       <h3>メッセージの読み返し</h3>
       画面右上の <b>📜</b> で、これまでのメッセージを読み返せる。仲間がやられた行は赤く表示される。戦闘中でも開ける
       <h3>不意打ち</h3>

@@ -327,7 +327,7 @@ async function inputPhase() {
       CLASSES[c.cls].dispel ? { label: "☩ ディスペル", value: "dispel", disabled: !undead } : null,
       { label: "🏃 逃げる", value: "flee" },
       i > 0 ? { label: "↩ ひとつ戻る", value: "back", cls: "back" } : null,
-      firstAble ? { label: "⚡ おまかせ攻撃", value: "auto" } : null,
+      firstAble ? { label: "⚡ おまかせ", value: "auto" } : null,
     ], { title: `${c.name}（${clsLabel(c)}）はどうする？${front ? "" : "　※後列"}`, cols: 3 });
     if (a === "auto") {
       for (const x of list) if (x.status === "ok") x._act = S.party.indexOf(x.id) < 3 ? { t: "fight", g: 0 } : { t: "parry" };
