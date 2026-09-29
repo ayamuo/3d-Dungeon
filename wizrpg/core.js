@@ -29,7 +29,9 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const Snd = (() => {
   let ctx = null;
   const muted = () => { try { return localStorage.getItem("asobi_muted") === "1"; } catch (e) { return false; } };
-  function ac() { if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } } if (ctx && ctx.state === "suspended") ctx.resume(); return ctx; }
+  function ac() { if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } } if (ctx && ctx.state === "suspended" && !document.hidden) ctx.resume(); return ctx; }
+  // 別のタブに切り替えた・最小化した・スマホでホームに戻ったときは音を一時停止し、戻ったら続きから鳴らす
+  document.addEventListener("visibilitychange", () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else ctx.resume(); });
   function tone(freq, dur, type = "square", vol = 0.08, slide = 0, delay = 0) {
     const c = ac(); if (!c) return;
     const t0 = c.currentTime + delay;
