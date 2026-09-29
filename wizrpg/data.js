@@ -82,6 +82,7 @@ const SPELLS = [
   { id: "porfica", name: "光の盾", sc: "P", lv: 1, tgt: "self",   use: "b",  eff: "ac", val: 4, desc: "光の盾で、戦闘中自分のACを4下げる。" },
   { id: "matuna",  name: "守りの祈り",     sc: "P", lv: 2, tgt: "party",  use: "b",  eff: "pac", val: 2, desc: "戦闘中、味方全員のACを2下げる。" },
   { id: "calfa",   name: "罠見破り",   sc: "P", lv: 2, tgt: "none",   use: "",   eff: "calfa", desc: "宝箱の罠を見破る（宝箱の前で使う）。" },
+  { id: "harawa",  name: "魔除けの祈り", sc: "P", lv: 2, tgt: "none",   use: "c",  eff: "ward", val: 150, desc: "しばらくの間（150歩）、怪物に出会う回数がおよそ半分になる。決まった場所の戦いは避けられない。" },
   { id: "montina", name: "沈黙", sc: "P", lv: 2, tgt: "group",  use: "b",  eff: "silence", desc: "敵1グループを沈黙させ、呪文を封じる。" },
   { id: "lomilwana",name:"大灯り", sc: "P", lv: 3, tgt: "none",   use: "c",  eff: "light", val: 400, desc: "強い魔法の灯り。長い間効果が続く。" },
   { id: "dialca",  name: "気付け", sc: "P", lv: 3, tgt: "ally",   use: "bc", eff: "cure", cures: ["sleep", "para"], desc: "味方1人の眠り・麻痺を治す。" },

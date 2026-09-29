@@ -12,7 +12,7 @@ let prevCell = -1;
 /* ────────── 迷宮の出入り ────────── */
 async function startExpedition() {
   // 行動不能な者は連れて行けない（死者も一緒に入ることはできるが、Wizardry同様に前列の邪魔になる）
-  S.inMaze = true; S.identAll = false; S.light = 0;
+  S.inMaze = true; S.identAll = false; S.light = 0; S.ward = 0;
   S.pos = { f: 1, x: 0, y: 0, d: 0 };
   partyChars().forEach(c => c.where = "maze");
   S.deepest = Math.max(S.deepest, 1);
@@ -39,7 +39,7 @@ async function enterMaze(resume) {
 }
 async function exitMaze(msg) {
   Bgm.stop(1.0);
-  S.inMaze = false; S.light = 0; S.identAll = false;
+  S.inMaze = false; S.light = 0; S.ward = 0; S.identAll = false;
   for (const c of partyChars()) { c.where = "town"; c.poison = 0; c.bac = 0; }
   saveGame(true);
   $("hud").textContent = "";
@@ -262,6 +262,7 @@ async function tryMove() {
   await animForward();
   S.stats.steps++;
   if (S.light > 0) S.light--;
+  if (S.ward > 0) S.ward--;
   markExplored();
   await stepEffects();
   if (!S.inMaze) return;
@@ -433,8 +434,9 @@ async function onEnterCell(noRandom) {
   }
   if (!fought && !noRandom) {
     S.encSteps = (S.encSteps || 0) + 1;
-    const n = S.encSteps - ENC_GRACE;
-    const p = n <= 0 ? 0 : n >= ENC_MAX ? 1 : f.cfg.encRate + ENC_STEP * (n - 1);
+    // 魔除けの祈りの間は、敵が出ない歩数を延ばし、確率も下げる（戦闘の回数がおよそ半分になる）
+    const ward = S.ward > 0, n = S.encSteps - (ward ? 8 : ENC_GRACE), max = ward ? 60 : ENC_MAX;
+    const p = n <= 0 ? 0 : n >= max ? 1 : (f.cfg.encRate + ENC_STEP * (n - 1)) * (ward ? 0.35 : 1);
     if (chance(p)) await battle(null, {});
   }
 }
@@ -652,14 +654,14 @@ async function partyWiped() {
     S.bodies.push({ f: S.pos.f, x: S.pos.x, y: S.pos.y, ids: members.map(c => c.id) });
     for (const c of members) { c.where = "lost"; c.poison = 0; c.bac = 0; if (isAlive(c) && c.status !== "stone" && c.status !== "para") c.status = "dead"; }
     S.party = [];
-    S.inMaze = false; S.light = 0;
+    S.inMaze = false; S.light = 0; S.ward = 0;
     saveGame(true);
     await tell(`冒険者たちの亡骸は、地下${S.pos.f}階に残された。\n新たなパーティを組んで回収に向かおう。\n（訓練所で新しい冒険者を作れる）`);
     throw new ToTown();
   } else {
     for (const c of members) { c.where = "town"; c.poison = 0; c.bac = 0; if (isAlive(c) && c.status !== "stone" && c.status !== "para") c.status = "dead"; }
     S.gold = Math.floor(S.gold / 2);
-    S.inMaze = false; S.light = 0;
+    S.inMaze = false; S.light = 0; S.ward = 0;
     saveGame(true);
     await tell("通りがかった冒険者が、君たちを町へ運び戻してくれた。\n（所持金が半分になった。聖堂で蘇生しよう）");
     throw new ToTown();
@@ -680,14 +682,14 @@ async function buriedInRock() {
   const members = partyChars();
   if (S.rule === "classic") {
     for (const c of members) removeLost(c);
-    S.party = []; S.inMaze = false; S.light = 0;
+    S.party = []; S.inMaze = false; S.light = 0; S.ward = 0;
     saveGame(true);
     await tell(`${members.map(c => c.name).join("、")}は、岩の中に消えた。\n彼らが戻ることは、二度となかった。`);
     throw new ToTown();
   }
   for (const c of members) { c.where = "town"; c.poison = 0; c.bac = 0; if (isAlive(c) && c.status !== "stone" && c.status !== "para") c.status = "dead"; }
   S.gold = Math.floor(S.gold / 2);
-  S.inMaze = false; S.light = 0;
+  S.inMaze = false; S.light = 0; S.ward = 0;
   saveGame(true);
   await tell("通りがかった鉱夫たちが岩を掘り崩し、君たちを町へ運び戻してくれた。\n（所持金が半分になった。聖堂で蘇生しよう）");
   throw new ToTown();
@@ -812,6 +814,7 @@ async function castOutside(c, sp, fromItem) {
       if (t.status === "ash" && chance(0.05)) { t.status = "lost"; await ritual(t.name, "lost"); await say(`${t.name}は……消え去ってしまった。`); removeLost(t); return true; }
       t.status = "ok"; t.hp = t.maxhp; await ritual(t.name, "ok"); await say(`${t.name}は完全に蘇った！`); return true;
     }
+    case "ward": { if (!inMaze) break; S.ward = Math.max(S.ward || 0, sp.val); Snd.play(SPELL_SND[sp.id] || "light"); drawView(); await say("静かな祈りが、パーティを包み込んだ。\n怪物の気配が遠のいていく……"); return true; }
     case "light": { if (!inMaze) break; S.light = Math.max(S.light, sp.val); Snd.play(SPELL_SND[sp.id] || "light"); drawView(); await say("あたりが魔法の光で照らされた。"); return true; }
     case "reveal": {
       if (!inMaze) break;
@@ -1071,7 +1074,7 @@ function drawView() {
   const light = S.light > 0;
   const here = f.tile[cidx(x, y)];
   const foot = here && { up: "▲上り階段", down: "▼下り階段", elev: "昇降機" }[here.t];
-  $("hud").innerHTML = `地下${f.n}階　<b>${DIR_NAME[d]}</b>${light ? "　💡" : ""}${f.anti[cidx(x, y)] ? "　🚫魔法" : ""}${foot ? `　<span style="color:#7dd3fc">${foot}</span>` : ""}`;
+  $("hud").innerHTML = `地下${f.n}階　<b>${DIR_NAME[d]}</b>${light ? "　💡" : ""}${S.ward > 0 ? "　🧿" : ""}${f.anti[cidx(x, y)] ? "　🚫魔法" : ""}${foot ? `　<span style="color:#7dd3fc">${foot}</span>` : ""}`;
   $("loc").textContent = `B${f.n} ${f.cfg.name}`;
   // 背景（床と天井）
   const bg = g.createLinearGradient(0, 0, 0, H);

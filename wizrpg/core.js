@@ -168,7 +168,7 @@ const SPELL_SND = {
   darta: "ice_m", madarta: "ice_l", morita: "thunder", malikta: "thunder_l", tiltwaita: "nuke",
   katina: "sleep", dilta: "debuff", montina: "debuff", badiosa: "debuff", badiara: "debuff",
   lakanita: "darkspell", makanita: "darkspell", badia: "darkspell", zilwana: "holy", labadia: "drainspell",
-  mogria: "buff", sopica: "buff", porfica: "shield", matuna: "buff_party", bamatuna: "buff_party",
+  mogria: "buff", sopica: "buff", porfica: "shield", matuna: "buff_party", bamatuna: "buff_party", harawa: "buff_party",
   diosa: "heal", diara: "heal_m", diaruma: "heal_l", madia: "heal_l", latumofisa: "cure_poison", dialca: "cure_all",
   dia: "raise", kadoruta: "raise", milwana: "light", lomilwana: "light", dumapia: "light", latumapica: "light", calfa: "light",
   loktofeita: "tele", malora: "tele",

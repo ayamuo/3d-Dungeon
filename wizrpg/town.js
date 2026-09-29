@@ -100,6 +100,7 @@ function makeRecommendedParty() {
 
 function resumeGame() {
   fixRockPositions();
+  S.roster.forEach(c => learnSpells(c)); // あとから増えた呪文も、使えるレベルなら覚えている扱いにする
   if (S.inMaze && S.pos && partyChars().length) return enterMaze(true);
   S.inMaze = false;
   return townMain();
