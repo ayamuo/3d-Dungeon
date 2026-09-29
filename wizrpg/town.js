@@ -67,7 +67,7 @@ async function titleScreen() {
     if (!ok) return titleScreen();
   }
   const rule = await dialog(`<p>パーティが全滅したときの扱いを選んでください。<br>（あとから変更できません）</p>
-    <div class="rulebox"><b>本格ルール（コア向け）</b><br>全滅すると遺体は迷宮に残る。別のパーティで回収に行かなければならない。<br>宿屋での回復や魔法の品・薬の値段は、原作寄りの厳しめの設定。</div>
+    <div class="rulebox"><b>本格ルール（コア向け）</b><br>全滅すると遺体は迷宮に残る。別のパーティで回収に行かなければならない。<br>宿屋での回復や魔法の品・薬の値段は、昔ながらの厳しめの設定。</div>
     <div class="rulebox"><b>救済ルール（カジュアル）</b><br>全滅すると町へ運び戻される（所持金は半分に）。死者は聖堂で蘇生。<br>宿屋や品物の値段は安めで、気軽に遊べる。</div>`,
     [{ label: "救済（カジュアル）", value: "easy" }, { label: "本格（コア向け）", value: "classic", cls: "pri" }], { title: "ゲームの難しさ" });
   S = newState(rule);
@@ -266,7 +266,7 @@ function itemDetail(d) {
   if (d.cursed) a.push("呪い");
   return a.join(" ");
 }
-/* 持ち物の説明：種類・能力・装備できる職業。未鑑定の品は能力を伏せる（原作どおり） */
+/* 持ち物の説明：種類・能力・装備できる職業。未鑑定の品は能力を伏せる */
 function itemInfo(it) {
   const d = ITEM[it.id], parts = [TYPE_NAME[d.t]];
   if (!it.known) { parts.push("未鑑定"); return parts.join(" / "); }

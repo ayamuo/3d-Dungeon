@@ -19,3 +19,6 @@ wizrpg/bgm/maou_game_battle21.mid
 wizrpg/bgm/maou_game_castle02.mid
 wizrpg/bgm/maou_game_lastboss04.mid
 wizrpg/bgm/maou_game_town07.mid
+
+# BGMの元ファイル（素材の再配布にあたらないよう公開しない。ゲームは bgm_data.js にまとめたものから鳴らす）
+wizrpg/bgm/*.mid

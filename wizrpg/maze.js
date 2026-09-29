@@ -1,6 +1,6 @@
 /* 星灯の迷宮 — 迷宮生成
    各階はデータ(FLOORS)の区画・接続・イベント定義と固定シードから、毎回まったく同じ形に生成される。
-   壁は「マスの辺」ごとに持つ（Wizardry式の薄い壁）。辺の値は同じ壁でも表と裏で違ってよい（一方通行扉のため）。 */
+   壁は「マスの辺」ごとに持つ（薄い壁）。辺の値は同じ壁でも表と裏で違ってよい（一方通行扉のため）。 */
 "use strict";
 (function (G) {
 const WD = (typeof module !== "undefined" && module.exports) ? require("./data.js") : G.WD;

@@ -718,7 +718,7 @@ async function monsterAct(g, m) {
   if (!def.atk.length) { await bmsg(`${nm}はうろうろしている。`, 400); return; }
   // 打撃
   const t = pick(frontTargets()); if (!t) return;
-  // 命中率：Wizardry式（敵レベル＋対象のAC）。鎧で固めるほど当たりにくくなる
+  // 命中率：敵レベル＋対象のAC で決める。鎧で固めるほど当たりにくくなる
   const p = clamp((partyAC(t) + def.lv + 2) / 20, 0.05, 0.95);
   let hits = 0, dmg = 0;
   for (const a of def.atk) if (chance(p)) { hits++; dmg += Math.max(1, dice(a)); }

@@ -11,7 +11,7 @@ let prevCell = -1;
 
 /* ────────── 迷宮の出入り ────────── */
 async function startExpedition() {
-  // 行動不能な者は連れて行けない（死者も一緒に入ることはできるが、Wizardry同様に前列の邪魔になる）
+  // 行動不能な者は連れて行けない（死者も一緒に入ることはできるが、前列の邪魔になる）
   S.inMaze = true; S.identAll = false; S.light = 0; S.ward = 0;
   S.pos = { f: 1, x: 0, y: 0, d: 0 };
   partyChars().forEach(c => c.where = "maze");
@@ -185,7 +185,7 @@ function revealAround(r) {
   saveGame();
   return traps;
 }
-/* 罠や呪文でランダムに飛ばされる先。原作どおり、鍵の扉の奥にも飛ばされることがある（床の仕掛けやイベントのマスは除く）。
+/* 罠や呪文でランダムに飛ばされる先。鍵の扉の奥にも飛ばされることがある（床の仕掛けやイベントのマスは除く）。
    鍵の奥に閉じ込められないよう、鍵・謎の扉は「内側」からなら開けられる（behindLock） */
 function randomTeleportCell() {
   const f = FL(S.pos.f), cand = [];

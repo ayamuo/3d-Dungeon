@@ -183,7 +183,7 @@ function weaponSnd(wd) {
   return "sword";
 }
 /* 回復量。呪文は術者のレベルに比例して伸び、薬は飲む人の最大HPに対する割合で回復する
-   （原作どおりの固定値だと、レベルが上がるほど回復が役に立たなくなるため） */
+   （固定値だと、レベルが上がるほど回復が役に立たなくなるため） */
 const HEAL_SPELL = { mend: { dice: "1d8+4", per: 2 }, mend2: { dice: "3d8+10", per: 3 }, mend3: { dice: "6d8+20", per: 4 } };
 const HEAL_ITEM = { potion: { dice: "2d8+6", pct: 0.3 }, potion2: { dice: "6d8+20", pct: 0.6 } };
 function healAmount(sp, caster, target, itemId) {
@@ -323,14 +323,14 @@ async function ritual(name, result) {
   }
 }
 
-/* 難易度による料金。本格（コア向け）は原作寄りの高い値段、救済（カジュアル）は安め */
+/* 難易度による料金。本格（コア向け）は高めの値段、救済（カジュアル）は安め */
 const isCore = () => !!(S && S.rule === "classic");
 function priceOf(id) {
   const d = ITEM[id];
   if (isCore()) { if (d.t === "use") return d.price * 3; if (d.tier >= 1) return d.price * 4; }
   return d.price;
 }
-/* 宿屋の部屋。本格は1Gあたりの回復が少ない（原作のように何度も泊まる必要がある） */
+/* 宿屋の部屋。本格は1Gあたりの回復が少ない（何度も泊まる必要がある） */
 function innRooms() {
   if (isCore()) return [
     { name: "馬小屋", cost: 0, heal: 0, d: "無料。呪文の回数だけ回復" },
