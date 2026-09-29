@@ -11,7 +11,8 @@ const rr = (a, b) => a + rand(b - a + 1);
 const chance = p => Math.random() < p;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const pick = arr => arr[rand(arr.length)];
-const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]))
+  .replace(/([―…])(?=[―…])/g, "$1⁠"); // 禁則：「――」「……」の途中で行が分かれないよう、間に改行させない印（ワードジョイナー）を入れる
 function dice(str) { // "3d6+2" を振る
   const m = /^(\d+)(?:d(\d+))?([+-]\d+)?$/.exec(String(str).trim());
   if (!m) return 0;

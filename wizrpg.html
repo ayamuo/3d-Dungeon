@@ -12,6 +12,7 @@
   html,body{height:100%;}
   body{background:radial-gradient(ellipse 700px 380px at 50% -10%,rgba(226,184,92,.10),transparent 60%),linear-gradient(180deg,#10111a,#07080c);color:var(--text);
     font-family:"DotGothic16",system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;max-width:480px;margin:0 auto;padding:4px 8px calc(6px + env(safe-area-inset-bottom));
+    line-break:strict;overflow-wrap:break-word;text-wrap:pretty; /* 禁則処理：句読点・小さい「ゃ」「ー」などを行の頭に来させない。最後の行に1〜2文字だけ残るのも避ける */
     user-select:none;-webkit-user-select:none;touch-action:manipulation;display:flex;flex-direction:column;min-height:100%;overflow-x:hidden;}
   header{display:flex;align-items:center;gap:8px;padding:4px 2px 6px;}
   header a{color:var(--dim);text-decoration:none;font-size:13px;white-space:nowrap;}
@@ -367,7 +368,7 @@ if (!document.documentElement.classList.contains("stdfont")) window.loadDotFont(
       <h3>転職</h3>
       条件を満たせば訓練所で転職できる。レベル1・種族の初期能力値に戻るが、覚えた呪文と回数、最大HPは引き継がれる。
       <h3>性格</h3>
-      善と悪は同じパーティに入れない。友好的な怪物を襲うと心が悪に傾くことも……。<br>
+      善と悪は同じパーティに入れない。友好的な怪物を襲うと心が悪に傾くことも…&#8288;…。<br>
       迷宮では、行き倒れの冒険者に出会うことがある。助ければ心は善に、身ぐるみを剥げば悪に傾くことがある。ただし、助けを求める声が罠のこともある。
     </div>
     <div class="hpage" data-t="装備・町">
