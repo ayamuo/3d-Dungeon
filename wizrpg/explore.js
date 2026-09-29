@@ -510,6 +510,14 @@ function wandererHint(fn) {
     if (!t || t.t !== "spin" || (S.knownTraps && S.knownTraps[fn] && S.knownTraps[fn][k])) continue;
     cands.push({ w: 1, go: () => { noteTrap(fn, x, y); return `「気をつけろ。\n${area(x, y)}に、踏むと向きを狂わされる床がある。\n俺はあれで道を見失った」\n冒険者は、地図にその床の印を書き込んでくれた。`; } });
   }
+  // この階の怪物が落とす宝箱から出ることのある、値打ちのある品（randomLoot と同じ段階の品から選ぶ）
+  const maxT = Math.min(5, Math.floor((fn + 1) / 2)), have = new Set(S.roster.flatMap(c => c.items.map(it => it.id)));
+  const rare = ITEMS.filter(it => it.tier >= 1 && (it.tier === maxT || it.tier === maxT - 1) && it.price >= 500 && !it.cursed && it.t !== "use" && !have.has(it.id) && it.id !== "murasama");
+  if (rare.length) {
+    // 上の段階の品ほど選ばれやすくする
+    const it = pick(rare.flatMap(r => r.tier === maxT ? [r, r] : [r]));
+    cands.push({ w: 4, go: () => `「礼に、いい話を教えてやる。\nこの階の怪物が抱えている宝箱から、〈${it.name}〉が出たことがあるんだ。\n『${it.unk}』を拾ったら、鑑定してみるといい」` });
+  }
   if (!cands.length) return pick(["「この階のことは、もうあんたたちの方が詳しそうだ……\n下の階は、ここよりずっと手強いと聞く。気をつけてな」", "「俺にはもう、この迷宮は無理だ……\nあんたたちなら、きっと奥まで行ける」"]);
   let r = Math.random() * cands.reduce((s, c) => s + c.w, 0);
   return (cands.find(c => (r -= c.w) < 0) || cands[0]).go();
