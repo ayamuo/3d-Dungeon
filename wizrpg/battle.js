@@ -54,15 +54,12 @@ const MON_ICONS = [
   [d => d.crit, "🔪", "首をはねる"], [d => d.poison, "🧪", "毒"], [d => d.para, "⚡", "麻痺"], [d => d.stone, "🗿", "石化"],
   [d => d.sleepAtk, "😪", "眠らせる"], [d => d.drain, "🩸", "レベルを吸い取る"], [d => d.call, "📣", "仲間を呼ぶ"],
   [d => d.regen, "♻️", "傷が治る"], [d => d.mr, "🚫", "呪文が効きにくい"],
-  // 耐性は絵文字だと「炎の息」などと紛らわしいので、小さな文字の札にする
-  [d => d.res && d.res.includes("fire"), "耐炎", "炎に強い", "rs fire"], [d => d.res && d.res.includes("cold"), "耐冷", "冷気に強い", "rs cold"],
-  [d => d.res && d.res.includes("sleep"), "耐眠", "眠らない", "rs sleep"],
 ];
 const ELEM_NAME = { fire: "炎", cold: "冷気", elec: "雷" };
 function monIcons(def) {
   const ic = MON_ICONS.filter(([f]) => f(def));
   // 印がないグループも同じ高さの行を取り、名前の位置がそろうようにする
-  return `<div class="micons">${ic.map(([, e, t, cls]) => `<span title="${t}"${cls ? ` class="${cls}"` : ""}>${e}</span>`).join("")}</div>`;
+  return `<div class="micons">${ic.map(([, e, t]) => `<span title="${t}">${e}</span>`).join("")}</div>`;
 }
 const livingMs = g => g.ms.filter(m => m.hp > 0);
 const ableMs = g => g.ms.filter(m => m.hp > 0 && m.status === "ok");
