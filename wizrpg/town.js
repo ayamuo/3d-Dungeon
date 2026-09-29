@@ -21,6 +21,17 @@ function showScene(key, extra) {
 }
 
 /* ────────── タイトル ────────── */
+/* タイトルロゴ（wizrpg/bg/logo.png）があれば、タイトルの文字の代わりに表示する。一度読み込めたら次からはすぐ出す */
+let titleLogo = null; // null: まだ / "ok" / "ng"
+function showTitleLogo(sc) {
+  const put = () => { const t = sc.querySelector(".ttl"); if (!t || document.body.dataset.mode !== "title" || t.querySelector(".tlogo")) return; t.querySelectorAll(".t1,.t2").forEach(e => e.remove()); t.insertAdjacentHTML("afterbegin", `<img class="tlogo" src="wizrpg/bg/logo.png" alt="星灯の迷宮 ― 十層の封印 ―">`); };
+  if (titleLogo === "ok") { put(); return; }
+  if (titleLogo === "ng") return;
+  const im = new Image();
+  im.onload = () => { titleLogo = "ok"; put(); };
+  im.onerror = () => { titleLogo = "ng"; };
+  im.src = "wizrpg/bg/logo.png";
+}
 /* タイトルの絵：スマホの縦画面では縦長の title_v.jpg（無ければ横長の title.jpg を切り抜いて使う）、横長の画面では title.jpg */
 function setTitleBg() {
   if (WIDE_MQ.matches) { setSceneBg("title"); return; }
@@ -37,6 +48,7 @@ async function titleScreen() {
   ["town", "tavern", "inn", "shop", "temple", "train", "castle", "chest", "wipe", "wanderer", "wanderer_warrior", "wanderer_mage", "wanderer_rogue"].forEach(k => preloadBg(k));
   preloadFloor(1);
   sc.innerHTML = `<div class="ttl"><div class="t1">星灯の迷宮</div><div class="t2">― 十層の封印 ―</div><div class="t3">THE LABYRINTH OF THE STARLIGHT SEAL</div><div class="tstory">坑道の底の封印迷宮から、要の〈星灯〉が奪われた。<br>封印がほどければ、地の底の『星喰い』が目を覚ますという――</div></div>`;
+  showTitleLogo(sc);
   $("loc").textContent = "";
   clearMsg();
   logMsg("坑道の底の封印迷宮から、要の〈星灯〉が奪われた。");

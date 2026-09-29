@@ -53,6 +53,24 @@ title_v.jpg　／　タイトル画面（スマホの縦画面用・縦長）
 　　・細長いスマホでは左右が1割ずつ切れるので、主役は横幅の真ん中8割に収める
 　　（パソコンなど横長の画面では、上の title.jpg を画面いっぱいに使う。無いときは title.jpg を切り抜いて使う）
 
+logo.png　／　タイトルロゴ（タイトル画面の文字の代わりに重ねる）
+　　※この1枚だけ背景が透明なPNG：1200×600px（横2:縦1）、300KB以下が目安
+　　・文字は「星灯の迷宮」（大きく）と、その下に「― 十層の封印 ―」（小さく）の2行だけ
+　　・金色の金属のような縁取りの文字に、青白い星の光がにじむ。明朝体・筆文字寄りの格調ある字形
+　　・「灯」の字か文字の上に、小さな星（光の粒）の飾りを1つ。ほかの飾りは控えめに
+　　・スマホでは横320px程度まで縮めて表示するので、細すぎる線や小さな飾りは避ける
+　　・背景・地面・影・枠線・署名は入れない（背景は完全に透明）
+　　・画像生成は日本語の字形を崩しやすい。字が1画でも違ったら使わず、作り直すか、文字だけ人の手で直す
+　　・置くと、ゲーム側のタイトル文字（明朝体の金色の文字）の代わりに自動で表示される。無ければ今までどおり
+　　生成用の指示文（英語）：
+　　　Create a game title logo on a fully transparent background, 1200x600 PNG. Two lines of Japanese text, centered:
+　　　large main title "星灯の迷宮" and below it a smaller subtitle "― 十層の封印 ―". Render the Japanese characters exactly,
+　　　stroke for stroke, with no missing or extra strokes. Style: dignified serif / Mincho brush lettering for a classic dark
+　　　fantasy dungeon RPG, antique gold metallic letters with a dark bronze bevel and a thin dark outline so they stay readable
+　　　on a dark painted background, a soft pale icy-blue starlight glow behind the main title, one small four-pointed star
+　　　sparkle accent near the character "灯". Restrained ornament, no frame, no banner, no background, no ground shadow,
+　　　no extra text, no English letters, no signature, no watermark. Bold enough to read when scaled down to 320px wide.
+
 town.jpg　／　鉱山町グレイヴン（町の広場）
 　　石畳の小さな広場。周りに木組みの家々、ランタンの灯り、つるはしやトロッコ。奥に坑道の入口が見える
 
