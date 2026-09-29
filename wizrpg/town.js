@@ -143,10 +143,12 @@ async function townMain() {
 /* テスト用：true の間は、善と悪を同じパーティに入れられる（本番に戻すときは false にする） */
 const ALLOW_MIXED_ALIGN = false;
 const mixedAlign = list => list.some(c => c.align === "G") && list.some(c => c.align === "E");
-function alignConflict(list) { return !ALLOW_MIXED_ALIGN && mixedAlign(list); }
+// 星喰いを倒したあとは、善と悪を同じパーティに入れられる（おまけ）
+const allowMixedAlign = () => ALLOW_MIXED_ALIGN || !!(S && S.flags && S.flags.hoshikui);
+function alignConflict(list) { return !allowMixedAlign() && mixedAlign(list); }
 /* 性格が変わって善悪が混ざったパーティから外すと、もう戻せなくなることがある。そのときは確認する */
 async function confirmMixedRemove(c) {
-  if (ALLOW_MIXED_ALIGN) return true;
+  if (allowMixedAlign()) return true;
   const rest = partyChars().filter(x => x.id !== c.id);
   const opp = c.align === "G" ? "E" : c.align === "E" ? "G" : null;
   if (!opp || !rest.some(x => x.align === opp)) return true;
@@ -182,7 +184,7 @@ async function tavern() {
       const c = await pickMember("誰を外す？");
       if (c && await confirmMixedRemove(c)) { S.party = S.party.filter(i => i !== c.id); renderParty(); saveGame(); }
     } else if (k === "remall") {
-      if (!ALLOW_MIXED_ALIGN && mixedAlign(partyChars()) && !(await confirmBox("善と悪の仲間が混ざっています。全員外すと、善と悪の者は二度と同じパーティに組めなくなります。\n全員外しますか？", "外す", "やめる"))) continue;
+      if (!allowMixedAlign() && mixedAlign(partyChars()) && !(await confirmBox("善と悪の仲間が混ざっています。全員外すと、善と悪の者は二度と同じパーティに組めなくなります。\n全員外しますか？", "外す", "やめる"))) continue;
       S.party = []; renderParty(); saveGame();
     }
     else if (k === "order") await reorderParty();
@@ -262,7 +264,7 @@ function itemDetail(d) {
   if (d.dmg) a.push(`攻撃 ${diceRange(d.dmg)}`); if (d.hit) a.push(`命中${d.hit > 0 ? "+" : ""}${d.hit}`);
   if (d.ac) a.push(`AC${d.ac > 0 ? "-" : "+"}${Math.abs(d.ac)}`);
   if (d.useSpell) a.push(`使うと「${SPELL[d.useSpell].name}」`);
-  if (d.regen) a.push("HP自然回復"); if (d.slay) a.push({ dragon: "竜に強い", undead: "不死に強い", demon: "悪魔に強い" }[d.slay]);
+  if (d.regen) a.push("HP自然回復"); if (d.spellSave) a.push("呪文を唱えても半分の確率で回数が減らない"); if (d.slay) a.push({ dragon: "竜に強い", undead: "不死に強い", demon: "悪魔に強い" }[d.slay]);
   if (d.cursed) a.push("呪い");
   return a.join(" ");
 }

@@ -771,6 +771,12 @@ function preloadBg(key, ok, ng) {
   img.src = `wizrpg/bg/${key}.jpg`;
 }
 
+/* 呪文の使用回数を1つ減らす。星喰いの瞳を装備していれば、半分の確率で減らない */
+function spendSlot(c, sp) {
+  const eye = c.items.find(it => it.eq && ITEM[it.id].spellSave);
+  if (eye && chance(ITEM[eye.id].spellSave)) { logMsg(`${ITEM[eye.id].name}が輝き、${c.name}の呪文の力は失われなかった！`); return; }
+  (sp.sc === "M" ? c.mpM : c.mpP)[sp.lv - 1]--;
+}
 /* 称号の印：クリアで★、星喰いを倒すと★★ */
 const honorMark = c => c.honor ? `<i class="hon">${c.honor >= 2 ? "★★" : "★"}</i>` : "";
 

@@ -642,6 +642,7 @@ async function altarEvent() {
   for (const c of partyChars()) if (isAlive(c)) c.honor = 2;
   Snd.play("levelup");
   await tell("生き残った冒険者たちは『星喰いを討ちし者』の称号（★★）を授けられた。");
+  await tell("星喰いが討たれたと聞いて、町の冒険者たちのわだかまりも解けていった。\nこれからは、善と悪の者も同じパーティで旅ができる。");
   saveGame(true);
 }
 async function bossIntro() {
@@ -813,12 +814,12 @@ async function campCast(c) {
   if (!sid) return;
   const sp = SPELL[sid];
   if (S.inMaze && FL(S.pos.f).anti[cidx(S.pos.x, S.pos.y)]) {
-    (sp.sc === "M" ? c.mpM : c.mpP)[sp.lv - 1]--;
+    spendSlot(c, sp);
     Snd.play("cancel"); await alertBox("呪文を唱えたが、何も起こらない……\n（ここでは魔法が封じられている）");
     return;
   }
   const ok = await castOutside(c, sp, false);
-  if (ok) (sp.sc === "M" ? c.mpM : c.mpP)[sp.lv - 1]--;
+  if (ok) spendSlot(c, sp);
   renderParty(); saveGame();
 }
 /* 戦闘外の呪文効果。実行したらtrue */
@@ -863,7 +864,7 @@ async function castOutside(c, sp, fromItem) {
       if (!inMaze) break;
       if (!(await confirmBox("地上の町へ帰還しますか？\n（所持金の半分を失う）"))) return false;
       Snd.play("tele"); S.gold = Math.floor(S.gold / 2);
-      if (!fromItem) (sp.sc === "M" ? c.mpM : c.mpP)[sp.lv - 1]--;
+      if (!fromItem) spendSlot(c, sp);
       await exitMaze("まばゆい光に包まれ、パーティは地上の町へ帰還した。");
       return true;
     }
@@ -872,7 +873,7 @@ async function castOutside(c, sp, fromItem) {
       const dest = await teleportPicker();
       if (!dest) return false;
       Snd.play("tele");
-      if (dest === "castle") { if (!fromItem) (sp.sc === "M" ? c.mpM : c.mpP)[sp.lv - 1]--; await exitMaze("パーティは地上の町へ瞬間移動した。"); return true; }
+      if (dest === "castle") { if (!fromItem) spendSlot(c, sp); await exitMaze("パーティは地上の町へ瞬間移動した。"); return true; }
       prevCell = -1;
       S.pos.f = dest.f; S.pos.x = dest.x; S.pos.y = dest.y;
       S.deepest = Math.max(S.deepest, dest.f);

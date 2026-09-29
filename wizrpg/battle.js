@@ -495,7 +495,7 @@ async function playerAct(c, act) {
     const sp = SPELL[act.sp];
     if (act.t === "spell") {
       if (spellSlotsLeft(c, sp) <= 0) return null;
-      (sp.sc === "M" ? c.mpM : c.mpP)[sp.lv - 1]--;
+      spendSlot(c, sp);
       Snd.play("cast");
       await bmsg(`${c.name}は${sp.name}を唱えた！`, 550);
     } else {
