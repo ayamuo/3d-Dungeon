@@ -42,7 +42,7 @@ async function titleScreen() {
   const slotSub = s => {
     if (!s) return "空き";
     const lv = Math.max(0, ...s.roster.map(c => c.lvl || 0));
-    return `${s.rule === "classic" ? "本格" : "救済"}・${s.deepest ? "地下" + s.deepest + "階" : "町"}・最高Lv${lv}${s.cleared ? "・★" : ""}`;
+    return `${s.rule === "classic" ? "本格" : "救済"}・${s.deepest ? "地下" + s.deepest + "階" : "町"}・最高Lv${lv}${s.flags && s.flags.hoshikui ? "・★★" : s.cleared ? "・★" : ""}`;
   };
   const n = await choose(slots.map(({ n, s }) => ({ label: `記録${n}`, sub: slotSub(s), value: n, cls: n === last && s ? "pri" : "" })).concat([{ label: "⚙ 設定", value: "opt" }]), { cols: 1 });
   if (n === "opt") {
@@ -168,7 +168,7 @@ async function tavern() {
       while (S.party.length < 6) {
         const cand = S.roster.filter(c => !S.party.includes(c.id));
         const items = cand.map(c => ({
-          html: `${c.honor ? '<i class="hon">★</i>' : ""}${esc(c.name)} <small>Lv${c.lvl} ${clsLabel(c)}</small>`,
+          html: `${honorMark(c)}${esc(c.name)} <small>Lv${c.lvl} ${clsLabel(c)}</small>`,
           right: c.where === "lost" ? "迷宮で行方不明" : statusLabel(c) || RACES[c.race].name,
           value: c.id, disabled: c.where === "lost",
         }));
@@ -205,7 +205,7 @@ async function membersView() {
   while (true) {
     const inParty = c => S.party.includes(c.id);
     const list = partyChars().concat(S.roster.filter(c => !inParty(c) && c.where !== "lost"));
-    const items = list.map(c => ({ html: `${c.honor ? '<i class="hon">★</i>' : ""}${esc(c.name)} <small>Lv${c.lvl} ${clsLabel(c)}</small>`, right: (inParty(c) ? "仲間 " : "") + statusLabel(c), value: c.id }));
+    const items = list.map(c => ({ html: `${honorMark(c)}${esc(c.name)} <small>Lv${c.lvl} ${clsLabel(c)}</small>`, right: (inParty(c) ? "仲間 " : "") + statusLabel(c), value: c.id }));
     const id = await listPick("誰の持ち物を見る？", items, { empty: "まだ誰も登録されていない。" });
     if (!id) return;
     await charSheet(charById(id), "town");
@@ -214,7 +214,7 @@ async function membersView() {
 }
 async function rosterView() {
   while (true) {
-    const items = S.roster.map(c => ({ html: `${c.honor ? '<i class="hon">★</i>' : ""}${esc(c.name)} <small>Lv${c.lvl} ${clsLabel(c)}</small>`, right: (S.party.includes(c.id) ? "仲間 " : "") + (c.where === "lost" ? "行方不明" : statusLabel(c)), value: c.id }));
+    const items = S.roster.map(c => ({ html: `${honorMark(c)}${esc(c.name)} <small>Lv${c.lvl} ${clsLabel(c)}</small>`, right: (S.party.includes(c.id) ? "仲間 " : "") + (c.where === "lost" ? "行方不明" : statusLabel(c)), value: c.id }));
     const id = await listPick("冒険者名簿", items, { empty: "まだ誰も登録されていない。" });
     if (!id) return;
     const c = charById(id);
@@ -563,10 +563,11 @@ async function castle() {
   const keys = Object.keys(S.keys).filter(k => S.keys[k]).map(k => KEYITEMS[k].name);
   const played = playMinutes(S);
   const msg = S.cleared
-    ? "議長「封印は結び直された。君たちはグレイヴンの恩人だ。坑道にはまだ魔物が残っている。存分に腕を磨くといい」"
+    ? (S.flags.hoshikui ? "議長「星喰いまで討ち果たすとは……。君たちの名は、グレイヴンの歴史そのものだ」"
+      : "議長「封印は結び直された。君たちはグレイヴンの恩人だ。\n……ただ、封印の守り人の古い記録に、こんな一文がある。『星灯を祭壇より離すことなかれ。眠れるものが目を覚ます』。\nまさか、試そうなどとは思わんだろうな」")
     : S.deepest >= 5 ? "議長「地下深くまで進んだそうだな。モルヴァンは最深部の封印の間にいるはずだ。封印の扉は、三つの欠片がそろえば開くと伝わっている」"
     : "議長「星灯を奪ったのは、かつて封印の守り人だった灰の司祭モルヴァンだ。奴は地下十階の封印の間で、星喰いを目覚めさせようとしている。どうか星灯を取り戻し、祭壇へ戻してくれ」";
-  await dialog(`<p class="king">${esc(msg)}</p>
+  await dialog(`<p class="king">${esc(msg).replace(/\n/g, "<br>")}</p>
     <h4>大事なもの</h4><p>${keys.length ? keys.map(esc).join("、") : "なし"}</p>
     <h4>冒険の記録</h4><p>最深到達：${S.deepest ? "地下" + S.deepest + "階" : "―"}<br>戦闘回数：${S.stats.battles}　倒した怪物：${S.stats.kills}<br>死者：${S.stats.deaths}人　歩数：${S.stats.steps}<br>難しさ：${S.rule === "classic" ? "本格（コア向け）" : "救済（カジュアル）"}　プレイ時間：約${played}分</p>
     <h4>メッセージ速度</h4><div class="spd">${[0.6, 1, 1.6, 2.5].map(v => `<button data-v="${v}" class="${S.speed === v ? "pri" : ""}">${{ 0.6: "ゆっくり", 1: "ふつう", 1.6: "はやい", 2.5: "最速" }[v]}</button>`).join("")}</div>
@@ -637,7 +638,7 @@ async function charSheet(c, ctx) {
     acts.push({ label: "とじる", value: null });
     const ageStr = c.age ? `${c.age}歳` : "";
     const html = `<div class="cs">
-      <div class="cshead"><div><b class="nm">${c.honor ? '<i class="hon">★</i>' : ""}${esc(c.name)}</b><span>${ALIGNS[c.align]}・${RACES[c.race].name}・${ci.name}　${ageStr}</span></div><div class="lv">Lv<b>${c.lvl}</b></div></div>
+      <div class="cshead"><div><b class="nm">${honorMark(c)}${esc(c.name)}</b><span>${ALIGNS[c.align]}・${RACES[c.race].name}・${ci.name}　${ageStr}</span></div><div class="lv">Lv<b>${c.lvl}</b></div></div>
       <div class="csgrid">
         <div>HP <b>${c.hp}</b>/${c.maxhp}</div><div>AC <b>${computeAC(c)}</b></div><div>状態 <b>${statusLabel(c) || "正常"}</b></div>
         <div class="w2">経験値 ${c.exp.toLocaleString()}<br><small>${c.exp >= nextExp(c) ? '<b style="color:#fcd34d">宿屋で休むとレベルアップ！</b>' : "次のLvまで " + (nextExp(c) - c.exp).toLocaleString()}</small></div><div>攻撃回数 ${swings(c)}</div>

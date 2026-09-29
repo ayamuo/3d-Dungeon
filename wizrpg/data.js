@@ -174,6 +174,7 @@ const ITEMS = [
   { id: "ringheal", name: "癒しの指輪",         unk: "指輪?",  t: "acc",    cls: "*",       ac: 0, price: 8000, tier: 3, regen: 1 },
   { id: "ringdeath",name: "死の指輪",           unk: "指輪?",  t: "acc",    cls: "*",       ac: 0, price: 500, tier: 3, cursed: true, drainHp: 1 },
   { id: "amuletgem",name: "宝玉の首飾り",       unk: "首飾り?", t: "acc",   cls: "*",       ac: 3, price: 15000, tier: 4 },
+  { id: "stareye",  name: "星喰いの瞳",         unk: "宝玉?",  t: "acc",    cls: "*",       ac: 4, price: 60000, tier: 6, regen: 1 },
   { id: "ringmovr", name: "移動の指輪",         unk: "指輪?",  t: "acc",    cls: "*",       ac: 0, price: 20000, tier: 5, useSpell: "phasestep", brk: 0.25 },
   // 消耗品・道具
   { id: "potion",   name: "回復の薬",           unk: "薬?",    t: "use",    cls: "*", price: 40,   tier: 0, useSpell: "mend", consume: true },
@@ -272,6 +273,7 @@ const MONSTERS = [
   { id: "demonlord",name: "星喰いの眷属",   unk: "魔物",         g: "👿", col: "#80f", lv: 13, hp: "14d8", ac: -5, atk: ["4d6", "4d6"], grp: [1, 2], fl: [10, 10], type: "demon", spells: { M: 7 }, call: 0.15, mr: 65, res: ["sleep"] },
   { id: "royalguard",name:"灰の親衛兵",     unk: "鎧の戦士",     g: "⚔️", col: "#aab", lv: 10, hp: "10d8+10", ac: -2, atk: ["2d8", "2d8"], grp: [3, 5], fl: [0, 0], type: "human", res: ["sleep"] },
   { id: "vlord",    name: "ヴァンパイアロード", unk: "青白い男", g: "🧛", col: "#c03", lv: 13, hp: "13d8+20", ac: -4, atk: ["2d10"], drain: 0.15, grp: [1, 1], fl: [0, 0], type: "undead", spells: { M: 6 }, mr: 50, res: ["sleep"], exp: 12000 },
+  { id: "hoshikui", name: "星喰い", unk: "星をまとう巨影", g: "🌌", col: "#48f", lv: 22, hp: "2400", ac: -12, atk: ["5d10", "5d10"], drain: 0.1, regen: 30, grp: [1, 1], fl: [0, 0], type: "other", spells: { M: 7, P: 7 }, mr: 50, res: ["sleep", "fire", "cold"], exp: 150000, boss: true },
   { id: "morvan",   name: "灰の司祭モルヴァン", unk: "灰色の法衣の男", g: "🧙‍♂️", col: "#f0c", lv: 16, hp: "480", ac: -8, atk: ["3d8", "2d8"], regen: 12, grp: [1, 1], fl: [0, 0], type: "human", spells: { M: 7, P: 6 }, mr: 60, res: ["sleep"], exp: 50000, boss: true },
 ];
 const MONSTER = {}; MONSTERS.forEach(m => MONSTER[m.id] = m);
@@ -462,6 +464,7 @@ const FLOORS = [
       { at: [16, 13], t: "msg", text: "三つの紋章が刻まれた、封印の扉だ。\n扉の銘：『三つの欠片は、四・六・八の層の番人に守らせる』\n封印の欠片を三つそろえれば開くだろう。", noStep: true, dir: "N" },
       { at: [16, 14], t: "msg", text: "この一帯には、呪文を封じる結界が張られている！\n祭壇の間は西の方角だ……。" },
       { at: [9, 16], t: "boss", mons: [["morvan", 1], ["demonlord", 2], ["royalguard", 4]], once: "b10boss", reward: { key: "starlamp" } },
+      { at: [9, 16], t: "altar" }, // クリア後：星灯を取り除くと星喰いが目を覚ます（裏ボス）
     ],
   },
 ];

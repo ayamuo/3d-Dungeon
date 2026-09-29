@@ -356,6 +356,10 @@ async function onEnterCell(noRandom) {
         if (ev.t === "boss") { await ending(); await exitMaze(null); }
       }
       if (r !== "win") return;
+    } else if (ev.t === "altar") {
+      if (!S.cleared || fought) continue;
+      await altarEvent();
+      if (!S.inMaze) return;
     } else if (ev.t === "gift") {
       S.flags[ev.once] = 1;
       Snd.play("sparkle");
@@ -615,6 +619,30 @@ async function elevator() {
   S.elev[n] = 1;
   await tell(`昇降機は地下${n}階で止まった。`);
   for (const ev of (FL(n).ev[cidx(...e)] || [])) if (ev.t === "msg") await tell(ev.text);
+}
+/* 封印の祭壇（クリア後）。星灯を取り除くと、封印の奥の星喰いが目を覚ます */
+async function altarEvent() {
+  if (S.flags.hoshikui) { await tell("祭壇の上で、星灯が静かに輝いている。\n地の底は、もう何も語らない。"); return; }
+  await tell("祭壇の上で、星灯が静かに輝いている。\n耳を澄ますと、封印の奥から、低いうなりがかすかに響いてくる……。");
+  const k = await choose([{ label: "立ち去る", value: "leave", cls: "pri" }, { label: "星灯を取り除く", value: "take", cls: "danger" }], { title: "封印の祭壇", cols: 2 });
+  if (k !== "take") return;
+  const ok = await dialog(`<p>星灯を祭壇から取り除きますか？</p><p class="warn">封印がほどけ、地の底に眠るものが目を覚ます。</p>`,
+    [{ label: "やめる", value: false, cls: "pri" }, { label: "取り除く", value: true, cls: "danger" }], { title: "封印を解く", small: true });
+  if (!ok) return;
+  Snd.play("rumble"); Bgm.stop(1.5);
+  await tell("星灯を持ち上げた瞬間、祭壇の間が大きく揺れた。\n床の紋様がひび割れ、底知れない闇が口を開ける……。");
+  await tell("闇の底から、無数の星をまとった巨大な影がせり上がってきた。\n――星喰いが、目を覚ました。");
+  const r = await battle([["hoshikui", 1], ["demonlord", 3]], { fixed: true, boss: true, once: "hoshikui" });
+  if (!S.inMaze) return;
+  if (r !== "win") { await tell("星灯がひとりでに祭壇へ戻り、闇はふたたび閉ざされた……。"); return; }
+  S.flags.hoshikui = 1; Bgm.stop(2);
+  await tell("星喰いの体が、光の粒となって砕け散っていく。\n星のかけらが雪のように降りそそぎ、やがて静けさが戻った。");
+  await giveReward({ gold: 50000, item: "stareye" });
+  await tell("パーティは星灯を祭壇に戻した。\n封印はもう、何も閉じ込めてはいない。\nそれでも星灯は、変わらず町を照らし続けるだろう。");
+  for (const c of partyChars()) if (isAlive(c)) c.honor = 2;
+  Snd.play("levelup");
+  await tell("生き残った冒険者たちは『星喰いを討ちし者』の称号（★★）を授けられた。");
+  saveGame(true);
 }
 async function bossIntro() {
   Snd.play("rumble");
