@@ -68,31 +68,37 @@ const Nav = (() => {
     else setCur(cur);
     return cur;
   }
-  // 画面上の位置関係で、押した方向にいちばん近いボタンへ移る
+  // 画面上の位置関係で、押した方向のボタンへ移る。
+  // 上下：まず押した方向でいちばん近い段を選び、その段の中で横の位置がいちばん近いボタンへ
+  //       （段ごとにボタンの数が違う画面（設定など）でも、1つ飛ばして先の段へ行かないように）
+  // 左右：同じ段の中で、いちばん近いボタンへ（同じ段にほかのボタンが無ければ動かない）
+  // 端まで来たら反対側の端へ回り込む（上下はいちばん遠い段の中で横が近いボタン、左右は同じ段の反対端）
   function move(dir) { // 0上 1右 2下 3左
     if (!ensure()) return;
     const r0 = cur.getBoundingClientRect(), x0 = r0.left + r0.width / 2, y0 = r0.top + r0.height / 2;
-    let best = null, bs = Infinity;
+    const fwd = [], back = [];
     for (const el of items()) {
       if (el === cur) continue;
       const r = el.getBoundingClientRect(), dx = r.left + r.width / 2 - x0, dy = r.top + r.height / 2 - y0;
       const main = [-dy, dx, dy, -dx][dir], side = Math.abs(dir % 2 ? dy : dx);
-      if (main <= 2) continue;
-      const s = main + side * 2;
-      if (s < bs) { bs = s; best = el; }
+      if (main > 2) fwd.push({ el, d: main, side });
+      else if (main < -2) back.push({ el, d: -main, side });
     }
-    // 端まで来たら反対側の端へ回り込む（上下は同じ列の反対端、左右は同じ行の反対端）
-    if (!best) {
-      let far = -Infinity;
-      for (const el of items()) {
-        if (el === cur) continue;
-        const r = el.getBoundingClientRect(), dx = r.left + r.width / 2 - x0, dy = r.top + r.height / 2 - y0;
-        const back = [dy, -dx, -dy, dx][dir], side = Math.abs(dir % 2 ? dy : dx);
-        if (dir % 2 && side > r.height / 2) continue; // 左右は同じ行の中だけ
-        const s = back - side * 2;
-        if (back > 2 && s > far) { far = s; best = el; }
-      }
-    }
+    const minSide = list => list.reduce((a, c) => (c.side < a.side ? c : a));
+    // 段（列）を1つ選ぶ：far=false ならいちばん近い段、true ならいちばん遠い段。高さの多少のずれは同じ段とみなす
+    const pickLine = (list, far) => {
+      const edge = far ? Math.max(...list.map(c => c.d)) : Math.min(...list.map(c => c.d));
+      return minSide(list.filter(c => Math.abs(c.d - edge) <= 8)).el;
+    };
+    const sameRow = list => list.filter(c => c.side <= r0.height / 2);
+    let best = null;
+    if (dir % 2) {
+      const row = sameRow(fwd);
+      if (row.length) best = row.reduce((a, c) => (c.d < a.d ? c : a)).el;
+      else if (sameRow(back).length) best = sameRow(back).reduce((a, c) => (c.d > a.d ? c : a)).el;
+      // 同じ段にほかのボタンが無いとき（「とじる」だけの段など）は動かない
+    } else if (fwd.length) best = pickLine(fwd, false);
+    else if (back.length) best = pickLine(back, true);
     if (best) { setCur(best); Snd.play("move"); }
   }
   // 戦闘メッセージの早送り（画面タップと同じ扱い）
