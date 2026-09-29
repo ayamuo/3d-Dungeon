@@ -407,12 +407,10 @@ async function onEnterCell(noRandom) {
       renderParty(); await checkWipeOutside();
       return;
     } else if (t.t === "tele") {
-      Snd.play("tele"); flashView("#6040ff");
+      Snd.play("tele");
       noteTrap(f.n, S.pos.x, S.pos.y);
-      await tell("突然、体がねじれるような感覚に襲われた！");
-      prevCell = -1;
-      S.pos.x = t.to[0]; S.pos.y = t.to[1];
-      markExplored(); drawView();
+      await warpFx(async () => { prevCell = -1; S.pos.x = t.to[0]; S.pos.y = t.to[1]; markExplored(); drawView(); });
+      await tell("突然、体がねじれるような感覚に襲われた！\nどこかへ飛ばされたようだ……");
       return onEnterCell(true);
     } else if (t.t === "up") {
       if (await stairsPrompt("上り階段がある。", "のぼる")) {
@@ -681,6 +679,54 @@ async function elevatorRide(from, to) {
   });
   fx.remove();
 }
+/* 瞬間移動の演出。今の景色が青白い光の粒と一緒に渦を巻きながら真ん中へ吸い込まれ、暗闇に小さな星が瞬いたあと、
+   行き先の景色が渦を巻きながら真ん中から広がって現れる。apply の中で実際に位置を移す（その間は前の景色を映しておく）。
+   光過敏への配慮で、画面全体を白く光らせることはしない */
+async function warpFx(apply) {
+  const st = $("stage"), cv = $("view"), W = cv.width, H = cv.height;
+  if (!W || !H) { await apply(); return; }
+  const snap = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; c.getContext("2d").drawImage(cv, 0, 0); return c; };
+  const A = snap();
+  const fx = document.createElement("canvas"); fx.className = "elevfx"; fx.width = W; fx.height = H; st.appendChild(fx);
+  const g = fx.getContext("2d"); g.drawImage(A, 0, 0);
+  await apply();
+  const B = snap();
+  const T = walkSpeed() === "off" ? 900 : 1500, cx = W / 2, cy = H / 2, R = Math.hypot(W, H) / 2;
+  const parts = Array.from({ length: 70 }, () => ({ a: Math.random() * 7, r: .15 + Math.random() * .85, s: .6 + Math.random() * .8, z: 1 + Math.random() * 2 }));
+  const ease = t => t * t * (3 - 2 * t);
+  // k：大きさ（0〜1）、rot：回転、round：丸く切り抜く度合い（0＝画面全体、1＝丸）。渦に吸い込まれるほど丸くなる
+  const swirl = (img, k, rot, alpha, round) => {
+    if (k <= .01 || alpha <= 0) return;
+    const rad = R * (1 - round) + H * .5 * round;
+    g.save(); g.globalAlpha = alpha; g.translate(cx, cy); g.rotate(rot); g.scale(k, k);
+    g.beginPath(); g.arc(0, 0, rad, 0, 7); g.clip(); g.drawImage(img, -W / 2, -H / 2); g.restore();
+  };
+  const draw = p => {
+    g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+    if (p < .45) { const q = ease(p / .45); swirl(A, 1 - q * .96, q * 2.2, 1 - q * .6, Math.min(1, q * 2.5)); }
+    if (p > .55) { const q = ease((p - .55) / .45); swirl(B, .04 + q * .96, -(1 - q) * 2.2, .4 + q * .6, Math.min(1, (1 - q) * 2.5)); }
+    // 光の粒：前半は真ん中へ、後半は真ん中から外へ、渦を巻いて動く
+    const inward = p < .5, q = inward ? ease(p / .5) : ease((p - .5) / .5), vis = Math.sin(Math.PI * p);
+    for (const pt of parts) {
+      const rr = (inward ? pt.r * (1 - q) : pt.r * q) * R * .9, aa = pt.a + (inward ? q : -q) * 3 * pt.s;
+      const x = cx + Math.cos(aa) * rr, y = cy + Math.sin(aa) * rr * .8, sz = pt.z * (H / 300);
+      g.fillStyle = `rgba(190,215,255,${(.75 * vis).toFixed(3)})`; g.fillRect(x - sz / 2, y - sz / 2, sz, sz);
+    }
+    // 真ん中の小さな星（全体は光らせない）
+    const star = Math.max(0, 1 - Math.abs(p - .5) / .12);
+    if (star > 0) {
+      const r = H * .08 * star, gr = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+      gr.addColorStop(0, `rgba(220,235,255,${(.85 * star).toFixed(3)})`); gr.addColorStop(1, "rgba(150,180,255,0)");
+      g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill();
+    }
+  };
+  await new Promise(res => {
+    const t0 = performance.now();
+    const frame = now => { const p = Math.min(1, (now - t0) / T); draw(p); if (p < 1) requestAnimationFrame(frame); else res(); };
+    requestAnimationFrame(frame);
+  });
+  fx.remove();
+}
 /* 封印の祭壇（クリア後）。星灯を取り除くと、封印の奥の星喰いが目を覚ます */
 async function altarEvent() {
   if (S.flags.hoshikui) { await tell("祭壇の上で、星灯が静かに輝いている。\n地の底は、もう何も語らない。"); return; }
@@ -936,8 +982,10 @@ async function castOutside(c, sp, fromItem) {
       Snd.play("tele");
       if (dest === "castle") { if (!fromItem) spendSlot(c, sp); await exitMaze("パーティは地上の町へ瞬間移動した。"); return true; }
       // 別の階へ飛ぶときは、階段と同じ処理で階を移る（BGM・敵の絵の先読み・行き倒れの冒険者などもそろえる）
-      if (dest.f !== S.pos.f) await changeFloor(dest.f, dest.x, dest.y);
-      else { prevCell = -1; S.pos.x = dest.x; S.pos.y = dest.y; markExplored(); drawView(); saveGame(true); }
+      await warpFx(async () => {
+        if (dest.f !== S.pos.f) await changeFloor(dest.f, dest.x, dest.y);
+        else { prevCell = -1; S.pos.x = dest.x; S.pos.y = dest.y; markExplored(); drawView(); saveGame(true); }
+      });
       await alertBox(`パーティは地下${dest.f}階（東${dest.x}・北${dest.y}）へ瞬間移動した。`);
       await onEnterCell(true);
       return true;
