@@ -61,7 +61,7 @@ const SPELLS = [
   // 魔術師系
   { id: "harita",  name: "火の矢",     sc: "M", lv: 1, tgt: "enemy1", use: "b",  eff: "dmg", dice: "1d8", elem: "fire", desc: "炎の矢を放つ。敵1体に1〜8ダメージ。" },
   { id: "katina",  name: "眠りの雲",   sc: "M", lv: 1, tgt: "group",  use: "b",  eff: "sleep", desc: "敵1グループを眠らせる。眠った敵は攻撃を受けやすい。" },
-  { id: "dumapia", name: "透視", sc: "M", lv: 1, tgt: "none",   use: "c",  eff: "reveal", desc: "自分のまわり3×3マスの地形と罠（落とし穴・落とし戸・転移床・回転床）を地図に書き込む。暗闇の中も見通せる。" },
+  { id: "dumapia", name: "透視", sc: "M", lv: 1, tgt: "none",   use: "c",  eff: "reveal", desc: "自分のまわり3×3マスの地形と罠（落とし穴・落とし戸・転移床・回転床）を地図に書き込む。暗闇のマスも書き込めるが、画面の暗闇は晴れない。" },
   { id: "mogria",  name: "魔法の鎧",   sc: "M", lv: 1, tgt: "self",   use: "b",  eff: "ac", val: 2, desc: "戦闘中、自分のACを2下げる。" },
   { id: "dilta",   name: "暗闇",   sc: "M", lv: 2, tgt: "group",  use: "b",  eff: "eac", val: 2, desc: "敵1グループを闇で包み、ACを2上げる（攻撃が当たりやすくなる）。" },
   { id: "sopica",  name: "幻影",     sc: "M", lv: 2, tgt: "self",   use: "b",  eff: "ac", val: 4, desc: "姿をかすませ、戦闘中自分のACを4下げる。" },
