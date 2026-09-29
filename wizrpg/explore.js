@@ -461,11 +461,12 @@ async function stairsPrompt(text, act) {
    身ぐるみを剥ぐ：お金と品を奪えるが、善の仲間が悪に傾くことがある。 */
 const WANDER_RATE = 0.003; // 1歩あたり。100歩でおよそ4人に1回、階を一通り歩く（約380歩）とおよそ3回に2回出会う
 let wanderMet = false; // この階に来てからもう出会ったか（階を移るたびに戻す）
-const WANDER_TEXT = [
-  "壁にもたれた戦士が、かすれた声で呼びかけてきた。\n「た、助けてくれ……仲間とはぐれて、もう歩けない……」",
-  "ローブの女がうずくまっている。\n「ここまで来て……こんな所で……。お願い、薬を……」",
-  "血の跡をたどると、若い盗賊が倒れていた。\n「頼む……見逃さないでくれ……」",
-  "折れた槍を抱えた男が、浅い息をしている。\n「水を……いや、薬があれば……」",
+/* 行き倒れの冒険者の種類。bg は背景画像（wizrpg/bg/〇〇.jpg）、who は罠だったときの呼び方 */
+const WANDER_TYPES = [
+  { bg: "wanderer", who: "男", text: "フードを被った男が、壁際で浅い息をしている。\n「水を……いや、薬があれば……」" },
+  { bg: "wanderer_warrior", who: "戦士", text: "壁にもたれた戦士が、かすれた声で呼びかけてきた。\n「た、助けてくれ……仲間とはぐれて、もう歩けない……」" },
+  { bg: "wanderer_mage", who: "魔術師", text: "ローブの魔術師がうずくまっている。\n「ここまで来て……こんな所で……。頼む、薬を……」" },
+  { bg: "wanderer_rogue", who: "盗賊", text: "血の跡をたどると、覆面の盗賊が倒れていた。\n「頼む……見逃さないでくれ……」" },
 ];
 function tiltAlign(from, to, p) {
   for (const c of partyChars()) if (c.align === from && CLASSES[c.cls].align.includes(to) && chance(p)) {
@@ -527,12 +528,13 @@ function wandererHint(fn) {
 async function wandererEvent(fn) {
   const sc = $("scene");
   sc.className = "on chest";
-  setSceneBg("wanderer"); // wizrpg/bg/wanderer.jpg があれば背景に出す（無ければ絵文字）
+  const wt = pick(WANDER_TYPES);
+  setSceneBg(wt.bg); // wizrpg/bg/ の画像があれば背景に出す（無ければ絵文字）
   sc.innerHTML = `<div class="plc"><div class="pg">🧎</div><div class="pn">行き倒れの冒険者</div></div>`;
   $("hud").textContent = "🧎 行き倒れ";
   try {
     Snd.play("move");
-    await tell(pick(WANDER_TEXT));
+    await tell(wt.text);
     const k = await choose([
       { label: "助ける", value: "help", cls: "pri" }, { label: "身ぐるみを剥ぐ", value: "rob" }, { label: "立ち去る", value: "leave" },
     ], { title: "どうする？", cols: 3 });
@@ -542,7 +544,7 @@ async function wandererEvent(fn) {
       if (chance(0.2)) {
         // 罠だった
         Snd.play("trap");
-        await tell("手当てをしようと屈んだその時、倒れていた男がにやりと笑った。\n「……かかったな！」\n物陰から、武器を構えた一団が飛び出してきた！");
+        await tell(`手当てをしようと屈んだその時、倒れていた${wt.who}がにやりと笑った。\n「……かかったな！」\n物陰から、武器を構えた一団が飛び出してきた！`);
         sc.className = ""; sc.innerHTML = "";
         const humans = MONSTERS.filter(m => m.type === "human" && m.fl[0] && fn >= m.fl[0] && fn <= m.fl[1] && !m.boss);
         // 人間の敵を2種類（同じ種類になったら1つのグループにまとめる）
