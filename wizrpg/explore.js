@@ -1011,7 +1011,7 @@ function flashView(col) {
 function sizeCanvas(cv) {
   // 描く細かさは横960ドットまで（パソコンの大きな画面で、描く量が増えて歩くのが重くならないように）
   const w = cv.clientWidth, h = cv.clientHeight;
-  const dpr = Math.min(2, window.devicePixelRatio || 1, w ? 960 / w : 2);
+  const dpr = Math.min(2 * uiZoom, (window.devicePixelRatio || 1) * uiZoom, w ? 960 / w : 2); // 横長の画面で拡大しているぶんも細かく描く
   if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
   return dpr;
 }

@@ -199,7 +199,7 @@ function renderBattle() {
 function floatText(x, y, text, cls) {
   const el = document.createElement("div");
   el.className = "ftxt" + (cls ? " " + cls : ""); el.textContent = text;
-  el.style.left = x + "px"; el.style.top = y + "px";
+  el.style.left = x / uiZoom + "px"; el.style.top = y / uiZoom + "px"; // 横長の画面で全体を拡大しているときは、画面上の位置を拡大前の単位に戻す
   document.body.appendChild(el); setTimeout(() => el.remove(), 900);
 }
 function popDmg(gi, text, cls) {

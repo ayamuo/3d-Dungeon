@@ -824,3 +824,18 @@ function sentenceBreak(node) {
 }
 sentenceBreak(document.body);
 new MutationObserver(ms => { for (const m of ms) m.addedNodes.forEach(sentenceBreak); }).observe(document.body, { childList: true, subtree: true });
+
+/* ────────── 横長の画面の拡大 ──────────
+   パソコンなどの横長の画面では、画面の高さに合わせて全体を拡大する（画面が広くなっても文字が小さいままにならないように）。
+   横幅が足りないときは、2列が収まる倍率までにとどめる。--vh は拡大前の単位での画面の高さ（表示窓の大きさの計算に使う） */
+const WIDE_MQ = matchMedia("(min-width:760px) and (orientation:landscape)");
+let uiZoom = 1;
+function fitWide() {
+  uiZoom = WIDE_MQ.matches ? clamp(Math.min(innerHeight / 760, innerWidth / 1100), 1, 1.8) : 1;
+  const b = document.body;
+  b.style.zoom = uiZoom === 1 ? "" : uiZoom;
+  b.style.height = b.style.minHeight = uiZoom === 1 ? "" : innerHeight / uiZoom + "px";
+  document.documentElement.style.setProperty("--vh", innerHeight / uiZoom + "px");
+}
+fitWide();
+window.addEventListener("resize", fitWide);
