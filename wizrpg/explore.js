@@ -874,10 +874,9 @@ async function castOutside(c, sp, fromItem) {
       if (!dest) return false;
       Snd.play("tele");
       if (dest === "castle") { if (!fromItem) spendSlot(c, sp); await exitMaze("パーティは地上の町へ瞬間移動した。"); return true; }
-      prevCell = -1;
-      S.pos.f = dest.f; S.pos.x = dest.x; S.pos.y = dest.y;
-      S.deepest = Math.max(S.deepest, dest.f);
-      markExplored(); drawView(); saveGame(true);
+      // 別の階へ飛ぶときは、階段と同じ処理で階を移る（BGM・敵の絵の先読み・行き倒れの冒険者などもそろえる）
+      if (dest.f !== S.pos.f) await changeFloor(dest.f, dest.x, dest.y);
+      else { prevCell = -1; S.pos.x = dest.x; S.pos.y = dest.y; markExplored(); drawView(); saveGame(true); }
       await alertBox(`パーティは地下${dest.f}階（東${dest.x}・北${dest.y}）へ瞬間移動した。`);
       await onEnterCell(true);
       return true;
