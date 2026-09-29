@@ -24,6 +24,7 @@
   /* 表示窓（3D迷宮・町・戦闘） */
   /* 画面が縦に収まらないときに、各欄が押しつぶされて重ならないようにする（はみ出した分はスクロール） */
   header,#stage,#msg,#cmd,#party{flex-shrink:0;}
+  #mainCol,#sideCol{display:contents;} /* スマホの縦画面では入れ物が無いのと同じ（横長の画面だけ2列に分ける） */
   #stage{position:relative;width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:#000;border:1px solid #2a2f3d;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.5);flex:0 0 auto;}
   #view{position:absolute;inset:0;width:100%;height:100%;display:block;}
   #hud{position:absolute;left:8px;top:6px;font-size:12px;color:#cfd6e6;text-shadow:0 1px 2px #000;pointer-events:none;z-index:3;}
@@ -240,6 +241,15 @@
   #helpOv th{color:var(--accent);background:#1e2230;}
   #helpOv .hfoot{padding:10px 14px;border-top:1px solid var(--line);}
   #helpOv .hfoot button{width:100%;font:inherit;font-weight:800;padding:10px;border:none;border-radius:10px;background:var(--accent);color:#2a1a02;}
+  /* パソコン・タブレット・スマホの横向きなど横長の画面：左に表示窓とメッセージ、右にコマンドとパーティ表 */
+  @media (min-width:760px) and (orientation:landscape){
+    body{max-width:1600px;display:grid;grid-template-columns:minmax(0,1fr) 400px;grid-template-rows:auto 1fr;column-gap:16px;padding:6px 16px 12px;}
+    header{grid-column:1 / -1;}
+    #mainCol,#sideCol{display:flex;flex-direction:column;min-width:0;}
+    #stage{width:min(100%, calc((100vh - 160px) * 1.6));align-self:center;}
+    #msg{width:min(100%, calc((100vh - 160px) * 1.6));align-self:center;min-height:88px;max-height:88px;font-size:14px;}
+    #cmd{margin-top:0;}
+  }
   @media (max-height:700px){ #stage{aspect-ratio:16/9;} #msg{min-height:56px;max-height:56px;font-size:12.5px;} #cmd{min-height:100px;} #cmd button{padding:7px 5px;} .prow{min-height:26px;padding:2px;} }
 </style>
 <script>
@@ -261,10 +271,10 @@ if (!document.documentElement.classList.contains("stdfont")) window.loadDotFont(
 </head>
 <body data-mode="title">
 <header><a href="index.html">← もどる</a><h1 id="ttl">星灯の迷宮<small id="loc"></small></h1><span id="goldTag"></span><button id="muteBtn">🔊</button><button id="logBtn">📜</button><button id="helpBtn">？</button></header>
-<div id="stage"><canvas id="view"></canvas><div id="scene"></div><div id="hud"></div></div>
-<div id="msg"></div>
-<div id="cmd"></div>
-<div id="party"></div>
+<div id="mainCol"><div id="stage"><canvas id="view"></canvas><div id="scene"></div><div id="hud"></div></div>
+<div id="msg"></div></div>
+<div id="sideCol"><div id="cmd"></div>
+<div id="party"></div></div>
 <div id="ov"></div>
 <div id="helpOv"><div class="hbox">
   <div class="htabs"></div>
