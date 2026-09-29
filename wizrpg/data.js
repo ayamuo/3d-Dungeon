@@ -158,7 +158,7 @@ const ITEMS = [
   { id: "shield1",  name: "盾+1",               unk: "盾?",    t: "shield", cls: "FPTSLN",  ac: 3, price: 900, tier: 1 },
   { id: "shieldcur",name: "重すぎる盾",         unk: "盾?",    t: "shield", cls: "FPTSLN",  ac: -1, price: 100, tier: 1, cursed: true },
   { id: "shield2",  name: "盾+2",               unk: "盾?",    t: "shield", cls: "FPTSLN",  ac: 4, price: 3500, tier: 2 },
-  { id: "shield3",  name: "盾+3",               unk: "盾?",    t: "shield", cls: "FPSLN",   ac: 5, price: 10000, tier: 3 },
+  { id: "shield3",  name: "盾+3",               unk: "盾?",    t: "shield", cls: "FPTSLN",  ac: 5, price: 10000, tier: 3 },
   { id: "shieldev", name: "邪悪なる盾",         unk: "盾?",    t: "shield", cls: "FPTSLN",  ac: 6, price: 16000, tier: 4, align: "E" },
   // 兜
   { id: "helm",     name: "兜",                 unk: "兜?",    t: "helm",   cls: "FPSLN",   ac: 1, price: 100, tier: 0 },
