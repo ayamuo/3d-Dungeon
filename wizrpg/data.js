@@ -129,7 +129,7 @@ const ITEMS = [
   { id: "flame",    name: "炎の剣",             unk: "剣?",    t: "weapon", cls: "FSLN",   dmg: "2d8", hit: 3, price: 6000, tier: 3 },
   { id: "sceptre",  name: "司祭の錫杖",         unk: "鈍器?",  t: "weapon", cls: "PBL",    dmg: "2d4+2", hit: 2, price: 5000, tier: 3, useSpell: "diara", brk: 0.1 },
   { id: "dslayer",  name: "竜殺しの剣",         unk: "剣?",    t: "weapon", cls: "FSLN",   dmg: "1d10+3", hit: 3, price: 8000, tier: 3, slay: "dragon" },
-  { id: "holyaxe",  name: "聖なる斧",           unk: "斧?",    t: "weapon", cls: "FLS",    dmg: "3d4+3", hit: 3, price: 9000, tier: 4, slay: "undead" },
+  { id: "holyaxe",  name: "聖なる斧",           unk: "斧?",    t: "weapon", cls: "FSLN",   dmg: "3d4+3", hit: 3, price: 9000, tier: 4, slay: "undead" },
   { id: "cassia",   name: "鍛冶師グラムの剣",     unk: "剣?",    t: "weapon", cls: "FSLN",   dmg: "10d3", hit: 4, price: 15000, tier: 4 },
   { id: "murasama", name: "妖刀・朧月",               unk: "刀?",    t: "weapon", cls: "S",      dmg: "10d5", hit: 6, price: 50000, tier: 5, strUp: 1 },
   { id: "shuriken", name: "手裏剣",             unk: "刃物?",  t: "weapon", cls: "N",      dmg: "3d5", hit: 5, price: 40000, tier: 5, critUp: 0.1 },
