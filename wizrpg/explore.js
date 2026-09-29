@@ -906,7 +906,7 @@ function teleportPicker() {
 /* ────────── オートマップ ────────── */
 async function showAutomap() {
   let fl = S.pos.f;
-  await dialog(`<div class="mapnav"><button data-d="-1">▲</button><b id="mapTitle"></b><button data-d="1">▼</button></div><canvas id="amap"></canvas><div class="maplegend">▲自分　<span style="color:#7dd3fc">↑↓</span>階段　<span style="color:#fbbf24">E</span>昇降機　<span style="color:#c08040">━</span>扉　<span style="color:#f87171">━</span>鍵のかかった扉<br><span style="color:#f87171">●</span>落とし穴　<span style="color:#fb923c">▼</span>落とし戸　<span style="color:#c084fc">◎</span>転移床　<span style="color:#fbbf24">↻</span>回転床　<span style="color:#fde68a">✦</span>何かありそう　<span style="color:#8a7a68">■</span>岩</div>`,
+  await dialog(`<div class="mapnav"><button data-d="-1">▲</button><b id="mapTitle"></b><button data-d="1">▼</button></div><canvas id="amap"></canvas><div class="maplegend">▲自分　<span style="color:#7dd3fc">↑↓</span>階段　<span style="color:#fbbf24">E</span>昇降機　<span style="color:#c08040">━</span>扉　<span style="color:#f87171">━</span>鍵のかかった扉<br><span style="color:#f87171">●</span>落とし穴　<span style="color:#fb923c">▼</span>落とし戸　<span style="color:#c084fc">◎</span>転移床　<span style="color:#fbbf24">↻</span>回転床　<span style="color:#fde68a">✦</span>何かありそう　<span style="color:#8a7a68">■</span>岩　<span style="color:#8080a8">▨</span>暗闇</div>`,
     null, { title: "地図", onOpen: b => {
       const draw = () => { b.querySelector("#mapTitle").textContent = `地下${fl}階 ${FLOORS[fl].name}` + (fl === S.pos.f ? `（東${S.pos.x}・北${S.pos.y}）` : ""); drawAutomap(b.querySelector("#amap"), fl); };
       const cv = b.querySelector("#amap");
@@ -943,8 +943,15 @@ function drawAutomap(cv, fn) {
     const k = cidx(x, y);
     if (ex[k] !== "1") continue;
     if (f.rock[k]) { g.fillStyle = "#4a4038"; g.fillRect(sx(x), sy(y), cs, cs); continue; }
-    g.fillStyle = f.swamp[k] ? "#1f3a24" : f.anti[k] ? "#2a2440" : "#1c2536";
+    g.fillStyle = f.dark[k] ? "#06060a" : f.swamp[k] ? "#1f3a24" : f.anti[k] ? "#2a2440" : "#1c2536";
     g.fillRect(sx(x) + 0.5, sy(y) + 0.5, cs - 1, cs - 1);
+    // 暗闇のマス（透視で書き込んだもの）：ほぼ黒の地に、斜めの点線で暗闇だと分かるようにする
+    if (f.dark[k]) {
+      g.save(); g.beginPath(); g.rect(sx(x) + 0.5, sy(y) + 0.5, cs - 1, cs - 1); g.clip();
+      g.strokeStyle = "rgba(120,120,160,.55)"; g.lineWidth = 1; g.setLineDash([1.5, 2.5]);
+      for (let t = -cs; t < cs; t += cs / 3) { g.beginPath(); g.moveTo(sx(x) + t, sy(y) + cs); g.lineTo(sx(x) + t + cs, sy(y)); g.stroke(); }
+      g.restore();
+    }
     for (let d = 0; d < 4; d++) {
       let e = f.walls[k * 4 + d];
       if (e === E_OPEN) continue;
