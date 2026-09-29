@@ -52,7 +52,7 @@ const MON_ICONS = [
   [d => d.type === "undead", "👻", "不死"], [d => d.spells, "✨", "呪文を使う"],
   [d => d.breath === "fire", "🔥", "炎の息"], [d => d.breath === "cold", "❄️", "冷気の息"], [d => d.breath === "gas", "💨", "毒の息"],
   [d => d.crit, "🔪", "首をはねる"], [d => d.poison, "🧪", "毒"], [d => d.para, "⚡", "麻痺"], [d => d.stone, "🗿", "石化"],
-  [d => d.sleepAtk, "😪", "眠らせる"], [d => d.drain, "🩸", "レベルを吸い取る"], [d => d.call, "📣", "仲間を呼ぶ"],
+  [d => d.sleepAtk, "🎵", "眠らせる"], [d => d.drain, "🩸", "レベルを吸い取る"], [d => d.call, "📣", "仲間を呼ぶ"],
   [d => d.regen, "♻️", "傷が治る"], [d => d.mr, "🚫", "呪文が効きにくい"],
 ];
 const ELEM_NAME = { fire: "炎", cold: "冷気", elec: "雷" };
