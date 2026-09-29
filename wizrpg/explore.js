@@ -485,6 +485,7 @@ function spendAid() {
 async function wandererEvent(fn) {
   const sc = $("scene");
   sc.className = "on chest";
+  setSceneBg("wanderer"); // wizrpg/bg/wanderer.jpg があれば背景に出す（無ければ絵文字）
   sc.innerHTML = `<div class="plc"><div class="pg">🧎</div><div class="pn">行き倒れの冒険者</div></div>`;
   $("hud").textContent = "🧎 行き倒れ";
   try {

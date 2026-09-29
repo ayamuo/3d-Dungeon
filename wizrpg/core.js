@@ -723,7 +723,7 @@ function pickMember(title, filter) {
 
 /* ────────── 背景画像 ──────────
    wizrpg/bg/キー.jpg があれば表示窓の背景にする。無ければ今までどおりのグラデーション＋絵文字。
-   キー: title town tavern inn shop temple train castle chest wipe ending */
+   キー: title town tavern inn shop temple train castle chest wipe ending wanderer */
 const BG_STATE = {}; // キー -> "ok" | "ng" | "loading"
 function setSceneBg(key) {
   const sc = $("scene");
