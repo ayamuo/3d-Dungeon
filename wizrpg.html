@@ -299,8 +299,9 @@
   .prow.gfocus,.prow.cur{outline:1px solid #fff !important;outline-offset:-1px;background:none;border-radius:0;}
   /* ダイアログ・一覧 */
   .shead{border-bottom:1px solid #fff;} .shead b{color:#fff;}
-  .sfoot{border-top:1px solid #fff;gap:4px;}
-  .sfoot button{text-align:center;}
+  /* 下の「とじる」「はい」「いいえ」などは文字の幅にして真ん中に並べ、▶ が文字のすぐ左に来るようにする */
+  .sfoot{border-top:1px solid #fff;gap:4px 26px;justify-content:center;flex-wrap:wrap;}
+  .sfoot button{flex:0 0 auto;text-align:left;}
   .srow{margin:0;}
   .sheet .slist .srow,.sheet .slist.g2 .srow{padding-left:22px !important;} /* 一覧の行も、左に ▶ の場所をとる（呪文などの名前と重ならないように） */
   .sbody h4,.csh,#helpOv h3,#helpOv th,.backlog .blsep{color:#fff;}
@@ -320,8 +321,8 @@
   #helpOv .htabs button{flex:0 0 auto;font-size:12.5px;padding:5px 8px 5px 20px !important;color:#bdbdbd;}
   #helpOv .htabs button.on{background:none;color:#fff;font-weight:400;}
   #helpOv .htabs button.on::before{content:"▶";}
-  #helpOv .hfoot{border-top:1px solid #fff;}
-  #helpOv .hfoot button{text-align:center;font-weight:400;}
+  #helpOv .hfoot{border-top:1px solid #fff;text-align:center;}
+  #helpOv .hfoot button{width:auto;text-align:left;font-weight:400;}
   #helpOv td,#helpOv th{border-color:#6a6a6a;background:none;}
   h1,#goldTag,.hon,.prow .plv{color:#fff;}
   /* タイトル画面：記録の窓も黒地に白枠（絵の上で読めるよう少しだけ透かす） */
