@@ -745,7 +745,9 @@ function setSceneBg(key) {
   const apply = () => {
     if (sc.dataset.bg !== key) return; // 読み込み中に別の画面へ移っていたら何もしない
     // タイトルとエンディングは中央に文字が重なるので、中央を少し暗くして読みやすくする
-    const shade = (key === "title" || key === "ending")
+    const shade = key.startsWith("title")
+      ? "linear-gradient(rgba(0,0,0,.55),rgba(0,0,0,.15) 38%,rgba(0,0,0,.15) 55%,rgba(0,0,0,.8))" // タイトル：上の文字と下のボタンのあたりを暗く
+      : key === "ending"
       ? "radial-gradient(ellipse 70% 45% at 50% 48%,rgba(0,0,0,.6),rgba(0,0,0,.15) 75%)"
       : "linear-gradient(rgba(0,0,0,.15),rgba(0,0,0,.55))";
     sc.style.backgroundImage = `${shade},url(wizrpg/bg/${key}.jpg)`;

@@ -21,15 +21,22 @@ function showScene(key, extra) {
 }
 
 /* ────────── タイトル ────────── */
+/* タイトルの絵：スマホの縦画面では縦長の title_v.jpg（無ければ横長の title.jpg を切り抜いて使う）、横長の画面では title.jpg */
+function setTitleBg() {
+  if (WIDE_MQ.matches) { setSceneBg("title"); return; }
+  setSceneBg("title_v");
+  preloadBg("title_v", null, () => { if (document.body.dataset.mode === "title") setSceneBg("title"); });
+}
+WIDE_MQ.addEventListener("change", () => { if (document.body.dataset.mode === "title") setTitleBg(); });
 async function titleScreen() {
   document.body.dataset.mode = "title";
   const sc = $("scene");
   sc.className = "on title";
-  setSceneBg("title");
+  setTitleBg();
   // 町の背景・宝箱・地下1階の画像を、タイトルを見ている間に裏で読み込んでおく
   ["town", "tavern", "inn", "shop", "temple", "train", "castle", "chest", "wipe", "wanderer", "wanderer_warrior", "wanderer_mage", "wanderer_rogue"].forEach(k => preloadBg(k));
   preloadFloor(1);
-  sc.innerHTML = `<div class="ttl"><div class="t1">星灯の迷宮</div><div class="t2">― 十層の封印 ―</div><div class="t3">THE LABYRINTH OF THE STARLIGHT SEAL</div></div>`;
+  sc.innerHTML = `<div class="ttl"><div class="t1">星灯の迷宮</div><div class="t2">― 十層の封印 ―</div><div class="t3">THE LABYRINTH OF THE STARLIGHT SEAL</div><div class="tstory">坑道の底の封印迷宮から、要の〈星灯〉が奪われた。<br>封印がほどければ、地の底の『星喰い』が目を覚ますという――</div></div>`;
   $("loc").textContent = "";
   clearMsg();
   logMsg("坑道の底の封印迷宮から、要の〈星灯〉が奪われた。");

@@ -49,6 +49,18 @@
   .ttl .t1{font-size:34px;font-weight:900;color:#f3cf7a;letter-spacing:6px;text-shadow:0 0 18px rgba(243,180,80,.45),0 3px 0 #5a3a10;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;}
   .ttl .t2{font-size:14px;color:#e8d8b8;margin-top:8px;letter-spacing:3px;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;}
   .ttl .t3{font-size:9px;color:#8a7a60;margin-top:10px;letter-spacing:2px;}
+  /* タイトル画面：絵を画面いっぱいに敷き、タイトルの文字を上に、記録のボタンを下に重ねる */
+  body[data-mode="title"] #stage{position:fixed;inset:0;width:auto;aspect-ratio:auto;align-self:stretch;border:none;border-radius:0;box-shadow:none;z-index:0;}
+  body[data-mode="title"] #msg,body[data-mode="title"] #party{display:none;}
+  body[data-mode="title"] header{position:fixed;top:0;left:0;right:0;z-index:3;padding:8px 12px;}
+  body[data-mode="title"] header h1,body[data-mode="title"] #goldTag{visibility:hidden;}
+  body[data-mode="title"] #cmd{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));width:min(400px,calc(100% - 32px));min-height:0;margin:0;z-index:3;}
+  body[data-mode="title"] #cmd button{background:rgba(22,24,36,.74);border-color:rgba(255,255,255,.14);backdrop-filter:blur(3px);}
+  body[data-mode="title"] #cmd button.pri{background:linear-gradient(180deg,rgba(233,196,106,.96),rgba(201,150,46,.96));}
+  body[data-mode="title"] .ctitle{text-shadow:0 1px 4px #000;}
+  #scene.title .ttl{position:absolute;left:0;right:0;top:13%;padding:0 20px;}
+  body[data-mode="title"] .ttl .t1{font-size:42px;}
+  .ttl .tstory{font-size:11.5px;color:#ddd2bc;margin:20px auto 0;line-height:1.8;max-width:360px;letter-spacing:-.2px;text-shadow:0 1px 4px #000,0 0 2px #000;}
   /* 戦闘 */
   #scene.battle{background:radial-gradient(ellipse at 50% 60%,#2a1418,#08060a 80%);align-items:flex-end;padding:26px 6px 8px;}
   .mgs{display:grid;gap:6px;width:100%;height:100%;}
