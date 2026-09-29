@@ -52,7 +52,7 @@
   /* 戦闘 */
   #scene.battle{background:radial-gradient(ellipse at 50% 60%,#2a1418,#08060a 80%);align-items:flex-end;padding:26px 6px 8px;}
   .mgs{display:grid;gap:6px;width:100%;height:100%;}
-  .mgs.n1{grid-template-columns:minmax(0,200px);justify-content:center;}
+  .mgs.n1{grid-template-columns:minmax(0,58%);justify-content:center;} /* 1グループのときは表示窓の幅に合わせる（2グループの1体ぶんより少し大きい） */
   .mgs.n2{grid-template-columns:1fr 1fr;} .mgs.n3{grid-template-columns:1fr 1fr 1fr;} .mgs.n4{grid-template-columns:1fr 1fr 1fr 1fr;}
   /* 3〜4グループのときは列が細くなるので、絵だけ列の幅をはみ出して大きく描く（隣と少し重なってよい） */
   .mgs.n3 .mimg.hasimg img{left:-20%;width:140%;} .mgs.n4 .mimg.hasimg img{left:-35%;width:170%;}

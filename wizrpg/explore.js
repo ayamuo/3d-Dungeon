@@ -1009,8 +1009,9 @@ function flashView(col) {
   setTimeout(() => { if (document.body.dataset.mode === "maze") drawView(); }, 120);
 }
 function sizeCanvas(cv) {
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  // 描く細かさは横960ドットまで（パソコンの大きな画面で、描く量が増えて歩くのが重くならないように）
   const w = cv.clientWidth, h = cv.clientHeight;
+  const dpr = Math.min(2, window.devicePixelRatio || 1, w ? 960 / w : 2);
   if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
   return dpr;
 }
