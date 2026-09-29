@@ -615,10 +615,71 @@ async function elevator() {
   if (!n) return;
   Snd.play("elevator");
   const e = FLOORS[n].elev;
+  await elevatorRide(S.pos.f, n);
   await changeFloor(n, e[0], e[1]);
+  Snd.play("clank");
+  const st = $("stage"); st.classList.remove("encshake"); void st.offsetWidth; st.classList.add("encshake");
+  vibrate(60);
   S.elev[n] = 1;
   await tell(`昇降機は地下${n}階で止まった。`);
   for (const ev of (FL(n).ev[cidx(...e)] || [])) if (ev.t === "msg") await tell(ev.text);
+}
+/* 昇降機の移動の演出。下りなら、今の階の景色が上へ流れながら暗くなり、縦穴の中（壁の梁や通り過ぎる階の明かり）を下って、
+   目的の階の景色が下からせり上がりながら明るくなって止まる。上りは向きが逆。
+   目的の階の景色は先に描いて写しておく（着いたら同じ絵が本物の画面に入れ替わる） */
+async function elevatorRide(from, to) {
+  const st = $("stage"), cv = $("view"), W = cv.width, H = cv.height;
+  if (!W || !H) return;
+  const snap = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; c.getContext("2d").drawImage(cv, 0, 0); return c; };
+  const A = snap();
+  await texWait(to);
+  const keep = { ...S.pos }, hud = $("hud").innerHTML, [ex, ey] = FLOORS[to].elev;
+  S.pos = { ...S.pos, f: to, x: ex, y: ey }; drawView();
+  const B = snap();
+  S.pos = keep; drawView(); $("hud").innerHTML = hud;
+  const fx = document.createElement("canvas"); fx.className = "elevfx"; fx.width = W; fx.height = H; st.appendChild(fx);
+  const g = fx.getContext("2d"), down = to > from, sg = down ? -1 : 1; // 下りは景色が上へ（マイナス方向へ）流れる
+  const T = Math.min(3200, 1300 + Math.abs(to - from) * 260) * (walkSpeed() === "off" ? .6 : 1);
+  const ease = t => t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+  const draw = p => {
+    g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+    // 縦穴：岩肌の帯と、鉄の梁が流れていく
+    const vis = Math.sin(Math.PI * p), scroll = sg * p * H * (2 + Math.abs(to - from));
+    for (let i = -1; i < 7; i++) {
+      const y = ((i * H / 5 + scroll) % (H * 1.4) + H * 1.4) % (H * 1.4) - H * .2;
+      g.fillStyle = `rgba(70,62,54,${(.35 * vis).toFixed(3)})`; g.fillRect(0, y, W, H * .07);
+      g.fillStyle = `rgba(150,130,100,${(.25 * vis).toFixed(3)})`; g.fillRect(0, y, W, Math.max(1, H * .006));
+    }
+    // 通り過ぎる階の明かり（階の数だけ、橙色の光が横切る）
+    const n = Math.abs(to - from);
+    for (let k = 1; k < n; k++) {
+      const q = (p - .25) / .5 * n - k + .5; // 0〜1 の間に画面を横切る
+      if (q < 0 || q > 1) continue;
+      const y = down ? H * (1.1 - q * 1.2) : H * (-.1 + q * 1.2);
+      const gr = g.createLinearGradient(0, y - H * .12, 0, y + H * .12);
+      gr.addColorStop(0, "rgba(255,170,80,0)"); gr.addColorStop(.5, `rgba(255,170,80,${(.35 * vis).toFixed(3)})`); gr.addColorStop(1, "rgba(255,170,80,0)");
+      g.fillStyle = gr; g.fillRect(0, y - H * .12, W, H * .24);
+    }
+    // 出発した階の景色：流れ去りながら暗くなる
+    if (p < .45) {
+      const q = ease(p / .45);
+      g.save(); g.globalAlpha = 1 - q; g.drawImage(A, 0, sg * H * .9 * q); g.restore(); // 景色だけを暗く（縦穴の帯は消さない）
+    }
+    // 着く階の景色：反対側からせり上がり（下り）／下りてきて（上り）、明るくなる
+    if (p > .55) {
+      const q = ease((p - .55) / .45);
+      g.save(); g.globalAlpha = q; g.drawImage(B, 0, -sg * H * .9 * (1 - q)); g.restore();
+    }
+    // 通過中の階
+    const cur = Math.round(from + (to - from) * clamp((p - .1) / .8, 0, 1));
+    $("hud").innerHTML = `昇降機 ${down ? "▼" : "▲"} 地下${cur}階`;
+  };
+  await new Promise(res => {
+    const t0 = performance.now();
+    const frame = now => { const p = Math.min(1, (now - t0) / T); draw(p); if (p < 1) requestAnimationFrame(frame); else res(); };
+    requestAnimationFrame(frame);
+  });
+  fx.remove();
 }
 /* 封印の祭壇（クリア後）。星灯を取り除くと、封印の奥の星喰いが目を覚ます */
 async function altarEvent() {
