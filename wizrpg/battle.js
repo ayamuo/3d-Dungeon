@@ -816,7 +816,8 @@ async function victory(fn, opt) {
   await bmsg(`怪物たちを倒した！　経験値を${each.toLocaleString()}ずつ獲得した。`, 1100);
   const lv = alive.filter(c => c.exp >= nextExp(c));
   if (lv.length) logMsg(`（${lv.map(c => c.name).join("、")}は宿屋で休むとレベルが上がる）`);
-  const hasChest = killed.length && (opt.fixed ? !opt.reward || !opt.reward.item : chance(0.33));
+  // 最後の戦いのあとは宝箱を出さない（エンディングへの流れを切らないように）
+  const hasChest = killed.length && !opt.boss && (opt.fixed ? !opt.reward || !opt.reward.item : chance(0.33));
   BT.groups = [];
   if (hasChest) {
     const items = randomLoot(fn, opt.fixed ? 1 + (chance(0.4) ? 1 : 0) : (chance(0.55) ? 1 : 0));

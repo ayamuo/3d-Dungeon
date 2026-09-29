@@ -347,7 +347,11 @@ async function onEnterCell(noRandom) {
       if (!S.inMaze) return;
       if (r === "win") {
         if (ev.once) S.flags[ev.once] = 1;
-        if (ev.t === "boss") await tell("灰の司祭モルヴァンは、灰となって崩れ落ちた。\n床に転がった星灯が、淡く輝いている……。");
+        if (ev.t === "boss") {
+          Bgm.stop(2);
+          await tell("モルヴァン「……星喰いの声が……遠のいていく……。\n私はただ……終わらない見張りから、この町を……」");
+          await tell("灰の司祭モルヴァンは、灰となって崩れ落ちた。\n床に転がった星灯が、淡く輝いている……。");
+        }
         await giveReward(ev.reward);
         if (ev.t === "boss") { await ending(); await exitMaze(null); }
       }

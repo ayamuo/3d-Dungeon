@@ -576,19 +576,36 @@ async function castle() {
       if (bt.dataset.bgm) { S.bgmOff = bt.dataset.bgm === "0"; saveGame(); Bgm.sync(); b.querySelectorAll("[data-bgm]").forEach(x => x.classList.toggle("pri", x === bt)); Snd.play("click"); return; } S.speed = +bt.dataset.v; saveGame(); b.querySelectorAll(".spd button[data-v]").forEach(x => x.classList.toggle("pri", x === bt)); Snd.play("click"); }) });
 }
 /* 最深部で星灯を取り戻した直後に呼ばれる */
+/* エンディング：自分の手で星灯を祭壇に戻す → 封印の間 → 町の人々 → 酒場の宴 → 称号 → タイトルと素材の表記 → 記録 */
 async function ending() {
+  const sc = $("scene");
+  await choose([{ label: "星灯を祭壇に戻す", value: 1, cls: "pri" }], { title: "封印の祭壇の前に立った。", cols: 1 });
   S.cleared = true;
   for (const c of partyChars()) if (isAlive(c)) c.honor = 1;
   saveGame(true);
-  Snd.play("win");
-  const sc = $("scene");
+  Snd.play("levelup");
+  Bgm.play("dangeon23");
   sc.className = "on title";
   setSceneBg("ending");
   sc.innerHTML = `<div class="ttl"><div class="t1">✨</div><div class="t2">封印は結び直された</div></div>`;
-  await tell("パーティは星灯を祭壇に掲げた。\n青白い光が封印の間を満たし、地の底の鼓動が静まっていく……。");
-  await tell("十層の封印は、ふたたび結び直された。");
-  await tell("町へ戻ると、評議会の議長が待っていた。\n「よくやってくれた！ 君たちはグレイヴンの恩人だ」");
+  await tell("パーティは星灯を祭壇に掲げた。\n青白い光が柱となって立ちのぼり、封印の間を満たしていく。");
+  await tell("地の底から響いていた鼓動が、ゆっくりと静まっていく……。\n十層の封印は、ふたたび結び直された。");
+  Bgm.play("town");
+  showScene("town", "地の底の鼓動は、もう聞こえない。");
+  await tell("坑道の昇降口から地上へ戻ると、町じゅうの人々が出迎えた。");
+  await tell("評議会の議長「よくやってくれた！\n君たちはグレイヴンの恩人だ」");
+  showScene("tavern", "今夜は、町じゅうが祝いの席だ。");
+  await tell("その夜、つるはし亭では朝まで祝いの歌が絶えなかった。");
+  await tell("坑道にはふたたび灯がともり、鉱夫たちは地の底へ降りていく。\n星灯は今も祭壇で、静かに町を見守っている。");
+  const fallen = partyChars().filter(c => !isAlive(c));
+  if (fallen.length) await tell(`戦いに倒れた${fallen.map(c => c.name).join("、")}の名は、祭壇の石に刻まれた。`);
   await tell("生き残った冒険者たちは『封印の守り手』の称号（★）を授けられた。\nその名は、永く町で語り継がれるだろう。");
+  sc.className = "on title";
+  setSceneBg("title");
+  sc.innerHTML = `<div class="ttl"><div class="t1">星灯の迷宮</div><div class="t2">― 十層の封印 ―</div></div>`;
+  $("loc").textContent = "";
+  await tell("効果音：効果音ラボ\nBGM：魔王魂\n文字：DotGothic16（Fontworks）", { btn: "おわり" });
+  Snd.play("win");
   const names = partyChars().map(c => `${c.name}（Lv${c.lvl} ${CLASSES[c.cls].name}）`).join("<br>");
   const played = playMinutes(S);
   await dialog(`<div class="end"><p class="big">🏆 CONGRATULATIONS 🏆</p><p>${names}</p><p>戦闘 ${S.stats.battles}回 / 倒した怪物 ${S.stats.kills}体<br>死者 ${S.stats.deaths}人 / 歩数 ${S.stats.steps}<br>プレイ時間 約${played}分</p><p class="thx">― 遊んでくれてありがとう ―<br><small>このあとも冒険を続けられます。</small></p></div>`,
