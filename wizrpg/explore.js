@@ -862,8 +862,10 @@ function teleportPicker() {
     { label: "やめる", value: null }, { label: "町へ", value: "castle" }, { label: "移動する", cls: "pri", value: () => ({ f, x, y }) },
   ], { title: "瞬間移動", onOpen: b => {
     const box = b.querySelector(".tp");
-    const draw = () => { box.innerHTML = [["f", "階", f, 1, maxF], ["x", "東へ", x, 0, 19], ["y", "北へ", y, 0, 19]].map(([k, l, v, a, bb]) => `<div class="bprow"><span>${l}</span><button data-k="${k}" data-d="-1" data-a="${a}" data-b="${bb}">－</button><b>${k === "f" ? "地下" + v : v}</b><button data-k="${k}" data-d="1" data-a="${a}" data-b="${bb}">＋</button></div>`).join("");
-      box.querySelectorAll("button").forEach(bt => bt.onclick = () => { const d = +bt.dataset.d, a = +bt.dataset.a, bb = +bt.dataset.b; if (bt.dataset.k === "f") f = clamp(f + d, a, bb); if (bt.dataset.k === "x") x = clamp(x + d, a, bb); if (bt.dataset.k === "y") y = clamp(y + d, a, bb); Snd.play("move"); draw(); }); };
+    box.innerHTML = [["f", "階", 1, maxF], ["x", "東へ", 0, 19], ["y", "北へ", 0, 19]].map(([k, l, a, bb]) => `<div class="bprow"><span>${l}</span><button data-k="${k}" data-d="-1" data-a="${a}" data-b="${bb}">－</button><b data-v="${k}"></b><button data-k="${k}" data-d="1" data-a="${a}" data-b="${bb}">＋</button></div>`).join("");
+    // 数字だけを書き換える（ボタンを作り直すと、コントローラのカーソルが外れて連打できなくなるため）
+    const draw = () => { box.querySelector('[data-v="f"]').textContent = "地下" + f; box.querySelector('[data-v="x"]').textContent = x; box.querySelector('[data-v="y"]').textContent = y; };
+    box.querySelectorAll("button").forEach(bt => bt.onclick = () => { const d = +bt.dataset.d, a = +bt.dataset.a, bb = +bt.dataset.b; if (bt.dataset.k === "f") f = clamp(f + d, a, bb); if (bt.dataset.k === "x") x = clamp(x + d, a, bb); if (bt.dataset.k === "y") y = clamp(y + d, a, bb); Snd.play("move"); draw(); });
     draw();
   } });
 }

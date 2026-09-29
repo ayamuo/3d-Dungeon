@@ -58,8 +58,12 @@ const Nav = (() => {
     const el = list.find(e => m.v !== undefined ? e.dataset.v === m.v : e.textContent === m.text);
     return el && !el.classList.contains("danger") && !isCancelBtn(el) ? el : null;
   }
+  // ボタンの目印（種類・data属性・文字）。画面が描き直されても、同じ役割のボタンなら同じ目印になる
+  const sigOf = el => el.tagName + JSON.stringify(el.dataset) + "|" + el.textContent;
   function ensure() {
     const list = items();
+    // 選んでいたボタンが描き直しで作り直されたら（＋－のボタンなど）、同じ役割のボタンにカーソルを残す
+    if (cur && !cur.isConnected) { const sig = sigOf(cur), same = list.find(e => sigOf(e) === sig); if (same) { setCur(same); return cur; } }
     if (!cur || !list.includes(cur)) setCur(list.includes(cmdCur) ? cmdCur : recalled(list) || defaultItem(list));
     else setCur(cur);
     return cur;
@@ -99,6 +103,8 @@ const Nav = (() => {
     if (el.tagName === "INPUT") { const p = overlay() && overlay().querySelector(".sfoot .pri"); if (p) p.click(); return; }
     remember(el);
     el.click();
+    // 押したボタンが描き直されて消えたときは、すぐに同じ役割のボタンへ枠を付け直す
+    if (!el.isConnected && navMode) setTimeout(() => { if (cur === el) ensure(); }, 0);
   }
   function cancel() {
     const ov = overlay();
