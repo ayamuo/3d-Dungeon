@@ -125,6 +125,7 @@ const Nav = (() => {
 
   /* 共通の入力（キーボードとゲームパッドの両方から呼ぶ） */
   function press(k, repeat) {
+    markActive(); // プレイ時間を数えるための「操作した」印
     navMode = true;
     const h = help();
     if (h) {

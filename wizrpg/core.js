@@ -839,3 +839,25 @@ function fitWide() {
 }
 fitWide();
 window.addEventListener("resize", fitWide);
+
+/* ────────── プレイ時間 ──────────
+   画面を開いていて、最後に操作してから3分以内の間だけ数える（S.stats.playMs）。
+   前の版の記録には無いので、歩いた歩数と戦闘回数からおおよその時間を出して始める（始めてからの経過時間は超えない） */
+let lastActive = Date.now(), playTick = Date.now();
+function markActive() { lastActive = Date.now(); }
+document.addEventListener("pointerdown", markActive, true);
+document.addEventListener("keydown", markActive, true);
+function estimatePlayMs(s) {
+  const st = s.stats || {};
+  return Math.min((st.steps || 0) * 1500 + (st.battles || 0) * 40000, Date.now() - (st.startedAt || Date.now()));
+}
+function playMinutes(s) {
+  const st = s.stats || (s.stats = {});
+  return Math.floor((st.playMs != null ? st.playMs : estimatePlayMs(s)) / 60000);
+}
+setInterval(() => {
+  const now = Date.now(), dt = now - playTick; playTick = now;
+  if (!S || document.hidden || now - lastActive > 180000 || dt > 60000) return;
+  if (S.stats.playMs == null) S.stats.playMs = estimatePlayMs(S);
+  S.stats.playMs += dt;
+}, 5000);

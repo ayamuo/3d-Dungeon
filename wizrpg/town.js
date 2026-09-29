@@ -59,7 +59,7 @@ async function titleScreen() {
     if (!c) return titleScreen();
     if (c === "cont") { S = saved; S.speed = S.speed || 1; try { localStorage.setItem(SLOT_KEY, String(n)); } catch (e) { } return resumeGame(); }
     // うっかり消さないよう、消える記録の中身を見せ、「やめる」を標準の選択にする
-    const played = Math.floor((Date.now() - ((saved.stats && saved.stats.startedAt) || Date.now())) / 60000);
+    const played = playMinutes(saved);
     const ok = await dialog(`<p>記録${n}を消して、はじめから遊びますか？</p>
       <div class="rulebox">${esc(slotSub(saved))}<br>冒険者 ${saved.roster.length}人　所持金 ${(saved.gold || 0).toLocaleString()}G　プレイ時間 約${played}分</div>
       <p class="warn">消した記録は元に戻せません。</p>`,
@@ -561,7 +561,7 @@ async function classChange() {
 async function castle() {
   showScene("castle");
   const keys = Object.keys(S.keys).filter(k => S.keys[k]).map(k => KEYITEMS[k].name);
-  const played = Math.floor((Date.now() - S.stats.startedAt) / 60000);
+  const played = playMinutes(S);
   const msg = S.cleared
     ? "議長「封印は結び直された。君たちはグレイヴンの恩人だ。坑道にはまだ魔物が残っている。存分に腕を磨くといい」"
     : S.deepest >= 5 ? "議長「地下深くまで進んだそうだな。モルヴァンは最深部の封印の間にいるはずだ。封印の扉は、三つの欠片がそろえば開くと伝わっている」"
@@ -590,7 +590,7 @@ async function ending() {
   await tell("町へ戻ると、評議会の議長が待っていた。\n「よくやってくれた！ 君たちはグレイヴンの恩人だ」");
   await tell("生き残った冒険者たちは『封印の守り手』の称号（★）を授けられた。\nその名は、永く町で語り継がれるだろう。");
   const names = partyChars().map(c => `${c.name}（Lv${c.lvl} ${CLASSES[c.cls].name}）`).join("<br>");
-  const played = Math.floor((Date.now() - S.stats.startedAt) / 60000);
+  const played = playMinutes(S);
   await dialog(`<div class="end"><p class="big">🏆 CONGRATULATIONS 🏆</p><p>${names}</p><p>戦闘 ${S.stats.battles}回 / 倒した怪物 ${S.stats.kills}体<br>死者 ${S.stats.deaths}人 / 歩数 ${S.stats.steps}<br>プレイ時間 約${played}分</p><p class="thx">― 遊んでくれてありがとう ―<br><small>このあとも冒険を続けられます。</small></p></div>`,
     [{ label: "町へ", value: true, cls: "pri" }], { title: "エンディング" });
 }
