@@ -164,27 +164,27 @@ const Snd = (() => {
 const ITEM_SND = { potion2: "potion_l" };
 /* 呪文ごとの効果音（効果音ラボの音に対応するキー） */
 const SPELL_SND = {
-  harita: "fire_s", maharita: "fire_m", laharita: "fire_l", litocana: "fire_m",
-  darta: "ice_m", madarta: "ice_l", morita: "thunder", malikta: "thunder_l", tiltwaita: "nuke",
-  katina: "sleep", dilta: "debuff", montina: "debuff", badiosa: "debuff", badiara: "debuff",
-  lakanita: "darkspell", makanita: "darkspell", badia: "darkspell", zilwana: "holy", labadia: "drainspell",
-  mogria: "buff", sopica: "buff", porfica: "shield", matuna: "buff_party", bamatuna: "buff_party", harawa: "buff_party",
-  diosa: "heal", diara: "heal_m", diaruma: "heal_l", madia: "heal_l", latumofisa: "cure_poison", dialca: "cure_all",
-  dia: "raise", kadoruta: "raise", milwana: "light", lomilwana: "light", dumapia: "light", latumapica: "light", calfa: "light",
-  loktofeita: "tele", malora: "tele",
+  firebolt: "fire_s", flamestorm: "fire_m", inferno: "fire_l", firepillar: "fire_m",
+  blizzard: "ice_m", deepfreeze: "ice_l", sparkrain: "thunder", judgment: "thunder_l", cataclysm: "nuke",
+  sleepcloud: "sleep", darkveil: "debuff", hush: "debuff", smite: "debuff", greatsmite: "debuff",
+  airless: "darkspell", annihilate: "darkspell", deathword: "darkspell", unmake: "holy", drainlife: "drainspell",
+  magearmor: "buff", phantom: "buff", lightshield: "shield", guardprayer: "buff_party", holyguard: "buff_party", wardprayer: "buff_party",
+  mend: "heal", mend2: "heal_m", mend3: "heal_l", fullmend: "heal_l", purify: "cure_poison", awaken: "cure_all",
+  revive: "raise", resurrect: "raise", glow: "light", radiance: "light", farsight: "light", trueseeing: "light", trapsense: "light",
+  homeward: "tele", phasestep: "tele",
 };
 /* 武器の種類ごとの打撃音 */
 function weaponSnd(wd) {
   if (!wd) return "fist";
   if (["dagger", "dagger1", "shuriken"].includes(wd.id)) return "dagger";
-  if (wd.id === "murasama") return "katana";
+  if (wd.id === "oborozuki") return "katana";
   if (["baxe", "axecur", "holyaxe"].includes(wd.id)) return "axe";
-  if (["staff", "mace", "mace1", "mace2", "staffhar", "sceptre"].includes(wd.id)) return "blunt";
+  if (["staff", "mace", "mace1", "mace2", "flamestaff", "sceptre"].includes(wd.id)) return "blunt";
   return "sword";
 }
 /* 回復量。呪文は術者のレベルに比例して伸び、薬は飲む人の最大HPに対する割合で回復する
    （原作どおりの固定値だと、レベルが上がるほど回復が役に立たなくなるため） */
-const HEAL_SPELL = { diosa: { dice: "1d8+4", per: 2 }, diara: { dice: "3d8+10", per: 3 }, diaruma: { dice: "6d8+20", per: 4 } };
+const HEAL_SPELL = { mend: { dice: "1d8+4", per: 2 }, mend2: { dice: "3d8+10", per: 3 }, mend3: { dice: "6d8+20", per: 4 } };
 const HEAL_ITEM = { potion: { dice: "2d8+6", pct: 0.3 }, potion2: { dice: "6d8+20", pct: 0.6 } };
 function healAmount(sp, caster, target, itemId) {
   const it = itemId && HEAL_ITEM[itemId];
@@ -423,8 +423,20 @@ function saveGame(now) {
   if (!saveTimer) saveTimer = setTimeout(doSave, 250);
 }
 function loadGame(n = curSlot) {
-  try { const s = JSON.parse(localStorage.getItem(saveKeyOf(n))); if (s && s.ver === 1) return s; } catch (e) { }
+  try { const s = JSON.parse(localStorage.getItem(saveKeyOf(n))); if (s && s.ver === 1) { migrateIds(s); return s; } } catch (e) { }
   return null;
+}
+/* 古い版の記録に残っている呪文・品物の名前を、今の名前に書き換える。
+   古い名前はソースに残さず、名前から計算した番号（idHash）で照合する。今ある名前はそのまま */
+const OLD_IDS = { 163997031: "blizzard", 164257137: "darkveil", 164262485: "mend", 164268986: "mend2", 165923830: "alvain", 174513605: "fullmend", 175689162: "deathword", 176746348: "trapsense", 193404649: "revive", 344389585: "annihilate", 359974896: "oborozuki", 383757294: "flamestorm", 400052324: "holyguard", 711561654: "firepillar", 763806932: "glow", 791979446: "resurrect", 1057837394: "judgment", 1067063371: "deepfreeze", 1125889607: "awaken", 1143607995: "hush", 1282327529: "homeward", 1355755471: "inferno", 1463705721: "phasestep", 1464543591: "guardprayer", 1465772410: "magearmor", 1466721129: "sparkrain", 1513080670: "trueseeing", 1524411158: "purify", 1537897839: "gramblade", 1541856624: "airless", 1586562114: "firebolt", 1586570665: "wardprayer", 1851019069: "sleepcloud", 2018126602: "cataclysm", 2170063234: "phantom", 2346929526: "smite", 2346939929: "greatsmite", 2599621573: "lightshield", 2785799223: "radiance", 2795249922: "mend3", 2972873667: "unmake", 3268869216: "farsight", 3357634086: "paladinrobe", 3720433720: "flamestaff", 4222343655: "drainlife" };
+const idHash = s => { let x = 5381; for (const c of s) x = ((x * 33) ^ c.charCodeAt(0)) >>> 0; return x; };
+function migrateIds(s) {
+  const fix = id => (typeof id !== "string" || SPELL[id] || ITEM[id]) ? id : (OLD_IDS[idHash(id)] || id);
+  for (const c of s.roster || []) {
+    if (c.known) c.known = c.known.map(fix);
+    for (const it of c.items || []) it.id = fix(it.id);
+  }
+  if (s.shop) for (const k of Object.keys(s.shop)) { const n = fix(k); if (n !== k) { s.shop[n] = (s.shop[n] || 0) + s.shop[k]; delete s.shop[k]; } }
 }
 function lastSlot() {
   try { const n = +localStorage.getItem(SLOT_KEY); if (n >= 1 && n <= SAVE_SLOTS) return n; } catch (e) { }

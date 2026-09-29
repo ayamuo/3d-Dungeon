@@ -480,7 +480,7 @@ function spendAid() {
     const i = c.items.findIndex(it => it.id === id && !it.eq);
     if (i >= 0) { c.items.splice(i, 1); return `${c.name}は${ITEM[id].name}を分け与えた。`; }
   }
-  for (const sid of ["diosa", "diara", "diaruma"]) for (const c of partyChars()) {
+  for (const sid of ["mend", "mend2", "mend3"]) for (const c of partyChars()) {
     if (c.status === "ok" && c.known.includes(sid) && spellSlotsLeft(c, SPELL[sid]) > 0) { c.mpP[SPELL[sid].lv - 1]--; return `${c.name}は「${SPELL[sid].name}」を唱えた。`; }
   }
   return "薬も呪文もない。布を裂いて、できるだけの手当てをした。";
@@ -515,7 +515,7 @@ function wandererHint(fn) {
   }
   // この階の怪物が落とす宝箱から出ることのある、値打ちのある品（randomLoot と同じ段階の品から選ぶ）
   const maxT = Math.min(5, Math.floor((fn + 1) / 2)), have = new Set(S.roster.flatMap(c => c.items.map(it => it.id)));
-  const rare = ITEMS.filter(it => it.tier >= 1 && (it.tier === maxT || it.tier === maxT - 1) && it.price >= 500 && !it.cursed && it.t !== "use" && !have.has(it.id) && it.id !== "murasama");
+  const rare = ITEMS.filter(it => it.tier >= 1 && (it.tier === maxT || it.tier === maxT - 1) && it.price >= 500 && !it.cursed && it.t !== "use" && !have.has(it.id) && it.id !== "oborozuki");
   if (rare.length) {
     // 上の段階の品ほど選ばれやすくする
     const it = pick(rare.flatMap(r => r.tier === maxT ? [r, r] : [r]));
@@ -849,7 +849,7 @@ async function castOutside(c, sp, fromItem) {
       await onEnterCell(true);
       return true;
     }
-    case "calfa": await say("宝箱の前でなければ意味がない。"); return false;
+    case "trapsense": await say("宝箱の前でなければ意味がない。"); return false;
   }
   await say("今は効果がない。");
   return false;

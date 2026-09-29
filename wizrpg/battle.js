@@ -660,8 +660,8 @@ const groupIdx = (g) => BT.groups.indexOf(g);
 
 /* ────────── 怪物の行動 ────────── */
 const MON_SPELLS = {
-  M: [null, ["harita", "katina"], ["harita", "katina"], ["maharita", "morita"], ["darta", "laharita"], ["madarta", "lakanita"], ["madarta", "laharita"], ["tiltwaita", "madarta"]],
-  P: [null, ["badiosa"], ["badiosa", "montina"], ["badiosa", "montina"], ["badiara"], ["badia", "litocana"], ["badia", "litocana"], ["malikta"]],
+  M: [null, ["firebolt", "sleepcloud"], ["firebolt", "sleepcloud"], ["flamestorm", "sparkrain"], ["blizzard", "inferno"], ["deepfreeze", "airless"], ["deepfreeze", "inferno"], ["cataclysm", "deepfreeze"]],
+  P: [null, ["smite"], ["smite", "hush"], ["smite", "hush"], ["greatsmite"], ["deathword", "firepillar"], ["deathword", "firepillar"], ["judgment"]],
 };
 function frontTargets() {
   const pc = partyChars();
@@ -748,7 +748,7 @@ async function monsterSpell(def, sp) {
   const alive = partyChars().filter(c => isAlive(c) && c.status !== "stone");
   if (!alive.length) return;
   Snd.play(SPELL_SND[sp.id] || "light");
-  const monDice = { tiltwaita: "6d8", malikta: "6d6", madarta: "5d6", darta: "4d6", laharita: "4d6", maharita: "3d6", morita: "2d6", litocana: "2d8" }; // 怪物が唱える全体呪文はパーティ全員に当たるので弱めにする
+  const monDice = { cataclysm: "6d8", judgment: "6d6", deepfreeze: "5d6", blizzard: "4d6", inferno: "4d6", flamestorm: "3d6", sparkrain: "2d6", firepillar: "2d8" }; // 怪物が唱える全体呪文はパーティ全員に当たるので弱めにする
   if (sp.eff === "dmg") {
     glowParty(spellFxKind(sp)); shakeParty(); vibrate(80);
     const targets = sp.tgt === "enemy1" ? [pick(alive)] : alive;
@@ -794,7 +794,7 @@ function randomLoot(fn, n) {
     let t = maxT - (chance(0.45) ? 0 : chance(0.6) ? 1 : 2);
     t = clamp(t, 0, 5);
     if (t === 5 && !chance(0.35)) t = 4; // 最上位の品はめったに出ない
-    let pool = ITEMS.filter(it => it.tier === t && !["murasama"].includes(it.id));
+    let pool = ITEMS.filter(it => it.tier === t && !["oborozuki"].includes(it.id));
     if (!pool.length) pool = ITEMS.filter(it => it.tier === 0);
     out.push({ id: pick(pool).id, known: false });
   }
@@ -848,10 +848,10 @@ async function chestBody({ gold, items, trapLv }) {
   $("hud").innerHTML = "🧰 宝箱";
   const thiefLike = c => ["thi", "nin"].includes(c.cls);
   while (true) {
-    const canCalfa = partyChars().some(c => c.status === "ok" && c.known.includes("calfa") && spellSlotsLeft(c, SPELL.calfa) > 0);
+    const canCalfa = partyChars().some(c => c.status === "ok" && c.known.includes("trapsense") && spellSlotsLeft(c, SPELL.trapsense) > 0);
     const k = await choose([
       { label: "開ける", value: "open", cls: "pri" }, { label: "調べる", value: "inspect" },
-      { label: "罠を外す", value: "disarm" }, { label: "罠見破り", value: "calfa", disabled: !canCalfa },
+      { label: "罠を外す", value: "disarm" }, { label: "罠見破り", value: "trapsense", disabled: !canCalfa },
       { label: "立ち去る", value: "leave" },
     ], { title: "宝箱だ！　どうする？", cols: 2 });
     if (k === "leave") { if (await confirmBox("宝箱を置いて立ち去りますか？")) return; continue; }
@@ -871,10 +871,10 @@ async function chestBody({ gold, items, trapLv }) {
       await tell(`${c.name}は宝箱を調べた。\n「${trapName(guess)}」のようだ。`);
       continue;
     }
-    if (k === "calfa") {
-      const c = await pickMember("誰が唱える？", x => x.status === "ok" && x.known.includes("calfa") && spellSlotsLeft(x, SPELL.calfa) > 0);
+    if (k === "trapsense") {
+      const c = await pickMember("誰が唱える？", x => x.status === "ok" && x.known.includes("trapsense") && spellSlotsLeft(x, SPELL.trapsense) > 0);
       if (!c) continue;
-      c.mpP[SPELL.calfa.lv - 1]--;
+      c.mpP[SPELL.trapsense.lv - 1]--;
       Snd.play("light");
       await tell(`${c.name}は「罠見破り」を唱えた。\n罠は「${trapName(chance(0.95) ? trap : pick(TRAPS).id)}」だ！`);
       continue;
