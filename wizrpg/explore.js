@@ -482,6 +482,38 @@ function spendAid() {
   }
   return "薬も呪文もない。布を裂いて、できるだけの手当てをした。";
 }
+/* 助けた冒険者が、その階でまだ見つけていないものを1つ教えてくれる。
+   隠された品物は地図に ✦ を書き込んでもらえる。回転床は地図に印が付く */
+function wandererHint(fn) {
+  const f = FL(fn);
+  // おおまかな場所（北＝yが大きい方）
+  const area = (x, y) => { const ns = y >= 13 ? "北" : y <= 6 ? "南" : "", ew = x >= 13 ? "東" : x <= 6 ? "西" : ""; return ns || ew ? `${ns}${ew}のあたり` : "まん中あたり"; };
+  const deadEnd = (x, y) => [0, 1, 2, 3].filter(d => { const e = edgeAt(f, x, y, d); return e === E_WALL || (e === E_SECRET && !isSecretFound(fn, x, y, d)); }).length >= 3;
+  const cands = [];
+  S.hiddenFound = S.hiddenFound || {}; S.hiddenSeen = S.hiddenSeen || {};
+  (FLOORS[fn].hidden || []).forEach((h, i) => {
+    const key = fn + ":" + i; if (S.hiddenFound[key] || S.hiddenSeen[key]) return;
+    const [x, y] = h.at;
+    cands.push({ w: 3, go: () => { S.hiddenSeen[key] = 1; return `「礼に、いいことを教えてやる。\n${area(x, y)}の${deadEnd(x, y) ? "行き止まり" : "通路"}で、床の石が一つだけ緩んでいた。\n何か埋まっていそうだったが、掘り出す力が残っていなくてな」\n冒険者は、地図にその場所の印を書き込んでくれた。`; } });
+  });
+  (FLOORS[fn].ev || []).forEach(e => {
+    if (e.t !== "treasure" || (e.once && S.flags[e.once])) return;
+    cands.push({ w: 2, go: () => `「礼に、いいことを教えてやる。\n${area(...e.at)}の奥で、手つかずの宝箱を見かけた。\n俺たちには、もう開ける余力がなかった……」` });
+  });
+  for (let k = 0; k < 400; k++) for (let d = 0; d < 2; d++) {
+    const x = k % 20, y = (k / 20) | 0;
+    if (edgeAt(f, x, y, d) !== E_SECRET || isSecretFound(fn, x, y, d)) continue;
+    cands.push({ w: 2, go: () => `「礼に、いいことを教えてやる。\n${area(x, y)}に、壁の向こうから風が吹いてくる場所があった。\nあの壁、どこかが開くのかもしれん」` });
+  }
+  for (let k = 0; k < 400; k++) {
+    const t = f.tile[k], x = k % 20, y = (k / 20) | 0;
+    if (!t || t.t !== "spin" || (S.knownTraps && S.knownTraps[fn] && S.knownTraps[fn][k])) continue;
+    cands.push({ w: 1, go: () => { noteTrap(fn, x, y); return `「気をつけろ。\n${area(x, y)}に、踏むと向きを狂わされる床がある。\n俺はあれで道を見失った」\n冒険者は、地図にその床の印を書き込んでくれた。`; } });
+  }
+  if (!cands.length) return pick(["「この階のことは、もうあんたたちの方が詳しそうだ……\n下の階は、ここよりずっと手強いと聞く。気をつけてな」", "「俺にはもう、この迷宮は無理だ……\nあんたたちなら、きっと奥まで行ける」"]);
+  let r = Math.random() * cands.reduce((s, c) => s + c.w, 0);
+  return (cands.find(c => (r -= c.w) < 0) || cands[0]).go();
+}
 async function wandererEvent(fn) {
   const sc = $("scene");
   sc.className = "on chest";
@@ -517,7 +549,9 @@ async function wandererEvent(fn) {
       const items = chance(0.4) ? randomLoot(fn, 1) : [];
       const got = items.map(it => { const c = giveItemToParty(it.id, false); return c ? `${c.name}は${ITEM[it.id].unk}を受け取った。` : ""; }).filter(Boolean);
       Snd.play("sparkle");
-      await tell(`冒険者は礼を言い、よろめきながら上り階段の方へ去っていった。\n「この恩は忘れない……これを持っていってくれ」\n${gold.toLocaleString()}ゴールドを受け取った。${got.length ? "\n" + got.join("\n") : ""}`);
+      await tell(`冒険者は礼を言った。\n「この恩は忘れない……これを持っていってくれ」\n${gold.toLocaleString()}ゴールドを受け取った。${got.length ? "\n" + got.join("\n") : ""}`);
+      await tell(wandererHint(fn));
+      await tell("冒険者は、よろめきながら上り階段の方へ去っていった。");
       tiltAlign("E", "G", 0.25);
     } else if (k === "rob") {
       const gold = rr(40, 100) * fn;
