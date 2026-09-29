@@ -1240,39 +1240,77 @@ function drawView() {
         `rgba(170,190,235,${(.12 + .4 * k).toFixed(3)})`);
     }
   };
-  // 昇降機：金属の床板と天井板、四隅の柱と手すり、奥側（v=1）に格子戸と暗い縦穴
+  /* 昇降機：坑道の鉄のケージ。縞鋼板の床とリベット、四隅の鉄骨の柱と天井の枠、左右は斜め格子の柵、
+     奥（v=1）は蛇腹の格子戸とその向こうの縦穴、天井の穴へ伸びる2本の吊り索、片隅のランタンと入口の操作レバー。
+     見る向きが変わっても重なりが崩れないよう、部品を遠いものから順に描く */
   const drawElevator = (l, zn, zf, b, rel) => {
-    const m = cellMap(l, zn, zf, rel), hw = .42;
-    const metal = rgbK(168, 132, 64, b), metalDark = rgbK(96, 76, 40, b);
-    const lw = z => Math.max(1, .025 / z * K);
-    const [x0, x1, z0, z1] = boxOf(m, -1, 1, 0, 1, hw);
-    const plate = yy => {
-      poly([P(x0, yy, z0), P(x1, yy, z0), P(x1, yy, z1), P(x0, yy, z1)], rgbK(58, 54, 46, b), metalDark, 1.5 * dpr);
-      g.strokeStyle = `rgba(0,0,0,${.45 * b})`; g.lineWidth = dpr;
-      for (let i = 1; i < 4; i++) {
-        const xx = x0 + (x1 - x0) * i / 4, zz = z0 + (z1 - z0) * i / 4;
-        let p = P(xx, yy, z0), q = P(xx, yy, z1); g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke();
-        p = P(x0, yy, zz); q = P(x1, yy, zz); g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke();
-      }
-    };
-    const bar = (p1, p2, wdt, col) => { g.strokeStyle = col || metal; g.lineWidth = wdt; g.beginPath(); g.moveTo(p1[0], p1[1]); g.lineTo(p2[0], p2[1]); g.stroke(); };
-    // 格子戸（v=1の辺）
-    const [ga, gb] = [m(-1, 1, hw), m(1, 1, hw)];
-    const G = (t, y) => P(ga[0] + (gb[0] - ga[0]) * t, y, ga[1] + (gb[1] - ga[1]) * t);
-    const gz = (ga[1] + gb[1]) / 2;
-    const drawGate = () => {
-      if (rel !== 2) poly([G(0, .5), G(1, .5), G(1, -.5), G(0, -.5)], `rgba(0,0,0,${(.55 * b).toFixed(3)})`, null);
-      for (const yy of [-.32, .34]) bar(G(0, yy), G(1, yy), lw(gz) * .7, metalDark);
-      for (let i = 1; i < 7; i++) bar(G(i / 7, -.5), G(i / 7, .5), lw(gz) * .5, metalDark);
-    };
-    plate(-.5); plate(.5);
-    const gateNear = rel === 2;
-    if (!gateNear) drawGate();
-    // 四隅の柱（遠い順）と、横の手すり
-    const corners = [[x0, z1], [x1, z1], [x0, z0], [x1, z0]];
-    for (const [xx, zz] of corners) bar(P(xx, -.5, zz), P(xx, .5, zz), lw(zz));
-    for (const xx of [x0, x1]) for (const yy of [-.15, .2]) bar(P(xx, yy, z0), P(xx, yy, z1), lw(z1));
-    if (gateNear) drawGate();
+    const m = cellMap(l, zn, zf, rel), hw = .42, YT = .40; // YT：ケージの天井の枠の高さ
+    const iron = k => rgbK(96, 90, 82, b * k), ironHi = rgbK(158, 148, 130, b), rust = rgbK(122, 78, 44, b);
+    const lw = z => Math.max(1, .02 / Math.max(.12, z) * K);
+    const Q = (a, v, y) => { const [lx, z] = m(a, v, hw); return P(lx, y, z); };
+    const line = (p1, p2, wdt, col) => { g.strokeStyle = col; g.lineWidth = wdt; g.beginPath(); g.moveTo(p1[0], p1[1]); g.lineTo(p2[0], p2[1]); g.stroke(); };
+    const depthOf = (a, v) => { const [lx, z] = m(a, v, hw); return lx * lx + z * z; };
+    // 天井の縦穴（吊り索が抜けていく）
+    poly([Q(-.4, .3, .5), Q(.4, .3, .5), Q(.4, .7, .5), Q(-.4, .7, .5)], "#020203", `rgba(0,0,0,${.7 * b})`, dpr);
+    // 床：縞鋼板。縁にリベット
+    poly([Q(-1, 0, -.5), Q(1, 0, -.5), Q(1, 1, -.5), Q(-1, 1, -.5)], iron(.7), rgbK(40, 38, 34, b), 1.5 * dpr);
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 4; j++) {
+      const a = -.8 + i * .4 + (j % 2) * .2, v = .15 + j * .23;
+      if (a > .9) continue;
+      line(Q(a - .08, v - .03, -.5), Q(a + .08, v + .03, -.5), Math.max(1, dpr), rgbK(140, 132, 118, b * .8));
+    }
+    for (const v of [.06, .94]) for (let i = 0; i < 6; i++) {
+      const [px, py] = Q(-.9 + i * .36, v, -.5); const [, z] = m(-.9 + i * .36, v, hw);
+      g.fillStyle = ironHi; g.beginPath(); g.arc(px, py, Math.max(1, .012 / Math.max(.12, z) * K), 0, 7); g.fill();
+    }
+    const parts = [];
+    // 格子の面（a0,v0 → a1,v1 の辺に立つ面）。gate=true は蛇腹の戸（奥は縦穴の闇）
+    const panel = (a0, v0, a1, v1, gate) => parts.push({
+      d: depthOf((a0 + a1) / 2, (v0 + v1) / 2), draw: () => {
+        const at = (t, y) => Q(a0 + (a1 - a0) * t, v0 + (v1 - v0) * t, y);
+        const [, z] = m((a0 + a1) / 2, (v0 + v1) / 2, hw);
+        poly([at(0, YT), at(1, YT), at(1, -.5), at(0, -.5)], gate ? `rgba(0,0,0,${(.7 * b).toFixed(3)})` : `rgba(0,0,0,${(.22 * b).toFixed(3)})`, null);
+        const n = gate ? 6 : 4, top = gate ? YT : .05, w = lw(z) * (gate ? .55 : .5), col = gate ? rust : iron(1.1);
+        for (let i = 0; i < n; i++) { line(at(i / n, -.5), at((i + 1) / n, top), w, col); line(at((i + 1) / n, -.5), at(i / n, top), w, col); }
+        for (const y of gate ? [-.5, YT] : [-.5, .05]) line(at(0, y), at(1, y), lw(z) * .9, ironHi);
+      },
+    });
+    panel(-1, 0, -1, 1, false); panel(1, 0, 1, 1, false); panel(-1, 1, 1, 1, true);
+    // 四隅の柱と天井の枠（厚みのある鉄骨）
+    const beamCols = { front: iron(1), side: iron(.75), top: iron(1.25) };
+    for (const [ca, cv] of [[-1, 0], [1, 0], [-1, 1], [1, 1]]) {
+      const [bx0, bx1, bz0, bz1] = boxOf(m, ca - .07 * Math.sign(ca), ca, cv === 0 ? 0 : .95, cv === 0 ? .05 : 1, hw);
+      parts.push({ d: depthOf(ca, cv), draw: () => drawBox(bx0, bx1, -.5, YT, bz0, bz1, beamCols, `rgba(200,190,170,${(.35 * b).toFixed(3)})`) });
+    }
+    for (const [a0, a1, v0, v1] of [[-1, 1, 0, .05], [-1, 1, .95, 1], [-1, -.93, 0, 1], [.93, 1, 0, 1]]) {
+      const [bx0, bx1, bz0, bz1] = boxOf(m, a0, a1, v0, v1, hw);
+      parts.push({ d: depthOf((a0 + a1) / 2, (v0 + v1) / 2) - .01, draw: () => drawBox(bx0, bx1, YT, YT + .05, bz0, bz1, beamCols, null) });
+    }
+    // 吊り索（天井の枠の真ん中から、天井の穴へ）
+    parts.push({ d: depthOf(0, .5), draw: () => {
+      const [, z] = m(0, .5, hw);
+      for (const a of [-.12, .12]) line(Q(a, .5, YT + .05), Q(a, .5, .5), lw(z) * .8, rgbK(50, 46, 40, b));
+    } });
+    // 入口のそばの操作レバー
+    parts.push({ d: depthOf(.7, .12), draw: () => {
+      const [bx0, bx1, bz0, bz1] = boxOf(m, .6, .8, .08, .16, hw);
+      drawBox(bx0, bx1, -.5, -.22, bz0, bz1, beamCols, null);
+      const [, z] = m(.7, .12, hw);
+      line(Q(.7, .12, -.22), Q(.62, .12, -.02), lw(z) * .9, ironHi);
+      g.fillStyle = rgbK(170, 40, 30, b); const [kx, ky] = Q(.62, .12, -.02); g.beginPath(); g.arc(kx, ky, lw(z) * 1.3, 0, 7); g.fill();
+    } });
+    // 片隅のランタン（橙色の明かり）
+    parts.push({ d: depthOf(-.8, .15) - .02, draw: () => {
+      const [, z] = m(-.8, .15, hw), r = .05 / Math.max(.12, z) * K;
+      const [lx, ly] = Q(-.8, .15, .12);
+      line(Q(-.8, .15, YT), [lx, ly - r], lw(z) * .5, rgbK(60, 56, 50, b));
+      const glow = g.createRadialGradient(lx, ly, 0, lx, ly, r * 5);
+      glow.addColorStop(0, `rgba(255,190,90,${(.45 * b).toFixed(3)})`); glow.addColorStop(1, "rgba(255,160,60,0)");
+      g.fillStyle = glow; g.beginPath(); g.arc(lx, ly, r * 5, 0, 7); g.fill();
+      g.fillStyle = rgbK(60, 50, 38, b); g.fillRect(lx - r * .6, ly - r, r * 1.2, r * 2);
+      g.fillStyle = `rgba(255,214,130,${(.95 * b).toFixed(3)})`; g.fillRect(lx - r * .35, ly - r * .6, r * .7, r * 1.2);
+    } });
+    parts.sort((p, q) => q.d - p.d).forEach(p => p.draw());
   };
   // 階段・昇降機の向き：壁に向かって上る/下る（奥が壁で反対側が通れる向きを優先）。迷宮の形から毎回同じ向きに決まる
   const stairDir = (qx, qy) => {
@@ -1281,7 +1319,14 @@ function drawView() {
     for (let i = 0; i < 4; i++) { const dd = (st + i) & 3; if (wall(dd)) return dd; }
     return st;
   };
-  const lockTint = e => e === E_LOCK ? "rgba(200,110,40,.28)" : e === E_RIDDLE ? "rgba(170,70,170,.28)" : null;
+  // 昇降機の向き：奥の格子戸は壁の側、入口は必ず通れる側を向ける（通路の途中にあっても、歩いてくる方から入口が見える）
+  const elevDir = (qx, qy) => {
+    const st = (qx * 7 + qy * 13) & 3, wall = dd => edgeAt(f, qx, qy, dd) === E_WALL;
+    for (let i = 0; i < 4; i++) { const dd = (st + i) & 3; if (wall(dd) && !wall((dd + 2) & 3)) return dd; }
+    for (let i = 0; i < 4; i++) { const dd = (st + i) & 3; if (!wall((dd + 2) & 3)) return dd; }
+    return st;
+  };
+  const lockTint = e =>e === E_LOCK ? "rgba(200,110,40,.28)" : e === E_RIDDLE ? "rgba(170,70,170,.28)" : null;
   const drawFront = (l, z, e, b) => {
     const quad = [P(l - .5, .5, z), P(l + .5, .5, z), P(l + .5, -.5, z), P(l - .5, -.5, z)];
     if (TW) {
@@ -1383,7 +1428,7 @@ function drawView() {
       // 階段・昇降機はそのマスの壁より手前にあるので、壁のあとに描く
       // 自分が立っているマスの階段・昇降機は、視界をふさがないよう描かない（下り階段の穴は床なので描く）
       if (t && dd <= 4 && (dd + VA.dz > 0.3 || t.t === "down")) {
-        const rel = (stairDir(qx, qy) - d + 4) & 3;
+        const rel = ((t.t === "elev" ? elevDir(qx, qy) : stairDir(qx, qy)) - d + 4) & 3;
         if (t.t === "down") drawDownStairs(l, zn, zf, b, rel);
         else if (t.t === "up") drawUpStairs(l, zn, zf, b, rel);
         else if (t.t === "elev") drawElevator(l, zn, zf, b, rel);
