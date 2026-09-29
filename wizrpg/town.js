@@ -100,6 +100,8 @@ function makeRecommendedParty() {
 
 function resumeGame() {
   fixRockPositions();
+  // 魔除けの祈りはレベル2からレベル5に変えたので、まだレベル5を使えない者は覚えていない扱いに戻す
+  S.roster.forEach(c => { if (c.known.includes("harawa") && !(maxSlots(c, "P")[4] > 0)) c.known.splice(c.known.indexOf("harawa"), 1); });
   S.roster.forEach(c => learnSpells(c)); // あとから増えた呪文も、使えるレベルなら覚えている扱いにする
   if (S.inMaze && S.pos && partyChars().length) return enterMaze(true);
   S.inMaze = false;
