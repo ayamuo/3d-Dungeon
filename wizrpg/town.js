@@ -21,16 +21,16 @@ function showScene(key, extra) {
 }
 
 /* ────────── タイトル ────────── */
-/* タイトルロゴ（wizrpg/bg/logo.png）があれば、タイトルの文字の代わりに表示する。一度読み込めたら次からはすぐ出す */
+/* タイトルロゴ（wizrpg/bg/title_logo.png）があれば、タイトルの文字の代わりに表示する。一度読み込めたら次からはすぐ出す */
 let titleLogo = null; // null: まだ / "ok" / "ng"
 function showTitleLogo(sc) {
-  const put = () => { const t = sc.querySelector(".ttl"); if (!t || document.body.dataset.mode !== "title" || t.querySelector(".tlogo")) return; t.querySelectorAll(".t1,.t2").forEach(e => e.remove()); t.insertAdjacentHTML("afterbegin", `<img class="tlogo" src="wizrpg/bg/logo.png" alt="星灯の迷宮 ― 十層の封印 ―">`); };
+  const put = () => { const t = sc.querySelector(".ttl"); if (!t || document.body.dataset.mode !== "title" || t.querySelector(".tlogo")) return; t.querySelectorAll(".t1,.t2").forEach(e => e.remove()); t.insertAdjacentHTML("afterbegin", `<img class="tlogo" src="wizrpg/bg/title_logo.png" alt="星灯の迷宮 ― 十層の封印 ―">`); };
   if (titleLogo === "ok") { put(); return; }
   if (titleLogo === "ng") return;
   const im = new Image();
   im.onload = () => { titleLogo = "ok"; put(); };
   im.onerror = () => { titleLogo = "ng"; };
-  im.src = "wizrpg/bg/logo.png";
+  im.src = "wizrpg/bg/title_logo.png";
 }
 /* タイトルの絵：スマホの縦画面では縦長の title_v.jpg（無ければ横長の title.jpg を切り抜いて使う）、横長の画面では title.jpg */
 function setTitleBg() {
