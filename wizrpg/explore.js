@@ -1103,6 +1103,30 @@ function texWait(n, ms = 2500) {
 // 次に行きそうな階の画像を、裏で先に読み込んでおく
 function preloadFloor(n) { if (!FLOORS[n]) return; texWait(n); preloadMonImgs(n); }
 
+/* 昇降機の鉄の模様をプログラムで作る（一度作ったら使い回す）。細かいざらつき・錆のしみ・引っかき傷。
+   端で途切れないよう、しみと傷は上下左右にずらした位置にも描いて、並べたときにつながるようにする */
+const PROC_TEX = {};
+function procTex(kind) {
+  if (PROC_TEX[kind]) return PROC_TEX[kind];
+  const N = 128, cv = document.createElement("canvas"); cv.width = cv.height = N;
+  const g = cv.getContext("2d");
+  let seed = kind === "rust" ? 7 : 3; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const [r0, g0, b0] = kind === "rust" ? [118, 76, 44] : [88, 82, 74];
+  const img = g.createImageData(N, N);
+  for (let i = 0; i < N * N; i++) { const n = (rnd() - .5) * 34; img.data[i * 4] = r0 + n; img.data[i * 4 + 1] = g0 + n; img.data[i * 4 + 2] = b0 + n * .9; img.data[i * 4 + 3] = 255; }
+  g.putImageData(img, 0, 0);
+  const wrap = draw => { for (const ox of [-N, 0, N]) for (const oy of [-N, 0, N]) { g.save(); g.translate(ox, oy); draw(); g.restore(); } };
+  for (let i = 0; i < 9; i++) {
+    const x = rnd() * N, y = rnd() * N, r = 8 + rnd() * 22, a = .18 + rnd() * .25;
+    wrap(() => { const gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, `rgba(138,72,30,${a})`); gr.addColorStop(1, "rgba(138,72,30,0)"); g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2); });
+  }
+  for (let i = 0; i < 12; i++) {
+    const x = rnd() * N, y = rnd() * N, l = 6 + rnd() * 20, an = rnd() * Math.PI, a = .12 + rnd() * .12;
+    wrap(() => { g.strokeStyle = `rgba(210,200,180,${a})`; g.lineWidth = 1; g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(an) * l, y + Math.sin(an) * l); g.stroke(); });
+  }
+  return (PROC_TEX[kind] = cv);
+}
+
 function drawView() {
   if (!S || !S.pos) return;
   const cv = $("view"); const dpr = sizeCanvas(cv);
@@ -1145,6 +1169,23 @@ function drawView() {
   const mortar = b => `rgba(0,0,0,${0.35 * b})`;
   const TW = texFor("wall", f.n), TD = texFor("door", f.n), TF = texFor("floor", f.n), TC = texFor("ceiling", f.n);
   const shadeOver = (pts, b) => { if (b < 0.99) poly(pts, `rgba(0,0,0,${((1 - b) * 0.92).toFixed(3)})`, null); };
+  /* 階段・昇降機の面に模様を貼る（単色だと、模様のある壁や床から浮いて見えるため）。
+     tile：模様1枚がマス何個分の幅になるか。k：明るさ（壁と同じく、黒を重ねて暗くする）。z：面のおおよその奥行き */
+  const texFace = (pts, img, tile, k, z) => {
+    const pat = g.createPattern(img, "repeat"), sc = (K / Math.max(.12, z)) * tile / img.width;
+    pat.setTransform(new DOMMatrix([sc, 0, 0, sc, pts[0][0], pts[0][1]]));
+    poly(pts, pat, null);
+    shadeOver(pts, clamp(k, 0, 1));
+  };
+  // 模様付きの箱（階段の段・昇降機の鉄骨）。正面・側面・上面で明るさを少し変える
+  const drawBoxTex = (x0, x1, y0, y1, z0, z1, img, tile, k, edge) => {
+    const zc = (z0 + z1) / 2;
+    if (z0 > 0.05) texFace([P(x0, y0, z0), P(x1, y0, z0), P(x1, y1, z0), P(x0, y1, z0)], img, tile, k * .68, z0);
+    if (x0 > 0) texFace([P(x0, y0, z0), P(x0, y0, z1), P(x0, y1, z1), P(x0, y1, z0)], img, tile, k * .55, zc);
+    if (x1 < 0) texFace([P(x1, y0, z0), P(x1, y0, z1), P(x1, y1, z1), P(x1, y1, z0)], img, tile, k * .55, zc);
+    if (y1 < 0) texFace([P(x0, y1, z0), P(x1, y1, z0), P(x1, y1, z1), P(x0, y1, z1)], img, tile, k * 1.15, zc);
+    if (edge) poly([P(x0, y1, z0), P(x1, y1, z0)], null, edge, dpr);
+  };
   // 奥行き方向に伸びる面（側面の壁・扉）は、縦の短冊に分けて貼ると遠近が正しくなる。
   // 短冊は画面上で数ピクセル幅になるよう本数を決め、面の形（台形）で切り抜く（上下の辺が階段状に欠けないように）
   const stripsSide = (img, lx, zA, zB, yT, yB) => {
@@ -1196,10 +1237,17 @@ function drawView() {
     const hole = [F(-1, 0), F(1, 0), F(1, 1), F(-1, 1)];
     poly(hole, "#020203", null);
     g.save(); pathOf(hole); g.clip();
+    const stone = TF || TW; // 段には、その階の床（無ければ壁）の石の模様を貼る
     for (let j = 0; j < N; j++) {
       const k = b * Math.max(.12, 1 - j * .16), v0 = j / N, vm = (j + .45) / N, v1 = (j + 1) / N;
-      poly([F(-1, v0), F(1, v0), F(1, vm), F(-1, vm)], rgbK(120, 124, 140, k), null);
-      poly([F(-1, vm), F(1, vm), F(1, v1), F(-1, v1)], rgbK(58, 60, 74, k), null);
+      const zz = m(0, vm, hw)[1];
+      if (stone) {
+        texFace([F(-1, v0), F(1, v0), F(1, vm), F(-1, vm)], stone, .45, k * .95, zz);
+        texFace([F(-1, vm), F(1, vm), F(1, v1), F(-1, v1)], stone, .45, k * .45, zz);
+      } else {
+        poly([F(-1, v0), F(1, v0), F(1, vm), F(-1, vm)], rgbK(120, 124, 140, k), null);
+        poly([F(-1, vm), F(1, vm), F(1, v1), F(-1, v1)], rgbK(58, 60, 74, k), null);
+      }
       poly([F(-1, v0), F(1, v0)], null, `rgba(190,205,240,${(.2 + .6 * k).toFixed(3)})`, 1.5 * dpr);
     }
     g.restore();
@@ -1233,9 +1281,11 @@ function drawView() {
       cols.push({ i, x0, x1, z0, z1, dist: cx * cx + cz * cz });
     }
     cols.sort((p, q) => q.dist - p.dist);
+    const stone = TF || TW; // 段には、その階の床（無ければ壁）の石の模様を貼る
     for (const c of cols) {
-      const k = b * (1 - c.i * .05);
-      drawBox(c.x0, c.x1, -.5, -.5 + (c.i + 1) * H, c.z0, c.z1,
+      const k = b * (1 - c.i * .05), edge = `rgba(235,220,190,${(.28 * k).toFixed(3)})`; // 段の角に淡い光の線
+      if (stone) drawBoxTex(c.x0, c.x1, -.5, -.5 + (c.i + 1) * H, c.z0, c.z1, stone, .45, k, edge);
+      else drawBox(c.x0, c.x1, -.5, -.5 + (c.i + 1) * H, c.z0, c.z1,
         { front: rgbK(66, 68, 82, k), side: rgbK(52, 54, 66, k), top: rgbK(104, 108, 124, k) },
         `rgba(170,190,235,${(.12 + .4 * k).toFixed(3)})`);
     }
@@ -1245,15 +1295,18 @@ function drawView() {
      見る向きが変わっても重なりが崩れないよう、部品を遠いものから順に描く */
   const drawElevator = (l, zn, zf, b, rel) => {
     const m = cellMap(l, zn, zf, rel), hw = .42, YT = .40; // YT：ケージの天井の枠の高さ
-    const iron = k => rgbK(96, 90, 82, b * k), ironHi = rgbK(158, 148, 130, b), rust = rgbK(122, 78, 44, b);
+    const iron = k => rgbK(82, 76, 68, b * k), ironHi = rgbK(112, 102, 88, b), rust = rgbK(118, 74, 42, b);
     const lw = z => Math.max(1, .02 / Math.max(.12, z) * K);
     const Q = (a, v, y) => { const [lx, z] = m(a, v, hw); return P(lx, y, z); };
     const line = (p1, p2, wdt, col) => { g.strokeStyle = col; g.lineWidth = wdt; g.beginPath(); g.moveTo(p1[0], p1[1]); g.lineTo(p2[0], p2[1]); g.stroke(); };
     const depthOf = (a, v) => { const [lx, z] = m(a, v, hw); return lx * lx + z * z; };
     // 天井の縦穴（吊り索が抜けていく）
     poly([Q(-.4, .3, .5), Q(.4, .3, .5), Q(.4, .7, .5), Q(-.4, .7, .5)], "#020203", `rgba(0,0,0,${.7 * b})`, dpr);
-    // 床：縞鋼板。縁にリベット
-    poly([Q(-1, 0, -.5), Q(1, 0, -.5), Q(1, 1, -.5), Q(-1, 1, -.5)], iron(.7), rgbK(40, 38, 34, b), 1.5 * dpr);
+    // 床：縞鋼板（錆と傷の模様を貼る）。縁にリベット
+    const IRON = procTex("iron");
+    const floorPts = [Q(-1, 0, -.5), Q(1, 0, -.5), Q(1, 1, -.5), Q(-1, 1, -.5)];
+    texFace(floorPts, IRON, .35, b * .62, m(0, .5, hw)[1]);
+    poly(floorPts, null, rgbK(40, 38, 34, b), 1.5 * dpr);
     for (let i = 0; i < 5; i++) for (let j = 0; j < 4; j++) {
       const a = -.8 + i * .4 + (j % 2) * .2, v = .15 + j * .23;
       if (a > .9) continue;
@@ -1276,15 +1329,15 @@ function drawView() {
       },
     });
     panel(-1, 0, -1, 1, false); panel(1, 0, 1, 1, false); panel(-1, 1, 1, 1, true);
-    // 四隅の柱と天井の枠（厚みのある鉄骨）
-    const beamCols = { front: iron(1), side: iron(.75), top: iron(1.25) };
+    // 四隅の柱と天井の枠（厚みのある鉄骨。錆と傷の模様を貼る）
+    const beam = (x0, x1, y0, y1, z0, z1, edge) => drawBoxTex(x0, x1, y0, y1, z0, z1, IRON, .3, b * .82, edge);
     for (const [ca, cv] of [[-1, 0], [1, 0], [-1, 1], [1, 1]]) {
       const [bx0, bx1, bz0, bz1] = boxOf(m, ca - .07 * Math.sign(ca), ca, cv === 0 ? 0 : .95, cv === 0 ? .05 : 1, hw);
-      parts.push({ d: depthOf(ca, cv), draw: () => drawBox(bx0, bx1, -.5, YT, bz0, bz1, beamCols, `rgba(200,190,170,${(.35 * b).toFixed(3)})`) });
+      parts.push({ d: depthOf(ca, cv), draw: () => beam(bx0, bx1, -.5, YT, bz0, bz1, `rgba(200,190,170,${(.3 * b).toFixed(3)})`) });
     }
     for (const [a0, a1, v0, v1] of [[-1, 1, 0, .05], [-1, 1, .95, 1], [-1, -.93, 0, 1], [.93, 1, 0, 1]]) {
       const [bx0, bx1, bz0, bz1] = boxOf(m, a0, a1, v0, v1, hw);
-      parts.push({ d: depthOf((a0 + a1) / 2, (v0 + v1) / 2) - .01, draw: () => drawBox(bx0, bx1, YT, YT + .05, bz0, bz1, beamCols, null) });
+      parts.push({ d: depthOf((a0 + a1) / 2, (v0 + v1) / 2) - .01, draw: () => beam(bx0, bx1, YT, YT + .05, bz0, bz1, null) });
     }
     // 吊り索（天井の枠の真ん中から、天井の穴へ）
     parts.push({ d: depthOf(0, .5), draw: () => {
@@ -1294,7 +1347,7 @@ function drawView() {
     // 入口のそばの操作レバー
     parts.push({ d: depthOf(.7, .12), draw: () => {
       const [bx0, bx1, bz0, bz1] = boxOf(m, .6, .8, .08, .16, hw);
-      drawBox(bx0, bx1, -.5, -.22, bz0, bz1, beamCols, null);
+      beam(bx0, bx1, -.5, -.22, bz0, bz1, null);
       const [, z] = m(.7, .12, hw);
       line(Q(.7, .12, -.22), Q(.62, .12, -.02), lw(z) * .9, ironHi);
       g.fillStyle = rgbK(170, 40, 30, b); const [kx, ky] = Q(.62, .12, -.02); g.beginPath(); g.arc(kx, ky, lw(z) * 1.3, 0, 7); g.fill();
