@@ -47,7 +47,7 @@ async function titleScreen() {
   // 町の背景・宝箱・地下1階の画像を、タイトルを見ている間に裏で読み込んでおく
   ["town", "tavern", "inn", "shop", "temple", "train", "castle", "chest", "wipe", "wanderer", "wanderer_warrior", "wanderer_mage", "wanderer_rogue"].forEach(k => preloadBg(k));
   preloadFloor(1);
-  sc.innerHTML = `<div class="ttl"><div class="t1">星灯の迷宮</div><div class="t2">― 十層の封印 ―</div><div class="t3">THE LABYRINTH OF THE STARLIGHT SEAL</div><div class="tstory">坑道の底の封印迷宮から、要の〈星灯〉が奪われた。<br>封印がほどければ、地の底の『星喰い』が目を覚ますという――</div></div>`;
+  sc.innerHTML = `<div class="ttl"><div class="t1">星灯の迷宮</div><div class="t2">― 十層の封印 ―</div></div>`;
   showTitleLogo(sc);
   $("loc").textContent = "";
   clearMsg();
@@ -65,7 +65,7 @@ async function titleScreen() {
   };
   const n = await choose(slots.map(({ n, s }) => ({ label: `記録${n}`, sub: slotSub(s), value: n, cls: n === last && s ? "pri" : "" })).concat([{ label: "⚙ 設定", value: "opt" }]), { cols: 1 });
   if (n === "opt") {
-    await dialog(fontOptHtml() + walkOptHtml() + spellDescOptHtml(), null, { title: "設定", onOpen: b => b.querySelectorAll(".spd button").forEach(bt => bt.onclick = () => { fontOptClick(bt, b) || walkOptClick(bt, b) || spellDescOptClick(bt, b); }) });
+    await dialog(fontOptHtml() + walkOptHtml() + spellDescOptHtml(), null, { title: "設定", cls: "narrow", onOpen: b => b.querySelectorAll(".spd button").forEach(bt => bt.onclick = () => { fontOptClick(bt, b) || walkOptClick(bt, b) || spellDescOptClick(bt, b); }) });
     return titleScreen();
   }
   curSlot = n;

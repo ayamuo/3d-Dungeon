@@ -307,6 +307,10 @@
   .sbody h4,.csh,#helpOv h3,#helpOv th,.backlog .blsep{color:#fff;}
   .rulebox,.king,.csgrid>div,.csst div,.spl span{background:none;border:1px solid #6a6a6a;border-radius:4px;}
   .king{color:#fff;}
+  /* 設定などの選択肢：窓の幅いっぱいに広げず、文字の幅で左から詰めて並べる */
+  .spd{gap:0 14px;flex-wrap:wrap;} .spd button{flex:0 0 auto;color:#8a8a8a;}
+  .spd button.pri{color:#fff;text-decoration:underline;text-underline-offset:4px;} /* 今選ばれている項目 */
+  .sheet.narrow{max-width:280px;}
   .bpcls span{background:none;border-color:#5a5a5a;color:#5a5a5a;border-radius:4px;}
   .bpcls span.ok{background:none;color:#fff;border-color:#fff;}
   .sbody input{background:#000;border:2px solid #fff;border-radius:4px;color:#fff;}

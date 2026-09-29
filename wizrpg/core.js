@@ -704,7 +704,7 @@ function dialog(html, buttons, o = {}) {
   return new Promise(res => {
     const ov = $("ov");
     ov.innerHTML = "";
-    const box = document.createElement("div"); box.className = "sheet" + (o.small ? " small" : "");
+    const box = document.createElement("div"); box.className = "sheet" + (o.small ? " small" : "") + (o.cls ? " " + o.cls : "");
     if (o.title) box.innerHTML = `<div class="shead"><b>${esc(o.title)}</b></div>`;
     const body = document.createElement("div"); body.className = "sbody"; body.innerHTML = html;
     box.appendChild(body);
