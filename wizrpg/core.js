@@ -802,14 +802,14 @@ const honorMark = c => c.honor ? `<i class="hon">${c.honor >= 2 ? "★★" : "�
 /* ────────── パーティ表 ────────── */
 let partyTapHandler = null;
 let partyHighlight = null;
-/* 戦闘で選んだ行動（その人が動くまで、HPの欄にHPと1秒ごとに入れ替えて出す） */
+/* 戦闘で選んだ行動（その人が動くまで、HPの欄にHPと2秒ごとに入れ替えて出す） */
 function actLabel(a) {
   const ic = { fight: "⚔️", parry: "🛡️", dispel: "☩", spell: "✨", use: "🎒" }[a.t] || "";
   const tx = a.t === "spell" || a.t === "use" ? (SPELL[a.sp] || {}).name || "" : { fight: "たたかう", parry: "身を守る", dispel: "ディスペル" }[a.t] || "";
   return `<i class="pact"><span class="pic">${ic}</span>${esc(tx)}</i>`;
 }
-// 戦闘中は1秒ごとに、HPの欄を「行動」と「HP」で切り替える
-setInterval(() => { const p = $("party"); if (!p) return; if (window.BT) p.classList.toggle("showhp"); else p.classList.remove("showhp"); }, 1000);
+// 戦闘中は2秒ごとに、HPの欄を「行動」と「HP」で切り替える（ふわっと入れ替える。速さの調整は下の2000）
+setInterval(() => { const p = $("party"); if (!p) return; if (window.BT) p.classList.toggle("showhp"); else p.classList.remove("showhp"); }, 2000);
 function renderParty() {
   const el = $("party");
   const list = S ? partyChars() : [];
