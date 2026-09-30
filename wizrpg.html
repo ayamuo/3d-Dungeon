@@ -159,7 +159,12 @@
   .prow .ph{text-align:right;} .prow .ph small{color:var(--dim);}
   .prow .ps{font-size:13px;text-align:center;font-weight:700;}
   .prow .ph b{font-size:16px;} .prow .ph small{font-size:12px;}
-  .prow .ph.act{color:#fde68a;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:clip;} /* 戦闘で選んだ行動（動くまでHPの代わりに出す） */
+  /* 戦闘で選んだ行動。名前は縮めず、行動のほうから縮める（記号だけは最後まで残す） */
+  .prow .pn{display:flex;align-items:center;min-width:0;}
+  .prow .pn .pnm{flex:none;}
+  .prow .pn .pact{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-style:normal;font-weight:400;font-size:11.5px;color:#fde68a;margin-left:3px;}
+  .prow .pn .pact .pic{margin-right:1px;}
+  .prow .pn > :not(.pnm):not(.pact){flex:none;}
   .prow.dead{color:#7a6f75;} .prow.dead .ps{color:var(--bad);}
   .prow.bad .ps{color:#fbbf24;} .prow.poi .ps{color:#a3e635;}
   .prow.empty{color:#444a5c;}

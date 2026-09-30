@@ -802,10 +802,11 @@ const honorMark = c => c.honor ? `<i class="hon">${c.honor >= 2 ? "★★" : "�
 /* ────────── パーティ表 ────────── */
 let partyTapHandler = null;
 let partyHighlight = null;
-/* 戦闘で選んだ行動（その人が動くまでは、HPの欄に出す） */
+/* 戦闘で選んだ行動（その人が動くまで、名前の横に出す。幅が足りなければ行動のほうから縮め、記号だけは残す） */
 function actLabel(a) {
-  if (a.t === "spell" || a.t === "use") return (SPELL[a.sp] || {}).name || "呪文";
-  return { fight: "たたかう", parry: "身を守る", dispel: "ディスペル" }[a.t] || "";
+  const ic = { fight: "⚔️", parry: "🛡️", dispel: "☩", spell: "✨", use: "🎒" }[a.t] || "";
+  const tx = a.t === "spell" || a.t === "use" ? (SPELL[a.sp] || {}).name || "" : { fight: "たたかう", parry: "身を守る", dispel: "ディスペル" }[a.t] || "";
+  return `<i class="pact"><span class="pic">${ic}</span>${esc(tx)}</i>`;
 }
 function renderParty() {
   const el = $("party");
@@ -822,8 +823,8 @@ function renderParty() {
     if (i === 3) cls.push("back1");
     const hpPct = c.maxhp ? c.hp / c.maxhp : 0;
     const act = window.BT && c._act && !c._act.done && c.status === "ok" ? actLabel(c._act) : "";
-    h += `<div class="${cls.join(" ")}" data-id="${c.id}"><span class="pn">${S && S.inMaze ? `<i class="plv">Lv${c.lvl}</i>` : ""}${honorMark(c)}${esc(c.name)}</span><span class="pc">${clsLabel(c)}</span><span class="pa">${computeAC(c, !!window.BT)}${window.BT && c.bac > 0 ? `<i class="acup">↑</i>` : ""}</span>` +
-      (act ? `<span class="ph act">${c._act.t === "use" ? "🎒" : c._act.t === "spell" ? "✨" : ""}${esc(act)}</span>` : `<span class="ph"><b style="color:${hpPct < 0.25 ? "#f87171" : hpPct < 0.5 ? "#fbbf24" : "#e8e8ee"}">${c.hp}</b><small>/${c.maxhp}</small></span>`) + `<span class="ps">${st || "&nbsp;"}</span></div>`;
+    h += `<div class="${cls.join(" ")}" data-id="${c.id}"><span class="pn">${S && S.inMaze ? `<i class="plv">Lv${c.lvl}</i>` : ""}${honorMark(c)}<span class="pnm">${esc(c.name)}</span>${act}</span><span class="pc">${clsLabel(c)}</span><span class="pa">${computeAC(c, !!window.BT)}${window.BT && c.bac > 0 ? `<i class="acup">↑</i>` : ""}</span>` +
+      `<span class="ph"><b style="color:${hpPct < 0.25 ? "#f87171" : hpPct < 0.5 ? "#fbbf24" : "#e8e8ee"}">${c.hp}</b><small>/${c.maxhp}</small></span><span class="ps">${st || "&nbsp;"}</span></div>`;
   }
   el.innerHTML = h;
   el.querySelectorAll(".prow[data-id]").forEach(r => r.onclick = () => { if (partyTapHandler) partyTapHandler(charById(+r.dataset.id)); });
