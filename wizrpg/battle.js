@@ -254,6 +254,53 @@ function popParty(id, text, cls) {
   const el = document.querySelector(`#party .prow[data-id="${id}"]`); if (!el) return;
   const r = el.getBoundingClientRect(); floatText(r.right - 34, r.top + r.height / 2, text, cls || "hurt"); // HPの数字に重ならないよう、右端の状態の欄に出す
 }
+/* 首はねの鮮血：首のあたり（ox, oy は画面上の位置）から赤いしぶきが噴き出し、放物線を描いて落ちる。
+   画面は光らせず、しぶきの粒だけを描く。size：しぶきの大きさ（敵の絵の大きさに合わせる） */
+function bloodFx(ox, oy, size) {
+  if (!innerWidth) return;
+  const z = uiZoom || 1, R = size * 3, dpr = Math.min(2, window.devicePixelRatio || 1);
+  const cv = document.createElement("canvas"); cv.className = "bloodfx";
+  const L = ox - R, T = oy - R, W = R * 2, H = R * 2.2;
+  Object.assign(cv.style, { left: L / z + "px", top: T / z + "px", width: W / z + "px", height: H / z + "px" });
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  document.body.appendChild(cv);
+  const g = cv.getContext("2d"); g.scale(dpr, dpr);
+  const DUR = 1100, x0 = R, y0 = R, grav = size * 15;
+  // しぶきの粒：3回の脈に分けて噴き出す（最初がいちばん強い）。上向きの扇形に飛ぶ
+  const drops = [];
+  for (let i = 0; i < 70; i++) {
+    const pulse = i < 34 ? 0 : i < 56 ? 1 : 2, a = -Math.PI / 2 + (Math.random() - .5) * 1.5, sp = size * (2.2 + Math.random() * 3.8) * (1 - pulse * .22);
+    drops.push({ t0: pulse * 0.16 + Math.random() * 0.07, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: size * (.01 + Math.random() * .028),
+      col: `rgb(${150 + Math.floor(Math.random() * 70)},${Math.floor(Math.random() * 14)},${10 + Math.floor(Math.random() * 18)})` });
+  }
+  return animate(DUR, p => {
+    g.clearRect(0, 0, W, H);
+    const t = p * DUR / 1000, fade = p < .7 ? 1 : 1 - (p - .7) / .3;
+    // 切り口から噴き出す赤い霧
+    const mist = Math.max(0, 1 - p * 2.2);
+    if (mist > 0) { const gr = g.createRadialGradient(x0, y0, 0, x0, y0, size * .5); gr.addColorStop(0, `rgba(170,0,12,${(.55 * mist).toFixed(3)})`); gr.addColorStop(1, "rgba(120,0,8,0)"); g.fillStyle = gr; g.beginPath(); g.arc(x0, y0, size * .5, 0, 7); g.fill(); }
+    for (const d of drops) {
+      const age = t - d.t0; if (age <= 0) continue;
+      const x = x0 + d.vx * age, y = y0 + d.vy * age + grav * age * age / 2;
+      const px = x0 + d.vx * Math.max(0, age - .03), py = y0 + d.vy * Math.max(0, age - .03) + grav * Math.max(0, age - .03) ** 2 / 2;
+      g.globalAlpha = fade; g.strokeStyle = d.col; g.lineWidth = d.r * 2; g.lineCap = "round";
+      g.beginPath(); g.moveTo(px, py); g.lineTo(x, y); g.stroke();
+    }
+    g.globalAlpha = 1;
+  }).then(() => cv.remove());
+}
+// 敵の首はね：絵の上のほう（首のあたり）から
+function bloodMon(gi) {
+  const el = document.querySelector(`#scene .mg[data-g="${gi}"] .mimg`); if (!el) return;
+  const img = el.querySelector("img"), r = (img || el).getBoundingClientRect();
+  bloodFx(r.left + r.width / 2, r.top + r.height * .34, Math.min(r.width, r.height) * .3);
+}
+// 仲間の首はね：パーティ表のその人の名前のあたりから、小さめに
+function bloodParty(id) {
+  const el = document.querySelector(`#party .prow[data-id="${id}"]`); if (!el) return;
+  const r = el.getBoundingClientRect();
+  bloodFx(r.left + Math.min(60, r.width * .2), r.top + r.height / 2, 46);
+}
 function stageShake() { const st = $("stage"); st.classList.remove("encshake"); void st.offsetWidth; st.classList.add("encshake"); }
 function hitFx(gi) {
   if (!BT) return;
@@ -527,7 +574,7 @@ async function playerAct(c, act) {
     const nm = gName(g);
     if (!hits) { Snd.play("miss"); await bmsg(`${c.name}の攻撃！　${nm}にかわされた。`); return null; }
     Snd.play(crit ? (weaponSnd(wd) === "axe" ? "axecrit" : "crit") : weaponSnd(wd)); hitFx(idx);
-    if (crit) { popDmg(idx, "首はね！", "crit"); stageShake(); vibrate(60); } else popDmgs(idx, each);
+    if (crit) { popDmg(idx, "首はね！", "crit"); bloodMon(idx); stageShake(); vibrate(60); } else popDmgs(idx, each);
     if (crit) {
       killMon(g, m); c.kills++;
       await bmsg(`${c.name}は${nm}の首をはねた！`, 800);
@@ -795,7 +842,7 @@ async function monsterAct(g, m) {
   await bmsg(`${nm}の攻撃！　${t.name}に${hits}回当たり、${dmg}のダメージ！`);
   if (died) { Snd.play("death"); await bmsg(`${t.name}は死んだ！`, 700); return; }
   // 特殊攻撃
-  if (def.crit && !saveThrow(t, 0.1) && chance(def.crit)) { Snd.play("ecrit"); t.hp = 0; t.status = "dead"; S.stats.deaths++; stageShake(); shakeParty(t.id); popParty(t.id, "首はね"); vibrate(150); await bmsg(`${t.name}は首をはねられた！`, 900); return; }
+  if (def.crit && !saveThrow(t, 0.1) && chance(def.crit)) { Snd.play("ecrit"); t.hp = 0; t.status = "dead"; S.stats.deaths++; bloodParty(t.id); stageShake(); shakeParty(t.id); popParty(t.id, "首はね"); vibrate(150); await bmsg(`${t.name}は首をはねられた！`, 900); return; }
   if (def.drain && chance(def.drain) && !saveThrow(t, 0.25)) {
     Snd.play("leveldrain");
     const lost = drainLevel(t);

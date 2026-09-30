@@ -76,6 +76,7 @@ const Snd = (() => {
     miss: () => tone(1200, 0.06, "sine", 0.03, -600),
     hurt: () => { noise(0.15, 0.2, 300); tone(120, 0.15, "sawtooth", 0.08, -60); },
     crit: () => { noise(0.2, 0.25, 300); tone(80, 0.3, "sawtooth", 0.12, -40); },
+    behead: () => { noise(0.2, 0.25, 300); tone(80, 0.3, "sawtooth", 0.12, -40); },
     magic: () => { for (let i = 0; i < 5; i++) tone(500 + i * 180, 0.12, "sine", 0.05, 200, i * 0.04); },
     fire: () => { noise(0.4, 0.2, 200); tone(200, 0.35, "sawtooth", 0.05, -120); },
     cold: () => { for (let i = 0; i < 6; i++) tone(1400 + rand(800), 0.1, "triangle", 0.035, 0, i * 0.05); },
@@ -99,9 +100,9 @@ const Snd = (() => {
     // 味方の攻撃（武器の種類で鳴らし分け）
     sword: ["sword1", "sword2", "sword3"], katana: ["katana1", "katana2"], axe: ["axe1", "axe2"], blunt: ["blunt1", "blunt2"],
     dagger: ["dagger1", "dagger2"], fist: ["fist1", "fist2"], hit: ["sword1", "sword2", "sword3"],
-    miss: ["swing", "swing2"], crit: "crit", axecrit: "axecrit", kill: "kill",
+    miss: ["swing", "swing2"], crit: "behead", axecrit: "behead", kill: "kill",
     // 敵の攻撃
-    block: "dodge", hurt: ["hurt1", "hurt2", "hurt3"], ecrit: "ecrit", death: "death",
+    block: "dodge", hurt: ["hurt1", "hurt2", "hurt3"], ecrit: "behead", death: "death",
     breath_fire: "breath_fire", breath_ice: "breath_ice", breath_gas: "breath_gas",
     poison: "poison", stone: "stone", para: "para", leveldrain: "leveldrain", call: "call", roar_dragon: "roar_dragon", flee: "flee",
     // 呪文
@@ -121,7 +122,7 @@ const Snd = (() => {
   const MAXLEN = {
     rumble: 3.0, heal_l: 1.8, nuke: 2.2, para: 1.4, holy: 1.8, darkspell: 1.8, breath_ice: 1.6, fire_l: 1.8,
     heal_m: 1.5, cast: 0.9, breath_fire: 1.8, fire_m: 1.6, ice_m: 1.5, sleep: 1.3, drainspell: 1.5, thunder_l: 1.7,
-    ice_l: 1.6, leveldrain: 1.5, stone: 1.5, crit: 1.4, breath_gas: 1.4, cure_poison: 1.3, ice_s: 1.2, cure_all: 1.3,
+    ice_l: 1.6, leveldrain: 1.5, stone: 1.5, crit: 1.4, behead: 1.4, breath_gas: 1.4, cure_poison: 1.3, ice_s: 1.2, cure_all: 1.3,
     heal_s: 1.3, trap_bomb: 1.5, explosion: 2.0, buff: 1.2, buff_party: 1.2, debuff: 1.2, roar_dragon: 1.6,
   };
   const FADE = 0.35;
