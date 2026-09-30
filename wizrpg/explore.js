@@ -415,6 +415,7 @@ async function onEnterCell(noRandom) {
       await tell("突然、体がねじれるような感覚に襲われた！\nどこかへ飛ばされたようだ……");
       return onEnterCell(true);
     } else if (t.t === "up") {
+      logMsg("上り階段がある。");
       if (await stairsPrompt("上り階段がある。", "のぼる")) {
         Snd.play("stairs");
         if (f.n === 1) return exitMaze("パーティは迷宮を抜け、地上の町へ戻った。");
@@ -423,6 +424,7 @@ async function onEnterCell(noRandom) {
         return;
       }
     } else if (t.t === "down") {
+      logMsg("下り階段がある。");
       if (await stairsPrompt("下り階段がある。", "おりる")) {
         Snd.play("stairs");
         await elevatorRide(f.n, f.n + 1, "stairs", [S.pos.x, S.pos.y]);
@@ -431,6 +433,7 @@ async function onEnterCell(noRandom) {
       }
     } else if (t.t === "elev") {
       S.elev[f.n] = 1;
+      logMsg("昇降機がある。");
       await elevator();
       return;
     }
