@@ -289,11 +289,28 @@ function bloodFx(ox, oy, size) {
     g.globalAlpha = 1;
   }).then(() => cv.remove());
 }
-// 敵の首はね：絵の上のほう（首のあたり）から
+/* 首はねの血しぶきが出る位置（絵に対する割合%：[右, 下]）。書いていない怪物は [50, 34] */
+const NECK = {
+  slime: [52, 23], rat: [44, 46], kobold: [50, 29], orc: [56, 31], bat: [57, 54], acolyte: [52, 25],
+  apprent: [49, 24], bushwack: [55, 26], skeleton: [51, 27], minerghost: [53, 26], banditboss: [49, 23], zombie: [55, 26],
+  highway: [54, 27], hound: [71, 41], dwarfwar: [59, 34], priestess: [51, 24], gascloud: [57, 56], koboldking: [51, 26],
+  coins: [53, 55], beetle: [49, 46], wererat: [53, 28], vbat: [58, 49], ninjaapp: [50, 26], mage: [53, 26],
+  hellhound: [47, 40], werewolf: [61, 29], ogre: [59, 29], dpuppy: [40, 39], knight: [52, 24], guard: [52, 28],
+  watcher: [54, 24], bladefox: [74, 49], harpy: [56, 23], wight: [51, 22], hmage: [50, 23], foxlord: [31, 39],
+  vorpal: [62, 54], golem: [55, 21], troll: [55, 22], medusa: [51, 27], chimera: [57, 40], ninja: [52, 26],
+  hpriest: [53, 28], vampire: [53, 19], poisongiant: [55, 22], succubus: [50, 25], wraith: [54, 24], wyvern: [47, 32],
+  swampking: [44, 43], firegiant: [53, 22], gdemon: [53, 25], frostgiant: [58, 20], reddragon: [52, 28], mninja: [57, 22],
+  archmage: [54, 27], firekeeper: [53, 20], sphinx: [62, 35], demonlord: [52, 29], royalguard: [53, 27], vlord: [52, 21],
+  leech: [50, 43],
+};
+// 敵の首はね：その怪物の首の位置から。絵は枠の中に縦横比を保って収まっているので、絵そのものの範囲を求めてから割合を当てる
 function bloodMon(gi) {
-  const el = document.querySelector(`#scene .mg[data-g="${gi}"] .mimg`); if (!el) return;
+  const g = BT && BT.groups[gi], el = document.querySelector(`#scene .mg[data-g="${gi}"] .mimg`); if (!el) return;
   const img = el.querySelector("img"), r = (img || el).getBoundingClientRect();
-  bloodFx(r.left + r.width / 2, r.top + r.height * .34, Math.min(r.width, r.height) * .2);
+  let L = r.left, T = r.top, w = r.width, h = r.height;
+  if (img && img.naturalWidth) { const k = Math.min(r.width / img.naturalWidth, r.height / img.naturalHeight); w = img.naturalWidth * k; h = img.naturalHeight * k; L += (r.width - w) / 2; T += (r.height - h) / 2; }
+  const [nx, ny] = (g && NECK[g.def.id]) || [50, 34];
+  bloodFx(L + w * nx / 100, T + h * ny / 100, Math.min(w, h) * .2);
 }
 // 仲間の首はね：パーティ表のその人の名前のあたりから、小さめに
 function bloodParty(id) {
