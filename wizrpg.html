@@ -160,7 +160,8 @@
   .prow .ps{font-size:13px;text-align:center;font-weight:700;}
   .prow .ph b{font-size:16px;} .prow .ph small{font-size:12px;}
   /* 戦闘で選んだ行動。動くまでHPの欄に出し、1秒ごとにHPと入れ替える（#party.showhp の間はHP） */
-  .prow .ph .pact{display:block;font-style:normal;font-size:12.5px;color:#fde68a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .prow .ph{height:24px;line-height:24px;} /* 行動とHPを入れ替えても行の高さが変わらないよう、高さを固定 */
+  .prow .ph .pact{display:block;height:24px;line-height:24px;font-style:normal;font-size:12.5px;color:#fde68a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .prow .ph.hasact .hpv{display:none;}
   #party.showhp .prow .ph.hasact .pact{display:none;} #party.showhp .prow .ph.hasact .hpv{display:inline;}
   .prow.dead{color:#7a6f75;} .prow.dead .ps{color:var(--bad);}
