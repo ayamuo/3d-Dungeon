@@ -798,6 +798,8 @@ async function giveReward(rw) {
 }
 async function foundBodies(bi) {
   const b = S.bodies[bi];
+  // 以前のセーブで同じ場所に別々に残っている亡骸は、ここで1つにまとめる
+  for (let i = S.bodies.length - 1; i > bi; i--) { const o = S.bodies[i]; if (o.f === b.f && o.x === b.x && o.y === b.y) { b.ids.push(...o.ids.filter(id => !b.ids.includes(id))); S.bodies.splice(i, 1); } }
   const chars = b.ids.map(charById).filter(Boolean);
   if (!chars.length) { S.bodies.splice(bi, 1); return; }
   const names = chars.map(c => c.name).join("、");
@@ -821,7 +823,10 @@ async function partyWiped() {
   await tell("パーティは全滅した……");
   const members = partyChars();
   if (S.rule === "classic") {
-    S.bodies.push({ f: S.pos.f, x: S.pos.x, y: S.pos.y, ids: members.map(c => c.id) });
+    // 同じ場所に亡骸があれば、そこへまとめる（踏んだとき一度に見つかるように）
+    const here = S.bodies.find(b => b.f === S.pos.f && b.x === S.pos.x && b.y === S.pos.y);
+    if (here) here.ids.push(...members.map(c => c.id).filter(id => !here.ids.includes(id)));
+    else S.bodies.push({ f: S.pos.f, x: S.pos.x, y: S.pos.y, ids: members.map(c => c.id) });
     for (const c of members) { c.where = "lost"; c.poison = 0; c.bac = 0; if (isAlive(c) && c.status !== "stone" && c.status !== "para") c.status = "dead"; }
     S.party = [];
     S.inMaze = false; S.light = 0; S.ward = 0;
