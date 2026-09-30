@@ -42,8 +42,11 @@ function randomGroups(fn) {
   for (let i = 0; i < ng; i++) {
     // 深い階ほど、その階の新しい怪物が出やすい
     const deep = pool.filter(m => m.fl[1] >= fn);
-    const def = (deep.length && chance(0.6)) ? pick(deep) : pick(pool);
-    gs.push(mkGroup(def.id, rr(def.grp[0], def.grp[1])));
+    let def = (deep.length && chance(0.6)) ? pick(deep) : pick(pool);
+    // grpUp：出始めの階では少なく、2階深くなるごとに1体ずつ増える。1回の戦闘に1グループまで
+    if (def.grpUp && gs.some(g => g.def === def)) def = pick(pool.filter(m => !m.grpUp)) || def;
+    const hi = def.grpUp ? Math.min(def.grp[1], Math.ceil((fn - def.fl[0] + 1) / 2)) : def.grp[1];
+    gs.push(mkGroup(def.id, rr(Math.min(def.grp[0], hi), hi)));
   }
   return gs;
 }
