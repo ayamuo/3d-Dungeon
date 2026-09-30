@@ -149,12 +149,13 @@
 
   /* パーティ表 */
   #party{margin-top:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px 8px;font-size:15px;}
-  .prow{display:grid;grid-template-columns:1fr 50px 32px 84px 46px;gap:4px;align-items:center;padding:4px 2px;border-bottom:1px solid #222838;min-height:30px;}
+  .prow{display:grid;grid-template-columns:1fr 50px 38px 84px 46px;gap:4px;align-items:center;padding:4px 2px;border-bottom:1px solid #222838;min-height:30px;}
   .prow:last-child{border-bottom:none;}
   .prow.phead{color:var(--dim);font-size:11.5px;min-height:0;padding:2px 2px;}
   .prow.back1{border-top:1px dashed #3a4258;}
   .prow .pn{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;}
-  .prow .pc{color:#b9c1d6;} .prow .pa{text-align:right;color:#b9c1d6;}
+  .prow .pc{color:#b9c1d6;} .prow .pa{text-align:right;color:#b9c1d6;white-space:nowrap;}
+  .prow .pa .acup{font-style:normal;color:#86efac !important;font-size:12.5px;font-weight:700;margin-left:1px;} /* 呪文で守りが固くなっている間の印 */
   .prow .ph{text-align:right;} .prow .ph small{color:var(--dim);}
   .prow .ps{font-size:13px;text-align:center;font-weight:700;}
   .prow .ph b{font-size:16px;} .prow .ph small{font-size:12px;}

@@ -815,7 +815,7 @@ function renderParty() {
     if (partyHighlight === c.id) cls.push("cur");
     if (i === 3) cls.push("back1");
     const hpPct = c.maxhp ? c.hp / c.maxhp : 0;
-    h += `<div class="${cls.join(" ")}" data-id="${c.id}"><span class="pn">${S && S.inMaze ? `<i class="plv">Lv${c.lvl}</i>` : ""}${honorMark(c)}${esc(c.name)}</span><span class="pc">${clsLabel(c)}</span><span class="pa">${computeAC(c, !!window.BT)}</span>` +
+    h += `<div class="${cls.join(" ")}" data-id="${c.id}"><span class="pn">${S && S.inMaze ? `<i class="plv">Lv${c.lvl}</i>` : ""}${honorMark(c)}${esc(c.name)}</span><span class="pc">${clsLabel(c)}</span><span class="pa">${computeAC(c, !!window.BT)}${window.BT && c.bac > 0 ? `<i class="acup">↑</i>` : ""}</span>` +
       `<span class="ph"><b style="color:${hpPct < 0.25 ? "#f87171" : hpPct < 0.5 ? "#fbbf24" : "#e8e8ee"}">${c.hp}</b><small>/${c.maxhp}</small></span><span class="ps">${st || "&nbsp;"}</span></div>`;
   }
   el.innerHTML = h;

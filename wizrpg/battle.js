@@ -718,8 +718,8 @@ async function spellEffect(c, sp, tgt, fromItem) {
       return null;
     }
     case "eac": { const g = targetGroup(tgt); if (!g) return null; tintGroups([groupIdx(g)], kind); g.acMod += sp.val; await bmsg(`${gName(g)}は闇に包まれた。`); return null; }
-    case "ac": { c.bac = (c.bac || 0) + sp.val; await bmsg(`${c.name}の守りが固くなった。`); return null; }
-    case "pac": { partyChars().forEach(x => x.bac = (x.bac || 0) + sp.val); await bmsg("パーティ全員の守りが固くなった。"); return null; }
+    case "ac": { c.bac = (c.bac || 0) + sp.val; renderParty(); popParty(c.id, "AC↑", "heal"); await bmsg(`${c.name}の守りが固くなった。`); return null; }
+    case "pac": { partyChars().forEach(x => x.bac = (x.bac || 0) + sp.val); renderParty(); partyChars().forEach(x => popParty(x.id, "AC↑", "heal")); await bmsg("パーティ全員の守りが固くなった。"); return null; }
     case "heal": case "fullheal": case "cure": {
       const t = charById(tgt); if (!t || !isAlive(t)) { await bmsg("効果がなかった。"); return null; }
       if (sp.eff === "heal") { const n = healAmount(sp, c, t, fromItem); t.hp = Math.min(t.maxhp, t.hp + n); popParty(t.id, "+" + n, "heal"); await bmsg(`${t.name}のHPが${n}回復した。`); }
