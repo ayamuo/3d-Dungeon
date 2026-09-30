@@ -542,7 +542,11 @@ async function reapGroups() {
     const wait = 520 - (Date.now() - Math.min(...dying.map(g => g.deathFx)));
     if (wait > 0) { renderBattle(); await sleep(wait); }
   }
+  const before = BT.groups.length;
   cleanupGroups();
+  // 全滅したグループを外したら、すぐ画面も描き直す（古い並びのままだと、次の攻撃のダメージ表示や血しぶきが
+  // 消えたグループの位置に出てしまう）
+  if (BT.groups.length !== before) renderBattle();
 }
 /* 敵が攻撃してくるとき、その敵の絵が一瞬こちらへ迫る */
 async function lunge(g) {
