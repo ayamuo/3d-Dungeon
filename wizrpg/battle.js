@@ -35,7 +35,7 @@ function identChance() {
 }
 function randomGroups(fn) {
   // rare：めったに出ない怪物（出会う確率をこの割合に下げる）
-  const pool = MONSTERS.filter(m => m.fl[0] && fn >= m.fl[0] && fn <= m.fl[1] && (!m.rare || chance(m.rare)));
+  const pool = MONSTERS.filter(m => m.fl[0] && fn >= m.fl[0] && fn <= m.fl[1] && (!m.rare || chance((m.rareAt && m.rareAt[fn]) || m.rare)));
   let ng = 1 + (chance(0.5) ? 1 : 0) + (fn >= 4 && chance(0.35) ? 1 : 0) + (fn >= 8 && chance(0.25) ? 1 : 0);
   ng = Math.min(4, ng);
   const gs = [];
