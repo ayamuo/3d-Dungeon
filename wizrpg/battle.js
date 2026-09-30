@@ -299,7 +299,7 @@ const NECK = {
   watcher: [54, 24], bladefox: [74, 49], harpy: [56, 23], wight: [51, 22], hmage: [50, 23], foxlord: [31, 39],
   vorpal: [62, 54], golem: [55, 21], troll: [55, 22], medusa: [51, 27], chimera: [57, 40], ninja: [52, 26],
   hpriest: [53, 28], vampire: [53, 19], poisongiant: [55, 22], succubus: [50, 25], wraith: [54, 24], wyvern: [47, 32],
-  swampking: [44, 43], firegiant: [53, 22], gdemon: [53, 25], frostgiant: [58, 20], reddragon: [52, 28], mninja: [57, 22],
+  swampking: [44, 43], firegiant: [53, 22], gdemon: [53, 25], frostgiant: [58, 20], reddragon: [57, 33], mninja: [57, 22],
   archmage: [54, 27], firekeeper: [53, 20], sphinx: [62, 35], demonlord: [52, 29], royalguard: [53, 27], vlord: [52, 21],
   leech: [50, 43],
 };
