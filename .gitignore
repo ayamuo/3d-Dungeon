@@ -26,3 +26,6 @@ wizrpg/bgm/maou_game_town07.mid
 
 # BGMの元ファイル（素材の再配布にあたらないよう公開しない。ゲームは bgm_data.js にまとめたものから鳴らす）
 wizrpg/bgm/*.mid
+
+# 首はねの位置の確認用画像（作業用）
+首はね位置/
