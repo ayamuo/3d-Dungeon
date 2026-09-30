@@ -633,8 +633,8 @@ function diceRange(s) {
 }
 function bookImg(def, lv, big) {
   const cls = "bkimg" + (big ? " big" : "") + (lv <= 0 ? " shadow" : "");
-  if (lv < 0) return `<span class="${cls}"><span class="glyph">？</span></span>`;
-  return `<span class="${cls}"><span class="glyph">${def.g}</span><img src="wizrpg/monsters/${def.id}.png" alt="" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"></span>`;
+  if (lv < 0) return `<span class="${cls} ng"><span class="glyph">？</span></span>`;
+  return `<span class="${cls}"><span class="glyph">${def.g}</span><img src="wizrpg/monsters/${def.id}.png" alt="" onerror="this.parentNode.classList.add('ng');this.remove()"></span>`;
 }
 function bookDetail(def) {
   const lv = bookLevel(def), b = bookInit()[def.id] || { s: 0, k: 0 };
