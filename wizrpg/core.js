@@ -202,14 +202,15 @@ function weaponSnd(wd) {
 }
 /* 回復量。呪文は術者のレベルに比例して伸び、薬は飲む人の最大HPに対する割合で回復する
    （固定値だと、レベルが上がるほど回復が役に立たなくなるため） */
-const HEAL_SPELL = { mend: { dice: "1d8+4", per: 2 }, mend2: { dice: "3d8+10", per: 3 }, mend3: { dice: "6d8+20", per: 4 } };
-const HEAL_ITEM = { potion: { dice: "2d8+6", pct: 0.3 }, potion2: { dice: "6d8+20", pct: 0.6 } };
+// cap：回復量の上限（レベルが上がるほど上限まで回復することが多くなる。小・中・大の差が縮まらないように）
+const HEAL_SPELL = { mend: { dice: "1d8+4", per: 2, cap: 40 }, mend2: { dice: "3d8+10", per: 3, cap: 90 }, mend3: { dice: "6d8+20", per: 4, cap: 150 } };
+const HEAL_ITEM = { potion: { dice: "2d8+6", pct: 0.3, cap: 40 }, potion2: { dice: "6d8+20", pct: 0.6, cap: 150 } };
 function healAmount(sp, caster, target, itemId) {
   const it = itemId && HEAL_ITEM[itemId];
-  if (it) return Math.max(dice(it.dice), Math.round(target.maxhp * it.pct));
+  if (it) return Math.min(it.cap, Math.max(dice(it.dice), Math.round(target.maxhp * it.pct)));
   const h = HEAL_SPELL[sp.id];
   if (!h) return dice(sp.dice || "1d8");
-  return dice(h.dice) + h.per * caster.lvl; // 魔力の宿った道具（錫杖など）は使う人のレベルで計算
+  return Math.min(h.cap, dice(h.dice) + h.per * caster.lvl); // 魔力の宿った道具（錫杖など）は使う人のレベルで計算
 }
 /* ────────── BGM ──────────
    WebAudioで再生し、曲の中の「ループ開始〜ループ終了」だけを継ぎ目なく繰り返す。
