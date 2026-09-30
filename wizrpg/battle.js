@@ -66,14 +66,45 @@ const ableMs = g => g.ms.filter(m => m.hp > 0 && m.status === "ok");
 
 /* ────────── 遭遇の演出 ──────────
    迷宮の画面にひびが入り「ENCOUNTER!」の文字が一瞬出てから戦闘画面に切り替わる */
-async function encounterFx(boss) {
+/* ボス戦の始まり：画面がゆっくり暗くなり、ボスの黒い影が赤い光をまとって下から浮かび上がる。
+   できた絵のキャンバスを返す（このあとのガラスの演出で、この絵ごと割る。割れたあとに呼び出し側で消す） */
+async function bossReveal(def) {
+  const st = $("stage"), cv = $("view"), W = cv.width, H = cv.height;
+  if (!W || !H) return null;
+  const fx = document.createElement("canvas"); fx.className = "elevfx"; fx.style.zIndex = 6; fx.width = W; fx.height = H; st.appendChild(fx);
+  const g = fx.getContext("2d");
+  let img = null;
+  if (!MON_MISS.has(def.id)) { img = new Image(); img.src = `wizrpg/monsters/${def.id}.png`; try { await img.decode(); } catch (e) { img = null; } }
+  Snd.play("rumble");
+  const T = 1700, glow = Math.max(2, Math.round(H * .02)), glow2 = Math.max(4, Math.round(H * .06));
+  const draw = p => {
+    g.clearRect(0, 0, W, H); g.drawImage(cv, 0, 0);
+    g.fillStyle = `rgba(0,0,0,${Math.min(.95, p * 2.5).toFixed(3)})`; g.fillRect(0, 0, W, H);
+    const q = clamp((p - .25) / .75, 0, 1), e = 1 - (1 - q) ** 3;
+    if (e <= 0) return;
+    const h = H * .86 * (.86 + .14 * e), w = img ? h * img.width / img.height : h, x = (W - w) / 2, y = H * .08 + (1 - e) * H * .08;
+    g.save(); g.globalAlpha = e;
+    g.filter = `brightness(0) drop-shadow(0 0 ${glow}px rgba(215,40,40,.95)) drop-shadow(0 0 ${glow2}px rgba(150,20,20,.6))`;
+    if (img) g.drawImage(img, x, y, w, h);
+    else { g.font = `${Math.round(h * .6)}px sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = "#000"; g.fillText(def.g, W / 2, H / 2); }
+    g.restore();
+  };
+  await new Promise(res => {
+    const t0 = performance.now();
+    const frame = now => { const p = Math.min(1, (now - t0) / T); draw(p); if (p < 1) requestAnimationFrame(frame); else res(); };
+    requestAnimationFrame(frame);
+  });
+  await sleep(250);
+  return fx;
+}
+async function encounterFx(boss, src) { // src：割れる前の絵（省略すると迷宮の画面）
   const st = $("stage");
   const fx = document.createElement("div");
   fx.className = "encfx" + (boss ? " boss" : "");
   fx.innerHTML = `<canvas></canvas><b>${boss ? "BOSS BATTLE!" : "ENCOUNTER!"}</b>`;
   st.appendChild(fx);
   const T = boss ? 1300 : 900;
-  glassShatter(fx.firstChild, st, T);
+  glassShatter(fx.firstChild, st, T, src);
   if (BT) renderBattle(); // 割れたガラスの奥に戦闘画面を用意しておく（破片が落ちると見える）
   st.classList.remove("encshake"); void st.offsetWidth; st.classList.add("encshake");
   Snd.play("encounter"); vibrate(boss ? 150 : 70);
@@ -83,13 +114,13 @@ async function encounterFx(boss) {
 /* 画面のガラスが割れる演出。
    当たった点から放射状のひびと同心円状のひびを走らせ、ひびで区切られた破片ごとに景色を少しずらして映す（本物のガラスの屈折っぽく見える）。
    最後は破片が落ちて、その奥の戦闘画面に切り替わる。光過敏への配慮で、白く光らせる量はごく控えめにする */
-function glassShatter(cv, st, T) {
+function glassShatter(cv, st, T, src) {
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const W = cv.width = Math.round(st.clientWidth * dpr), H = cv.height = Math.round(st.clientHeight * dpr);
   const g = cv.getContext("2d"); if (!g || !W || !H) return;
   // 割れる前の迷宮の画面を写しておく
   const snap = document.createElement("canvas"); snap.width = W; snap.height = H;
-  try { snap.getContext("2d").drawImage($("view"), 0, 0, W, H); } catch (e) { }
+  try { snap.getContext("2d").drawImage(src || $("view"), 0, 0, W, H); } catch (e) { }
   const rnd = (a, b) => a + Math.random() * (b - a);
   const cx = W * rnd(0.44, 0.56), cy = H * rnd(0.42, 0.56), D = Math.hypot(W, H) * 0.62;
   const NR = 16 + Math.floor(Math.random() * 5), RING = [0.04, 0.1, 0.2, 0.36, 0.6, 1.4];
@@ -189,7 +220,14 @@ function renderBattle() {
     const lv = livingMs(g).length, ab = ableMs(g).length;
     const hit = BT.hitFx && BT.hitFx.g === i && Date.now() < BT.hitFx.until ? " hit" : "";
     const tint = BT.tint && BT.tint.on && BT.tint.gs.includes(i);
-    return `<div class="mg${hit}${tint ? " tint" : ""}" data-g="${i}"${tint ? ` style="--tf:${BT.tint.f};--tc:${BT.tint.c}"` : ""}><div class="mimg${MON_MISS.has(id) ? "" : " hasimg"}" style="--mc:${g.def.col}"><span class="glyph">${g.def.g}</span>${img}<i class="kari">仮</i></div>
+    // 動きの演出：全滅したグループは崩れて沈む（dying）、攻撃してくる敵は迫る（atk）、一部が倒れたグループは一瞬暗くなる（lose）。
+    // 描き直しても途中から続くよう、始まってからの時間を負の遅れ（--dl）で渡す
+    const now = Date.now(); let mv = "", dl = 0;
+    if (!lv && g.deathFx) { mv = " dying"; dl = now - g.deathFx; }
+    else if (BT.atkFx && BT.atkFx.g === i && now - BT.atkFx.t < 360) { mv = " atk"; dl = now - BT.atkFx.t; }
+    else if (g.deathFx && now - g.deathFx < 360) { mv = " lose"; dl = now - g.deathFx; }
+    const sty = (tint ? `--tf:${BT.tint.f};--tc:${BT.tint.c};` : "") + (mv ? `--dl:-${dl}ms;` : "");
+    return `<div class="mg${hit}${tint ? " tint" : ""}${mv}" data-g="${i}"${sty ? ` style="${sty}"` : ""}><div class="mimg${MON_MISS.has(id) ? "" : " hasimg"}" style="--mc:${g.def.col}"><span class="glyph">${g.def.g}</span>${img}<i class="kari">仮</i></div>
       <div class="mname">${i + 1}) ${esc(gName(g))}</div>${g.ident ? monIcons(g.def) : `<div class="micons"></div>`}<div class="mcnt">×${lv}<small>（${ab}）</small>${g.ms.some(m => m.hp > 0 && m.status === "sleep") ? " 💤" : ""}${g.silenced ? " 🤐" : ""}</div></div>`;
   }).join("")}</div>`;
   $("hud").innerHTML = BT.boss ? "⚔️ 決戦" : "⚔️ 戦闘中";
@@ -239,7 +277,11 @@ async function battle(spec, opt = {}) {
     pushLog(`―― 戦闘（地下${fn}階）――`, "sep");
     Bgm.play(opt.boss ? "lastboss" : (opt.fixed && /boss$|sph$|^b10[ac]$/.test(opt.once || "")) ? "boss" : "battle");
     $("cmd").innerHTML = ""; // 迷宮の移動ボタンを演出の間に残さない
-    await encounterFx(BT.boss);
+    // ボス戦（最後の戦い・各階の番人）は、画面が暗くなってボスの影が浮かび上がってから、その絵ごとガラスが割れる
+    const bossy = opt.boss || (opt.fixed && /boss$|sph$|^b10[ac]$/.test(opt.once || ""));
+    const shadow = bossy ? await bossReveal(groups.reduce((a, g) => (g.def.lv > a.def.lv ? g : a)).def) : null;
+    await encounterFx(BT.boss, shadow);
+    if (shadow) shadow.remove();
     if (groups.some(g => g.def.type === "dragon")) Snd.play("roar_dragon");
     clearMsg();
     renderBattle();
@@ -428,8 +470,24 @@ function cleanupGroups() {
   BT.groups = BT.groups.filter(g => livingMs(g).length > 0);
   for (const g of BT.groups) g.ms = g.ms.filter(m => m.hp > 0);
 }
+/* 全滅したグループが崩れて消える演出を見せ終わってから、一覧から外す */
+async function reapGroups() {
+  const dying = BT.groups.filter(g => !livingMs(g).length && g.deathFx);
+  if (dying.length) {
+    const wait = 520 - (Date.now() - Math.min(...dying.map(g => g.deathFx)));
+    if (wait > 0) { renderBattle(); await sleep(wait); }
+  }
+  cleanupGroups();
+}
+/* 敵が攻撃してくるとき、その敵の絵が一瞬こちらへ迫る */
+async function lunge(g) {
+  if (!BT) return;
+  BT.atkFx = { g: BT.groups.indexOf(g), t: Date.now() };
+  renderBattle();
+  await sleep(Math.round(200 / (S.speed || 1)));
+}
 function killMon(g, m, how) {
-  m.hp = 0;
+  m.hp = 0; g.deathFx = Date.now();
   if (how === "dispel") BT.dispelled.push(g.def); else BT.killed.push(g.def);
 }
 function targetGroup(gi) { return BT.groups[gi] || BT.groups[0]; }
@@ -475,7 +533,7 @@ async function playerAct(c, act) {
       await bmsg(`${c.name}の攻撃！　${nm}に${hits}回当たり、${dmg}のダメージ！`);
       if (m.hp <= 0) { killMon(g, m); c.kills++; Snd.play("kill"); await bmsg(`${nm}は倒れた。`, 500); }
     }
-    cleanupGroups();
+    await reapGroups();
     return null;
   }
   if (act.t === "dispel") {
@@ -488,7 +546,7 @@ async function playerAct(c, act) {
     const base = c.cls === "lor" ? 0.35 : c.cls === "bis" ? 0.4 : 0.5;
     for (const m of livingMs(g)) if (!g.def.boss && chance(clamp(base + (c.lvl - g.def.lv) * 0.08, 0.05, 0.95))) { killMon(g, m, "dispel"); n++; }
     await bmsg(n ? `${gName(g)}が${n}体消え去った！` : "しかし何も起こらなかった。");
-    cleanupGroups();
+    await reapGroups();
     return null;
   }
   if (act.t === "spell" || act.t === "use") {
@@ -541,7 +599,7 @@ async function spellEffect(c, sp, tgt, fromItem) {
         if (hitN) await bmsg(`${gName(g)}${hitN > 1 ? `${hitN}体に平均${Math.round(tot / hitN)}` : `に${tot}`}のダメージ！${kills ? `　${kills}体を倒した！` : ""}`);
         if (hitN && weak) await bmsg(`${gName(g)}には${ELEM_NAME[sp.elem]}の効きが悪いようだ……`, 700);
       }
-      cleanupGroups();
+      await reapGroups();
       return null;
     }
     case "sleep": case "silence": case "suffocate": {
@@ -557,7 +615,7 @@ async function spellEffect(c, sp, tgt, fromItem) {
       const w = { sleep: "眠った", silence: "沈黙した", suffocate: "窒息して倒れた" }[sp.eff];
       const noSleep = sp.eff === "sleep" && g.def.res && g.def.res.includes("sleep");
       await bmsg(n ? `${gName(g)}が${sp.eff === "silence" ? "" : n + "体"}${w}！` : noSleep ? `${gName(g)}は眠りを受けつけないようだ……` : "効果がなかった。");
-      cleanupGroups();
+      await reapGroups();
       return null;
     }
     case "slay": {
@@ -565,7 +623,7 @@ async function spellEffect(c, sp, tgt, fromItem) {
       let n = 0;
       for (const g of BT.groups) if (g.def.lv <= sp.val && !g.def.boss) for (const m of livingMs(g)) { if (!resist(g)) { killMon(g, m); n++; c.kills++; } }
       await bmsg(n ? `${n}体の怪物が消し飛んだ！` : "効果がなかった。");
-      cleanupGroups();
+      await reapGroups();
       return null;
     }
     case "death": {
@@ -574,7 +632,7 @@ async function spellEffect(c, sp, tgt, fromItem) {
       const m = pick(livingMs(g));
       if (!g.def.boss && !resist(g) && chance(clamp(0.8 - g.def.lv * 0.04, 0.05, 0.8))) { killMon(g, m); c.kills++; await bmsg(`${gName(g)}の心臓が止まった！`); }
       else await bmsg("効果がなかった。");
-      cleanupGroups();
+      await reapGroups();
       return null;
     }
     case "drain": {
@@ -698,6 +756,7 @@ async function monsterAct(g, m) {
   }
   // ブレス
   if (def.breath && chance(0.4)) {
+    await lunge(g);
     Snd.play(def.breath === "fire" ? "breath_fire" : def.breath === "cold" ? "breath_ice" : "breath_gas");
     glowParty(def.breath === "gas" ? "air" : def.breath);
     await bmsg(`${nm}は${{ fire: "炎", cold: "冷気", gas: "毒の息" }[def.breath]}を吐いた！`, 550);
@@ -718,6 +777,7 @@ async function monsterAct(g, m) {
   if (!def.atk.length) { await bmsg(`${nm}はうろうろしている。`, 400); return; }
   // 打撃
   const t = pick(frontTargets()); if (!t) return;
+  await lunge(g);
   // 命中率：敵レベル＋対象のAC で決める。鎧で固めるほど当たりにくくなる
   const p = clamp((partyAC(t) + def.lv + 2) / 20, 0.05, 0.95);
   let hits = 0, dmg = 0;
@@ -859,6 +919,7 @@ async function chestBody({ gold, items, trapLv }) {
     if (k === "open") {
       const c = await pickMember("誰が開ける？", x => x.status === "ok");
       if (!c) continue;
+      await chestRattle();
       if (!disarmed) { const r = await springTrap(trap, c, trapLv); if (r === "gone") return; }
       break;
     }
@@ -909,8 +970,26 @@ async function chestBody({ gold, items, trapLv }) {
   renderParty(); saveGame();
   await tell(got.length ? "宝箱を開けた！\n" + got.join("\n") : "宝箱は空っぽだった。");
 }
+/* 宝箱を開けるとき、箱（表示窓の絵）が小さくガタガタ揺れる */
+async function chestRattle() {
+  const sc = $("scene"); sc.classList.remove("rattle"); void sc.offsetWidth; sc.classList.add("rattle");
+  Snd.play("move");
+  await sleep(380);
+  sc.classList.remove("rattle");
+}
+/* 罠の煙：色の付いた煙が表示窓いっぱいに広がって薄れていく（画面を白く光らせることはしない） */
+function trapSmoke(color) {
+  const st = $("stage"), fx = document.createElement("div");
+  fx.className = "smoke"; fx.style.setProperty("--sm", color); st.appendChild(fx);
+  setTimeout(() => fx.remove(), 1600);
+}
 async function springTrap(trap, c, lv) {
   vibrate(100);
+  // 罠ごとの見た目：爆弾は大きく揺れて茶色い煙、毒ガスは緑の煙、呪文の罠は紫の煙、針や矢は小さく揺れる
+  if (trap === "bomb") { stageShake(); trapSmoke("rgba(120,90,60,.85)"); }
+  else if (trap === "gas") trapSmoke("rgba(90,170,70,.8)");
+  else if (trap === "mblast" || trap === "pblast") { trapSmoke("rgba(130,70,180,.8)"); stageShake(); }
+  else if (["needle", "arrow", "stunner"].includes(trap)) { const sc = $("scene"); sc.classList.remove("rattle"); void sc.offsetWidth; sc.classList.add("rattle"); }
   Snd.play({ needle: "trap_needle", arrow: "trap_arrow", gas: "breath_gas", stunner: "trap_stun", bomb: "trap_bomb", teleport: "tele", alarm: "trap", mblast: "darkspell", pblast: "darkspell" }[trap] || "trap");
   const alive = partyChars().filter(x => isAlive(x) && x.status !== "stone");
   const deaths = [];

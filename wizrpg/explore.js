@@ -390,8 +390,8 @@ async function onEnterCell(noRandom) {
     if (t.t === "spin") { S.pos.d = rand(4); drawView(); }
     else if (t.t === "pit") {
       Snd.play("fall"); vibrate(80);
-      setTimeout(() => Snd.play("land"), 450);
       noteTrap(f.n, S.pos.x, S.pos.y);
+      await pitFx();
       await tell("落とし穴だ！");
       for (const c of partyChars()) if (isAlive(c) && c.status !== "stone") {
         if (chance(clamp((c.st.agi - 8) * 0.04, 0, 0.5))) continue;
@@ -402,7 +402,9 @@ async function onEnterCell(noRandom) {
       Snd.play("fall"); vibrate(120);
       noteTrap(f.n, S.pos.x, S.pos.y);
       await tell("床が抜けた！\nパーティは下の階へ落ちていく――");
+      await elevatorRide(f.n, f.n + 1, "fall", [S.pos.x, S.pos.y]);
       await changeFloor(f.n + 1, S.pos.x, S.pos.y);
+      Snd.play("land"); stageShake(); vibrate(120);
       for (const c of partyChars()) if (isAlive(c) && c.status !== "stone") damageChar(c, rr(1, 8));
       renderParty(); await checkWipeOutside();
       return;
@@ -416,12 +418,14 @@ async function onEnterCell(noRandom) {
       if (await stairsPrompt("上り階段がある。", "のぼる")) {
         Snd.play("stairs");
         if (f.n === 1) return exitMaze("パーティは迷宮を抜け、地上の町へ戻った。");
+        await elevatorRide(f.n, f.n - 1, "stairs", [S.pos.x, S.pos.y]);
         await changeFloor(f.n - 1, S.pos.x, S.pos.y);
         return;
       }
     } else if (t.t === "down") {
       if (await stairsPrompt("下り階段がある。", "おりる")) {
         Snd.play("stairs");
+        await elevatorRide(f.n, f.n + 1, "stairs", [S.pos.x, S.pos.y]);
         await changeFloor(f.n + 1, S.pos.x, S.pos.y);
         return;
       }
@@ -453,8 +457,9 @@ async function useTile() {
   if (t.t !== "elev") Snd.play("stairs");
   if (t.t === "up") {
     if (f.n === 1) return exitMaze("パーティは迷宮を抜け、地上の町へ戻った。");
+    await elevatorRide(f.n, f.n - 1, "stairs", [S.pos.x, S.pos.y]);
     await changeFloor(f.n - 1, S.pos.x, S.pos.y);
-  } else if (t.t === "down") await changeFloor(f.n + 1, S.pos.x, S.pos.y);
+  } else if (t.t === "down") { await elevatorRide(f.n, f.n + 1, "stairs", [S.pos.x, S.pos.y]); await changeFloor(f.n + 1, S.pos.x, S.pos.y); }
   else if (t.t === "elev") await elevator();
 }
 async function stairsPrompt(text, act) {
@@ -624,32 +629,36 @@ async function elevator() {
 }
 /* 昇降機の移動の演出。下りなら、今の階の景色が上へ流れながら暗くなり、縦穴の中（壁の梁や通り過ぎる階の明かり）を下って、
    目的の階の景色が下からせり上がりながら明るくなって止まる。上りは向きが逆。
-   目的の階の景色は先に描いて写しておく（着いたら同じ絵が本物の画面に入れ替わる） */
-async function elevatorRide(from, to) {
+   目的の階の景色は先に描いて写しておく（着いたら同じ絵が本物の画面に入れ替わる）。
+   kind："elev"＝昇降機 / "stairs"＝階段（短く、縦穴は見せない）/ "fall"＝落とし戸で落ちる（加速して落ち、岩肌が速く流れる）。
+   dest：着く位置 [x, y]（省略すると、その階の昇降機の位置） */
+async function elevatorRide(from, to, kind = "elev", dest = null) {
   const st = $("stage"), cv = $("view"), W = cv.width, H = cv.height;
   if (!W || !H) return;
   const snap = () => { const c = document.createElement("canvas"); c.width = W; c.height = H; c.getContext("2d").drawImage(cv, 0, 0); return c; };
   const A = snap();
   await texWait(to);
-  const keep = { ...S.pos }, hud = $("hud").innerHTML, [ex, ey] = FLOORS[to].elev;
+  const keep = { ...S.pos }, hud = $("hud").innerHTML, [ex, ey] = dest || FLOORS[to].elev;
   S.pos = { ...S.pos, f: to, x: ex, y: ey }; drawView();
   const B = snap();
   S.pos = keep; drawView(); $("hud").innerHTML = hud;
   const fx = document.createElement("canvas"); fx.className = "elevfx"; fx.width = W; fx.height = H; st.appendChild(fx);
   const g = fx.getContext("2d"), down = to > from, sg = down ? -1 : 1; // 下りは景色が上へ（マイナス方向へ）流れる
-  const T = Math.min(3200, 1300 + Math.abs(to - from) * 260) * (walkSpeed() === "off" ? .6 : 1);
+  const slow = walkSpeed() === "off" ? .6 : 1;
+  const T = (kind === "stairs" ? 750 : kind === "fall" ? 950 : Math.min(3200, 1300 + Math.abs(to - from) * 260)) * slow;
   const ease = t => t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+  const easeOut = kind === "fall" ? t => t * t * t : ease; // 落ちるときは、出発した階の景色が加速して流れ去る
   const draw = p => {
     g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
-    // 縦穴：岩肌の帯と、鉄の梁が流れていく
-    const vis = Math.sin(Math.PI * p), scroll = sg * p * H * (2 + Math.abs(to - from));
-    for (let i = -1; i < 7; i++) {
+    // 縦穴：岩肌の帯と、鉄の梁が流れていく（階段では見せない。落ちるときは速く流れる）
+    const vis = kind === "stairs" ? 0 : Math.sin(Math.PI * p), scroll = sg * p * H * (kind === "fall" ? 6 : 2 + Math.abs(to - from));
+    for (let i = -1; i < 7 && vis > 0; i++) {
       const y = ((i * H / 5 + scroll) % (H * 1.4) + H * 1.4) % (H * 1.4) - H * .2;
       g.fillStyle = `rgba(70,62,54,${(.35 * vis).toFixed(3)})`; g.fillRect(0, y, W, H * .07);
       g.fillStyle = `rgba(150,130,100,${(.25 * vis).toFixed(3)})`; g.fillRect(0, y, W, Math.max(1, H * .006));
     }
-    // 通り過ぎる階の明かり（階の数だけ、橙色の光が横切る）
-    const n = Math.abs(to - from);
+    // 通り過ぎる階の明かり（昇降機だけ。階の数だけ、橙色の光が横切る）
+    const n = kind === "elev" ? Math.abs(to - from) : 0;
     for (let k = 1; k < n; k++) {
       const q = (p - .25) / .5 * n - k + .5; // 0〜1 の間に画面を横切る
       if (q < 0 || q > 1) continue;
@@ -660,7 +669,7 @@ async function elevatorRide(from, to) {
     }
     // 出発した階の景色：流れ去りながら暗くなる
     if (p < .45) {
-      const q = ease(p / .45);
+      const q = easeOut(p / .45);
       g.save(); g.globalAlpha = 1 - q; g.drawImage(A, 0, sg * H * .9 * q); g.restore(); // 景色だけを暗く（縦穴の帯は消さない）
     }
     // 着く階の景色：反対側からせり上がり（下り）／下りてきて（上り）、明るくなる
@@ -668,9 +677,37 @@ async function elevatorRide(from, to) {
       const q = ease((p - .55) / .45);
       g.save(); g.globalAlpha = q; g.drawImage(B, 0, -sg * H * .9 * (1 - q)); g.restore();
     }
-    // 通過中の階
-    const cur = Math.round(from + (to - from) * clamp((p - .1) / .8, 0, 1));
-    $("hud").innerHTML = `昇降機 ${down ? "▼" : "▲"} 地下${cur}階`;
+    // 通過中の階（昇降機だけ）
+    if (kind === "elev") {
+      const cur = Math.round(from + (to - from) * clamp((p - .1) / .8, 0, 1));
+      $("hud").innerHTML = `昇降機 ${down ? "▼" : "▲"} 地下${cur}階`;
+    }
+  };
+  await new Promise(res => {
+    const t0 = performance.now();
+    const frame = now => { const p = Math.min(1, (now - t0) / T); draw(p); if (p < 1) requestAnimationFrame(frame); else res(); };
+    requestAnimationFrame(frame);
+  });
+  fx.remove();
+}
+/* 落とし穴の演出：景色が加速して上へずれ（穴に落ちる）、底に着いた瞬間に「ドスン」と揺れ、ゆっくり元に戻る（はい上がる） */
+async function pitFx() {
+  const st = $("stage"), cv = $("view"), W = cv.width, H = cv.height;
+  if (!W || !H) return;
+  const A = document.createElement("canvas"); A.width = W; A.height = H; A.getContext("2d").drawImage(cv, 0, 0);
+  const fx = document.createElement("canvas"); fx.className = "elevfx"; fx.width = W; fx.height = H; st.appendChild(fx);
+  const g = fx.getContext("2d"), T = walkSpeed() === "off" ? 700 : 1000;
+  let landed = false;
+  const draw = p => {
+    g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+    let off, dark;
+    if (p < .3) { const q = p / .3; off = -H * .35 * q * q; dark = .55 * q; }
+    else {
+      if (!landed) { landed = true; Snd.play("land"); stageShake(); vibrate(100); }
+      const q = clamp((p - .45) / .55, 0, 1), e = 1 - (1 - q) ** 2; off = -H * .35 * (1 - e); dark = .55 * (1 - e);
+    }
+    g.drawImage(A, 0, off);
+    g.fillStyle = `rgba(0,0,0,${dark.toFixed(3)})`; g.fillRect(0, 0, W, H);
   };
   await new Promise(res => {
     const t0 = performance.now();
@@ -1218,6 +1255,58 @@ function texWait(n, ms = 2500) {
 // 次に行きそうな階の画像を、裏で先に読み込んでおく
 function preloadFloor(n) { if (!FLOORS[n]) return; texWait(n); preloadMonImgs(n); }
 
+/* ────────── 迷宮の空気 ──────────
+   深い階（地下6〜10階）では細かい塵がゆっくり漂い（深いほど多い）、水の多い階（地下2・7階）ではときどき天井から水滴が落ちて音が鳴る。
+   迷宮を歩いている間だけ動かす（戦闘中・町・画面が見えないときは止める）。明るさが揺れる演出は使わない */
+const Amb = (() => {
+  let cv = null, g = null, running = false, last = 0, nextDrip = 0, floor = 0;
+  let dust = [], drops = [];
+  const DUST = n => n >= 6 ? 12 + (n - 6) * 7 : 0;
+  const WET = n => n === 2 || n === 7;
+  const active = () => S && S.inMaze && S.pos && document.body.dataset.mode === "maze" && !BT && !document.hidden && (DUST(S.pos.f) || WET(S.pos.f));
+  function reset(n) {
+    floor = n;
+    dust = Array.from({ length: DUST(n) }, () => ({ x: Math.random(), y: Math.random(), vx: (Math.random() - .5) * .00003, vy: -.00001 - Math.random() * .00002, a: .12 + Math.random() * .22, s: .6 + Math.random() * 1.2 }));
+    drops = []; nextDrip = performance.now() + 2000 + Math.random() * 4000;
+  }
+  function frame(now) {
+    if (!active()) { running = false; if (g) g.clearRect(0, 0, cv.width, cv.height); return; }
+    if (S.pos.f !== floor) reset(S.pos.f);
+    const W = cv.clientWidth, H = cv.clientHeight;
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    const dt = Math.min(50, now - (last || now)); last = now;
+    g.clearRect(0, 0, W, H);
+    for (const p of dust) {
+      p.x = (p.x + p.vx * dt + 1) % 1; p.y = (p.y + p.vy * dt + 1) % 1;
+      g.fillStyle = `rgba(210,195,165,${p.a})`; g.fillRect(p.x * W, p.y * H, p.s, p.s);
+    }
+    if (WET(S.pos.f) && now > nextDrip) {
+      drops.push({ x: .15 + Math.random() * .7, y: .02, v: 0, splash: 0 });
+      nextDrip = now + 4000 + Math.random() * 7000;
+    }
+    for (const d of drops) {
+      if (!d.splash) {
+        d.v += .0000045 * dt; d.y += d.v * dt;
+        g.fillStyle = "rgba(170,200,230,.55)"; g.fillRect(d.x * W - .75, d.y * H - 5, 1.5, 5);
+        if (d.y > .8) { d.splash = 1; Snd.play("drip"); }
+      } else {
+        d.splash += dt / 400;
+        const r = d.splash * W * .025;
+        g.strokeStyle = `rgba(170,200,230,${(.45 * (1 - d.splash)).toFixed(3)})`; g.lineWidth = 1;
+        g.beginPath(); g.ellipse(d.x * W, .8 * H, r, r * .3, 0, 0, 7); g.stroke();
+      }
+    }
+    drops = drops.filter(d => d.splash < 1);
+    requestAnimationFrame(frame);
+  }
+  function start() {
+    if (running || !active()) return;
+    if (!cv) { cv = document.createElement("canvas"); cv.className = "ambfx"; $("stage").appendChild(cv); g = cv.getContext("2d"); }
+    running = true; last = 0; requestAnimationFrame(frame);
+  }
+  return { start };
+})();
+
 /* 昇降機の鉄の模様をプログラムで作る（一度作ったら使い回す）。細かいざらつき・錆のしみ・引っかき傷。
    端で途切れないよう、しみと傷は上下左右にずらした位置にも描いて、並べたときにつながるようにする */
 const PROC_TEX = {};
@@ -1244,6 +1333,7 @@ function procTex(kind) {
 
 function drawView() {
   if (!S || !S.pos) return;
+  Amb.start(); // 迷宮の空気（塵・水滴）。すでに動いていれば何もしない
   const cv = $("view"); const dpr = sizeCanvas(cv);
   const g = cv.getContext("2d");
   const W = cv.width, H = cv.height;

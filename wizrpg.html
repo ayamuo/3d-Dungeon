@@ -82,6 +82,12 @@
   /* 遭遇の演出 */
   .encfx{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;pointer-events:none;}
   .encfx canvas{position:absolute;inset:0;width:100%;height:100%;}
+  .ambfx{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;} /* 迷宮の空気（塵・水滴） */
+  /* 宝箱：開けるときのガタガタ／罠の煙 */
+  #scene.rattle{animation:rattle .38s;}
+  @keyframes rattle{15%{transform:translate(-3px,1px) rotate(-.6deg);}35%{transform:translate(3px,-1px) rotate(.6deg);}55%{transform:translate(-2px,0) rotate(-.4deg);}75%{transform:translate(2px,1px);}}
+  .smoke{position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse 60% 55% at 50% 62%,var(--sm),transparent 70%),radial-gradient(ellipse 40% 35% at 30% 45%,var(--sm),transparent 70%),radial-gradient(ellipse 40% 35% at 72% 48%,var(--sm),transparent 70%);animation:smoke 1.6s ease-out forwards;}
+  @keyframes smoke{0%{opacity:0;transform:scale(.4) translateY(20%);}25%{opacity:.9;}100%{opacity:0;transform:scale(1.5) translateY(-12%);}}
   .elevfx{position:absolute;inset:0;width:100%;height:100%;z-index:2;} /* 昇降機の移動の演出（左上の表示は上に重ねる） */
   html.stdfont body{font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;}
   html.stdfont .encfx b{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:900;}
@@ -93,6 +99,13 @@
   @keyframes stshake{15%{transform:translate(-5px,2px);}35%{transform:translate(5px,-2px);}55%{transform:translate(-3px,1px);}75%{transform:translate(2px,0);}}
   .mimg .kari{position:absolute;right:4px;top:3px;font-size:9px;font-style:normal;color:#fff8;background:#0006;border-radius:4px;padding:0 4px;}
   .mg.hit .mimg{animation:mhit .18s;}
+  /* 全滅したグループは暗くなりながら崩れるように沈んで消える／攻撃してくる敵は一瞬こちらへ迫る／一部が倒れたら一瞬暗くなる */
+  .mg.dying .mimg{animation:mdie .5s ease-in var(--dl,0s) forwards;} .mg.dying .mname,.mg.dying .micons,.mg.dying .mcnt{opacity:.25;}
+  .mg.atk .mimg{animation:matk .36s ease-out var(--dl,0s) both;}
+  .mg.lose .mimg{animation:mlose .36s ease-out var(--dl,0s) both;}
+  @keyframes mdie{0%{filter:brightness(1);transform:none;opacity:1;}40%{filter:brightness(.35) sepia(.4);}100%{filter:brightness(0);transform:translateY(22%) scaleY(.7);opacity:0;}}
+  @keyframes matk{0%{transform:none;}35%{transform:translateY(7%) scale(1.16);}100%{transform:none;}}
+  @keyframes mlose{0%{filter:brightness(1);}40%{filter:brightness(.35);}100%{filter:brightness(1);}}
   .mimg img,.mimg .glyph{transition:filter .15s;} #party{transition:box-shadow .15s;}
   .mg.tint .mimg img,.mg.tint .mimg .glyph{filter:var(--tf) drop-shadow(0 0 10px var(--tc)) !important;}
   .ftxt{position:fixed;z-index:60;transform:translate(-50%,-50%);font-size:24px;color:#fff;text-shadow:0 0 4px #000,0 2px 0 #000,2px 0 0 #000,-2px 0 0 #000;pointer-events:none;animation:ftxt .85s ease-out forwards;white-space:nowrap;}
