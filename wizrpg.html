@@ -83,9 +83,7 @@
   .encfx{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;pointer-events:none;}
   .encfx canvas{position:absolute;inset:0;width:100%;height:100%;}
   .ambfx{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;} /* 迷宮の空気（塵・水滴） */
-  /* 宝箱：開けるときのガタガタ／罠の煙 */
-  #scene.rattle{animation:rattle .38s;}
-  @keyframes rattle{15%{transform:translate(-3px,1px) rotate(-.6deg);}35%{transform:translate(3px,-1px) rotate(.6deg);}55%{transform:translate(-2px,0) rotate(-.4deg);}75%{transform:translate(2px,1px);}}
+  /* 宝箱の罠の煙 */
   .smoke{position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse 60% 55% at 50% 62%,var(--sm),transparent 70%),radial-gradient(ellipse 40% 35% at 30% 45%,var(--sm),transparent 70%),radial-gradient(ellipse 40% 35% at 72% 48%,var(--sm),transparent 70%);animation:smoke 1.6s ease-out forwards;}
   @keyframes smoke{0%{opacity:0;transform:scale(.4) translateY(20%);}25%{opacity:.9;}100%{opacity:0;transform:scale(1.5) translateY(-12%);}}
   .elevfx{position:absolute;inset:0;width:100%;height:100%;z-index:2;} /* 昇降機の移動の演出（左上の表示は上に重ねる） */
@@ -307,7 +305,7 @@
   #cmd button:active{transform:none;}
   button::before{position:absolute;left:5px;top:50%;transform:translateY(-50%);font-size:12px;color:#fff;}
   button.gfocus::before,button:active::before{content:"▶";}
-  @media (hover:hover){ button:not(:disabled):hover::before{content:"▶";} }
+  @media (hover:hover){ body:not(.navmode) button:not(:disabled):hover::before{content:"▶";} }
   /* キーボード・コントローラーで選んでいる項目：光る枠の代わりに ▶（ボタン以外の行は白い細線で囲む） */
   .gfocus{outline:none !important;box-shadow:none !important;}
   .prow.gfocus,.prow.cur{outline:1px solid #fff !important;outline-offset:-1px;background:none;border-radius:0;}

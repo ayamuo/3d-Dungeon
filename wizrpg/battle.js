@@ -919,7 +919,6 @@ async function chestBody({ gold, items, trapLv }) {
     if (k === "open") {
       const c = await pickMember("誰が開ける？", x => x.status === "ok");
       if (!c) continue;
-      await chestRattle();
       if (!disarmed) { const r = await springTrap(trap, c, trapLv); if (r === "gone") return; }
       break;
     }
@@ -970,13 +969,6 @@ async function chestBody({ gold, items, trapLv }) {
   renderParty(); saveGame();
   await tell(got.length ? "宝箱を開けた！\n" + got.join("\n") : "宝箱は空っぽだった。");
 }
-/* 宝箱を開けるとき、箱（表示窓の絵）が小さくガタガタ揺れる */
-async function chestRattle() {
-  const sc = $("scene"); sc.classList.remove("rattle"); void sc.offsetWidth; sc.classList.add("rattle");
-  Snd.play("move");
-  await sleep(380);
-  sc.classList.remove("rattle");
-}
 /* 罠の煙：色の付いた煙が表示窓いっぱいに広がって薄れていく（画面を白く光らせることはしない） */
 function trapSmoke(color) {
   const st = $("stage"), fx = document.createElement("div");
@@ -985,12 +977,10 @@ function trapSmoke(color) {
 }
 async function springTrap(trap, c, lv) {
   vibrate(100);
-  // 罠ごとの見た目：爆弾は大きく揺れて茶色い煙、毒ガスは緑の煙、呪文の罠は紫の煙、針や矢は小さく揺れる
+  // 罠ごとの見た目：爆弾は大きく揺れて茶色い煙、毒ガスは緑の煙、呪文の罠は紫の煙
   if (trap === "bomb") { stageShake(); trapSmoke("rgba(120,90,60,.85)"); }
   else if (trap === "gas") trapSmoke("rgba(90,170,70,.8)");
-  else if (trap === "mblast" || trap === "pblast") { trapSmoke("rgba(130,70,180,.8)"); stageShake(); }
-  else if (["needle", "arrow", "stunner"].includes(trap)) { const sc = $("scene"); sc.classList.remove("rattle"); void sc.offsetWidth; sc.classList.add("rattle"); }
-  Snd.play({ needle: "trap_needle", arrow: "trap_arrow", gas: "breath_gas", stunner: "trap_stun", bomb: "trap_bomb", teleport: "tele", alarm: "trap", mblast: "darkspell", pblast: "darkspell" }[trap] || "trap");
+  else if (trap === "mblast" || trap === "pblast") { trapSmoke("rgba(130,70,180,.8)"); stageShake(); }  Snd.play({ needle: "trap_needle", arrow: "trap_arrow", gas: "breath_gas", stunner: "trap_stun", bomb: "trap_bomb", teleport: "tele", alarm: "trap", mblast: "darkspell", pblast: "darkspell" }[trap] || "trap");
   const alive = partyChars().filter(x => isAlive(x) && x.status !== "stone");
   const deaths = [];
   const hurt = (x, d) => { if (damageChar(x, d)) deaths.push(x.name); };

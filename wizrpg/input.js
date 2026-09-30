@@ -5,6 +5,8 @@
 "use strict";
 const Nav = (() => {
   let navMode = false;   // キーボードかゲームパッドを最後に使ったか（タップしたら枠を消す）
+  // コントローラ・キーボードで操作している間は body に navmode を付ける（マウスの位置に出る ▶ を隠し、カーソルが2つ出ないようにする）
+  const setNav = v => { navMode = v; document.body.classList.toggle("navmode", v); };
   let cur = null;        // 選択中の要素
   let cmdCur = null;     // 画面下のボタン欄で最後に選んでいた要素（ダイアログを閉じたら戻す）
   const CANCEL_WORDS = ["とじる", "もどる", "やめる", "いいえ", "降りない", "キャンプを出る", "町へ戻る", "そのまま"];
@@ -132,7 +134,7 @@ const Nav = (() => {
   /* 共通の入力（キーボードとゲームパッドの両方から呼ぶ） */
   function press(k, repeat) {
     markActive(); // プレイ時間を数えるための「操作した」印
-    navMode = true;
+    setNav(true);
     const h = help();
     if (h) {
       if (k === "left" || k === "right") { if (!repeat) helpTab(k === "right" ? 1 : -1); }
@@ -162,7 +164,9 @@ const Nav = (() => {
   new MutationObserver(refresh).observe($("ov"), { childList: true });
   new MutationObserver(refresh).observe($("helpOv"), { attributes: true, attributeFilter: ["class"] });
   // タップやクリックをしたら枠を消す
-  document.addEventListener("pointerdown", e => { if (e.isTrusted && navMode) { navMode = false; if (cur) cur.classList.remove("gfocus"); } }, true);
+  document.addEventListener("pointerdown", e => { if (e.isTrusted && navMode) { setNav(false); if (cur) cur.classList.remove("gfocus"); } }, true);
+  // マウスを動かしたら、マウスで操作しているとみなす（キーボード・コントローラのカーソルは消す）
+  document.addEventListener("mousemove", e => { if (e.isTrusted && navMode && (Math.abs(e.movementX) + Math.abs(e.movementY) > 2)) { setNav(false); if (cur) cur.classList.remove("gfocus"); } }, true);
 
   /* ── キーボード ── */
   document.addEventListener("keydown", e => {
@@ -170,7 +174,7 @@ const Nav = (() => {
     if (inInput && !["Enter", "Escape", "ArrowUp", "ArrowDown"].includes(e.key)) return;
     if (mazePad() && !help()) {
       // 迷宮の移動キー（矢印・WASDなど）は explore.js 側で処理している。ここでは決定キーと遊び方だけ
-      if (["Enter", " "].includes(e.key)) { e.preventDefault(); navMode = true; mazeA(); }
+      if (["Enter", " "].includes(e.key)) { e.preventDefault(); setNav(true); mazeA(); }
       return;
     }
     const k = { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right", Enter: "a", " ": "a", z: "a", Z: "a",

@@ -100,7 +100,7 @@ const Snd = (() => {
     buff: "buff", buff_party: "buff_party", shield: "shield", debuff: "debuff", sleep: "sleep", darkspell: "darkspell", holy: "holy",
     drainspell: "drainspell", tele: "warp", light: "light", magic: "light",
     // 罠・迷宮
-    stairs: "stairs", door: "door", elevator: "elevator",
+    stairs: "stairs", door: "door", elevator: "elevator", drip: "drip", clank: "clank",
     potion_l: "heal_l", // 上等な回復薬（呪文の大回復と同じ音を短くして使う）
     encounter: "encounter", chest: "chest", trap_arrow: "trap_arrow", trap_needle: "trap_needle", trap_bomb: "explosion", trap_stun: "trap_stun", land: "land", rumble: "rumble",
   };
