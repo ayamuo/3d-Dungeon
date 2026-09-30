@@ -48,7 +48,7 @@ const Nav = (() => {
     return (ov ? "ov:" : "cmd:") + (t ? t.textContent : "").replace(/[0-9０-９,，]+/g, "#");
   }
   // 覚えないもの：戦闘中（キャラごとに行動が違うので毎回はじめの位置から）、閉じる・戻るのボタン
-  const isCancelBtn = el => !!el.closest(".sfoot") || el.classList.contains("back") || CANCEL_WORDS.includes(el.textContent.trim());
+  const isCancelBtn = el => (!!el.closest(".sfoot") && !el.classList.contains("keep")) || el.classList.contains("back") || CANCEL_WORDS.includes(el.textContent.trim());
   function remember(el) {
     if (help() || mazePad() || BT || isCancelBtn(el)) return;
     memo[scopeKey()] = { v: el.dataset.v, text: el.textContent };
@@ -210,5 +210,7 @@ const Nav = (() => {
   });
   if (navigator.getGamepads && [...navigator.getGamepads()].some(Boolean)) start();
 
-  return { press };
+  // 画面の見出しを指定して、次に開いたときのカーソル位置（項目の data-v）を覚えさせる
+  function recall(title, v) { memo["ov:" + title.replace(/[0-9０-９,，]+/g, "#")] = { v: String(v) }; }
+  return { press, recall };
 })();

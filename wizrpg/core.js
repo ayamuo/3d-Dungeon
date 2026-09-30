@@ -693,7 +693,7 @@ function listPick(title, items, o = {}) {
   return new Promise(res => {
     const ov = $("ov");
     ov.innerHTML = "";
-    const box = document.createElement("div"); box.className = "sheet";
+    const box = document.createElement("div"); box.className = "sheet" + (o.cls ? " " + o.cls : "");
     box.innerHTML = `<div class="shead"><b>${esc(title)}</b>${o.right ? `<span>${o.right}</span>` : ""}</div>`;
     if (o.note) { const n = document.createElement("div"); n.className = "snote"; n.innerHTML = o.note; box.appendChild(n); }
     const list = document.createElement("div"); list.className = "slist" + (o.grid2 ? " g2" : "");

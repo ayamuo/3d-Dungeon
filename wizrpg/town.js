@@ -672,8 +672,9 @@ function bookDetail(def) {
   }
   return h;
 }
+let bookLast = null; // 図鑑を閉じても、次に開いたとき同じ怪物にカーソルを戻す
 async function monsterBook() {
-  let last;
+  let last = bookLast;
   while (true) {
     const known = MONSTERS.filter(d => bookLevel(d) >= 1).length;
     const items = MONSTERS.map((d, i) => {
@@ -681,16 +682,21 @@ async function monsterBook() {
       return { html: `<span class="bkrow">${bookImg(d, lv)}<small>No.${i + 1}</small> ${lv > 0 ? esc(d.name) : lv === 0 ? "？？？" : "―――"}</span>`,
         right: b && b.k ? `${b.k}体` : "", value: d.id, disabled: lv < 0 };
     });
-    const id = await listPick("モンスター図鑑", items, { right: `${known}/${MONSTERS.length}`, focus: last });
+    // 詳しい画面から戻ったら、最後に見ていた怪物にカーソルを置き、その行が見えるようにする
+    if (last) Nav.recall("モンスター図鑑", last);
+    const pr = listPick("モンスター図鑑", items, { right: `${known}/${MONSTERS.length}`, cls: "book" });
+    const row = last && document.querySelector(`#ov .srow[data-v="${last}"]`);
+    if (row) row.scrollIntoView({ block: "center" });
+    const id = await pr;
     if (!id) return;
-    last = id;
+    last = bookLast = id;
     let i = MONSTERS.findIndex(d => d.id === id);
     while (true) {
-      const v = await dialog(bookDetail(MONSTERS[i]), [{ label: "◀ 前", value: -1 }, { label: "もどる", value: 0, cls: "pri" }, { label: "次 ▶", value: 1 }], { title: "モンスター図鑑", cls: "book" });
+      const v = await dialog(bookDetail(MONSTERS[i]), [{ label: "◀ 前", value: -1, cls: "keep" }, { label: "もどる", value: 0, cls: "pri" }, { label: "次 ▶", value: 1, cls: "keep" }], { title: "モンスター図鑑", cls: "book" });
       if (!v) break;
       let j = i;
       do { j = (j + v + MONSTERS.length) % MONSTERS.length; } while (bookLevel(MONSTERS[j]) < 0 && j !== i);
-      i = j; last = MONSTERS[i].id;
+      i = j; last = bookLast = MONSTERS[i].id;
     }
   }
 }

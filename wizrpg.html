@@ -325,7 +325,7 @@
   .sheet.narrow{max-width:280px;}
   /* モンスター図鑑 */
   .bloodfx{position:fixed;pointer-events:none;z-index:60;}
-  .sheet.book{max-width:380px;}
+  .sheet.book{max-width:380px;height:min(560px, calc(var(--vh, 100vh) * 0.88));animation:none;} /* 図鑑は一覧も詳しい画面も同じ大きさのまま（めくっても窓が伸び縮みしない） */
   .bkrow{display:flex;align-items:center;gap:8px;}
   .bkrow small{opacity:.6;min-width:3.2em;}
   .bkimg{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;}
