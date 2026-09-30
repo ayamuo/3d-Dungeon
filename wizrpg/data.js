@@ -209,7 +209,8 @@ const KEYITEMS = {
    hp: ダイス / ac / atk: 攻撃ごとのダメージ / grp: 1グループの数 / fl: 出現階
    特殊: poison 毒, para 麻痺, stone 石化, drain レベル吸収, crit 首はね, sleepAtk 眠り
    breath: ブレス(火fire/冷cold/毒gas) / spells: {M:使える魔術レベル, P:僧侶レベル} / call: 仲間を呼ぶ確率
-   mr: 呪文無効化率(%) / res: 効きにくい属性 / flee: 逃走しやすさ / friendly: 友好的な確率 */
+   mr: 呪文無効化率(%) / res: 効きにくい属性 / flee: 行動のたびに逃げる確率 / friendly: 友好的な確率
+   hard: どんな攻撃も1ダメージしか通らない / fast: 素早さ（先に動きやすい） / rare: 出会いにくさ（その階の候補に入る確率） */
 const MONSTERS = [
   { id: "slime",    name: "泡スライム", unk: "ぬめぬめした物体", g: "🟢", col: "#3a7",  lv: 1, hp: "1d5",  ac: 9, atk: ["1d2"], grp: [2, 6], fl: [1, 2], type: "slime" },
   { id: "rat",      name: "大ネズミ",       unk: "小さな動物",   g: "🐀", col: "#876", lv: 1, hp: "1d4",  ac: 8, atk: ["1d3"], grp: [3, 7], fl: [1, 2], type: "animal", friendly: 0.05 },
@@ -250,6 +251,7 @@ const MONSTERS = [
   { id: "wight",    name: "ワイト",         unk: "不気味な影",   g: "👤", col: "#557", lv: 6, hp: "5d8",  ac: 4, atk: ["1d6"], drain: 0.07, grp: [1, 4], fl: [5, 7], type: "undead", res: ["sleep"] },
   { id: "hmage",    name: "上位魔術師",     unk: "ローブの男",   g: "🧙", col: "#74d", lv: 6, hp: "5d6",  ac: 6, atk: ["1d6"], grp: [1, 3], fl: [5, 7], type: "human", spells: { M: 4 }, mr: 10 },
   { id: "foxlord",  name: "刃尾ギツネの長", unk: "小さな獣",     g: "🦊", col: "#fc6", lv: 7, hp: "6d8+10", ac: 1, atk: ["1d6", "1d6"], crit: 0.15, grp: [1, 1], fl: [0, 0], type: "animal", exp: 1500 },
+  { id: "vorpal",   name: "首狩りウサギ",   unk: "小さな獣",     g: "🐇", col: "#eee", lv: 6, hp: "1d4+5", ac: -6, atk: ["1d4"], crit: 0.3, grp: [1, 3], fl: [4, 9], type: "animal", res: ["sleep"], mr: 80, hard: 1, flee: 0.65, fast: 8, rare: 0.25, exp: 8000 },
   { id: "golem",    name: "クレイゴーレム", unk: "巨大な人形",   g: "🗿", col: "#a85", lv: 7, hp: "8d8",  ac: 2, atk: ["3d6"], grp: [1, 3], fl: [6, 7], type: "other", res: ["sleep"], mr: 20 },
   { id: "troll",    name: "トロル",         unk: "大きな人影",   g: "🦍", col: "#686", lv: 7, hp: "7d8",  ac: 4, atk: ["1d8", "1d8", "2d6"], regen: 3, grp: [1, 4], fl: [6, 8], type: "human" },
   { id: "medusa",   name: "メデューサ",     unk: "蛇髪の女",     g: "🐍", col: "#5a5", lv: 7, hp: "6d8",  ac: 5, atk: ["1d6"], stone: 0.12, grp: [1, 3], fl: [6, 7], type: "other" },

@@ -34,7 +34,8 @@ function identChance() {
   return clamp(0.3 + (iq - 10) * 0.04, 0.2, 0.7);
 }
 function randomGroups(fn) {
-  const pool = MONSTERS.filter(m => m.fl[0] && fn >= m.fl[0] && fn <= m.fl[1]);
+  // rare：めったに出ない怪物（出会う確率をこの割合に下げる）
+  const pool = MONSTERS.filter(m => m.fl[0] && fn >= m.fl[0] && fn <= m.fl[1] && (!m.rare || chance(m.rare)));
   let ng = 1 + (chance(0.5) ? 1 : 0) + (fn >= 4 && chance(0.35) ? 1 : 0) + (fn >= 8 && chance(0.25) ? 1 : 0);
   ng = Math.min(4, ng);
   const gs = [];
@@ -426,7 +427,7 @@ async function runRound(partyOn, monOn, groupLimit = 99) {
   const actors = [];
   if (partyOn) { for (const c of partyChars()) if (c._act) actors.push({ c, init: c.st.agi + agiBonus(c.st.agi) * 2 + rr(1, 10) }); }
   else partyChars().forEach(c => c._act = null);
-  if (monOn) for (const g of BT.groups.slice(0, groupLimit)) for (const m of g.ms) actors.push({ g, m, init: rr(1, 10) + Math.floor(g.def.lv / 2) + 4 });
+  if (monOn) for (const g of BT.groups.slice(0, groupLimit)) for (const m of g.ms) actors.push({ g, m, init: rr(1, 10) + Math.floor(g.def.lv / 2) + 4 + (g.def.fast || 0) }); // fast：素早い怪物は先に動く
   actors.sort((a, b) => b.init - a.init);
   for (const c of partyChars()) c._parry = c._act && c._act.t === "parry";
   for (const a of actors) {
@@ -510,6 +511,7 @@ async function playerAct(c, act) {
       d += strDmg(c.st.str) + (wd && wd.strUp ? 2 : 0);
       if (wd && wd.slay && wd.slay === g.def.type) d *= 2;
       if (m.status === "sleep") d = Math.round(d * 1.3);
+      if (g.def.hard) d = 1; // 硬い毛皮の怪物は、どんな一撃も1しか通らない（会心の一撃なら仕留められる）
       dmg += Math.max(1, d); each.push(Math.max(1, d));
       const cr = CLASSES[c.cls].crit || 0;
       if (!g.def.boss && (cr || (wd && wd.critUp))) {
@@ -584,6 +586,7 @@ async function spellEffect(c, sp, tgt, fromItem) {
           if (resist(g)) { blocked++; continue; }
           let d = dice(sp.dice);
           if (weak) d = Math.floor(d / 2);
+          if (g.def.hard) d = 1;
           tot += d; m.hp -= d; each.push(d);
           if (m.hp <= 0) { killMon(g, m); kills++; c.kills++; }
         }
@@ -606,7 +609,7 @@ async function spellEffect(c, sp, tgt, fromItem) {
         if (resist(g) || g.def.boss) continue;
         if (sp.eff === "sleep") { if (g.def.res && g.def.res.includes("sleep")) continue; if (chance(clamp(0.85 - g.def.lv * 0.05, 0.1, 0.85))) { m.status = "sleep"; n++; } }
         else if (sp.eff === "silence") { if (chance(clamp(0.8 - g.def.lv * 0.03, 0.2, 0.8))) { g.silenced = true; n++; } }
-        else { if (g.def.type === "undead" || g.def.type === "other") continue; if (chance(g.def.lv <= 4 ? 0.9 : g.def.lv <= 8 ? 0.6 : 0.25)) { killMon(g, m); n++; c.kills++; } }
+        else { if (g.def.type === "undead" || g.def.type === "other" || g.def.hard) continue; if (chance(g.def.lv <= 4 ? 0.9 : g.def.lv <= 8 ? 0.6 : 0.25)) { killMon(g, m); n++; c.kills++; } }
       }
       const w = { sleep: "眠った", silence: "沈黙した", suffocate: "窒息して倒れた" }[sp.eff];
       const noSleep = sp.eff === "sleep" && g.def.res && g.def.res.includes("sleep");
@@ -726,7 +729,10 @@ function saveThrow(c, base) { return chance(clamp(base + (c.st.luk - 10) * 0.02 
 function partyAC(c) { return computeAC(c, true) + (c._parry ? -2 : 0) + (c.status === "sleep" ? 5 : 0); }
 async function monsterAct(g, m) {
   const def = g.def, nm = gName(g);
-  // 逃走
+  // 逃走（flee：逃げ足の速い怪物は、傷の有無に関係なく逃げる）
+  if (def.flee && !BT.fixed && chance(def.flee)) {
+    m.hp = 0; cleanupGroups(); Snd.play("flee"); await bmsg(`${nm}は逃げ出した。`); return;
+  }
   if (!def.boss && !BT.fixed && m.hp < m.maxhp * 0.3 && (def.type === "human" || def.type === "animal") && chance(0.1)) {
     m.hp = 0; cleanupGroups(); Snd.play("flee"); await bmsg(`${nm}は逃げ出した。`); return;
   }
