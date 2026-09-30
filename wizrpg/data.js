@@ -252,7 +252,7 @@ const MONSTERS = [
   { id: "wight",    name: "ワイト",         unk: "不気味な影",   g: "👤", col: "#557", lv: 6, hp: "5d8",  ac: 4, atk: ["1d6"], drain: 0.07, grp: [1, 4], fl: [5, 7], type: "undead", res: ["sleep"] },
   { id: "hmage",    name: "上位魔術師",     unk: "ローブの男",   g: "🧙", col: "#74d", lv: 6, hp: "5d6",  ac: 6, atk: ["1d6"], grp: [1, 3], fl: [5, 7], type: "human", spells: { M: 4 }, mr: 10 },
   { id: "foxlord",  name: "刃尾ギツネの長", unk: "小さな獣",     g: "🦊", col: "#fc6", lv: 7, hp: "6d8+10", ac: 1, atk: ["1d6", "1d6"], crit: 0.15, grp: [1, 1], fl: [0, 0], type: "animal", exp: 1500 },
-  { id: "vorpal",   name: "首狩りウサギ",   unk: "小さな獣",     g: "🐇", col: "#eee", lv: 6, hp: "1d4+5", ac: -6, atk: ["1d4"], crit: 0.3, grp: [1, 3], fl: [4, 9], type: "animal", res: ["sleep"], mr: 80, hard: 1, flee: 0.65, fast: 8, rare: 0.25, grpUp: 1, exp: 8000 },
+  { id: "vorpal",   name: "首狩りウサギ",   unk: "小さな獣",     g: "🐇", col: "#eee", lv: 6, hp: "1d4+5", ac: -6, atk: ["1d4"], crit: 0.3, grp: [1, 3], fl: [4, 9], type: "animal", res: ["sleep"], mr: 80, hard: 1, flee: 0.65, fast: 8, rare: 0.25, grpUp: 1, exp: 48000 },
   { id: "golem",    name: "クレイゴーレム", unk: "巨大な人形",   g: "🗿", col: "#a85", lv: 7, hp: "8d8",  ac: 2, atk: ["3d6"], grp: [1, 3], fl: [6, 7], type: "other", res: ["sleep"], mr: 20 },
   { id: "troll",    name: "トロル",         unk: "大きな人影",   g: "🦍", col: "#686", lv: 7, hp: "7d8",  ac: 4, atk: ["1d8", "1d8", "2d6"], regen: 3, grp: [1, 4], fl: [6, 8], type: "human" },
   { id: "medusa",   name: "メデューサ",     unk: "蛇髪の女",     g: "🐍", col: "#5a5", lv: 7, hp: "6d8",  ac: 5, atk: ["1d6"], stone: 0.12, grp: [1, 3], fl: [6, 7], type: "other" },
