@@ -711,31 +711,27 @@ function bookDetail(def) {
   const row = (k, v, wide) => `<div class="bkc${wide ? " wide" : ""}"><span>${k}</span><b>${v}</b></div>`;
   let h = `<div class="bkhead">${bookImg(def, lv, true)}<div><div class="bkno">No.${no}</div><div class="bkname">${lv > 0 ? esc(def.name) : "？？？"}</div>`;
   h += `<div class="bkunk">${lv >= 0 ? "見た目：" + esc(def.unk) : ""}</div><div class="bkcnt">出会った数 ${b.s}　倒した数 ${b.k}</div></div></div>`;
-  if (lv >= 1 && BOOK_DESC[def.id]) h += `<p class="bkdesc">${esc(BOOK_DESC[def.id])}</p>`;
-  const rows = [];
-  if (lv >= 1) {
-    rows.push(row("種類", MON_TYPE_NAME[def.type] || "―"));
-    rows.push(row("出る場所", def.fl[0] ? `地下${def.fl[0]}〜${def.fl[1]}階` : "決まった場所"));
-    rows.push(row("経験値", monExp(def).toLocaleString()));
-  }
-  if (lv >= 2) {
-    rows.push(row("群れ", def.grp[0] === def.grp[1] ? `${def.grp[0]}体` : `${def.grp[0]}〜${def.grp[1]}体`));
-    rows.push(row("体力", diceRange(def.hp)));
-    rows.push(row("守り（AC）", def.ac));
-    rows.push(row("攻撃", def.atk.length ? `${def.atk.length}回（${def.atk.map(diceRange).join("、")}）` : "打撃はしない", true));
-  }
-  if (lv >= 3) {
-    const sp = MON_ICONS.filter(([f]) => f(def)).filter(([, e]) => e !== "🚫").map(([, e, t]) => `${e}${t}`);
-    if (def.spells) sp.push(`（${[def.spells.M && "魔術" + def.spells.M, def.spells.P && "僧侶" + def.spells.P].filter(Boolean).join("・")}レベルまで）`);
-    if (def.hard) sp.push("🛡️どんな攻撃も1しか通らない");
-    if (def.flee) sp.push("💨すぐ逃げる");
-    if (def.friendly) sp.push("🤝友好的なことがある");
-    const res = (def.res || []).map(r => ({ sleep: "眠り", fire: "炎", cold: "冷気", elec: "雷" }[r] || r));
-    rows.push(row("効きにくい", res.length ? res.join("・") : "なし"));
-    rows.push(row("呪文を消す", def.mr ? def.mr + "%" : "なし"));
-    rows.push(row("特殊な力", sp.length ? sp.join("<br>") : "なし", true));
-  }
-  if (rows.length) h += `<div class="bkgrid">${rows.join("")}</div>`;
+  // 項目の並びはいつも同じにし、まだわからないものは「不明」と出す（めくっても表の位置が動かないように）
+  const U = "不明", rows = [];
+  const sp = MON_ICONS.filter(([f]) => f(def)).filter(([, e]) => e !== "🚫").map(([, e, t]) => `${e}${t}`);
+  if (def.spells) sp.push(`（${[def.spells.M && "魔術" + def.spells.M, def.spells.P && "僧侶" + def.spells.P].filter(Boolean).join("・")}レベルまで）`);
+  if (def.hard) sp.push("🛡️どんな攻撃も1しか通らない");
+  if (def.flee) sp.push("💨すぐ逃げる");
+  if (def.friendly) sp.push("🤝友好的なことがある");
+  const res = (def.res || []).map(r => ({ sleep: "眠り", fire: "炎", cold: "冷気", elec: "雷" }[r] || r));
+  rows.push(row("種類", lv >= 1 ? MON_TYPE_NAME[def.type] || "―" : U));
+  rows.push(row("出る場所", lv >= 1 ? (def.fl[0] ? `地下${def.fl[0]}〜${def.fl[1]}階` : "決まった場所") : U));
+  rows.push(row("経験値", lv >= 1 ? monExp(def).toLocaleString() : U));
+  rows.push(row("群れ", lv >= 2 ? (def.grp[0] === def.grp[1] ? `${def.grp[0]}体` : `${def.grp[0]}〜${def.grp[1]}体`) : U));
+  rows.push(row("体力", lv >= 2 ? diceRange(def.hp) : U));
+  rows.push(row("守り（AC）", lv >= 2 ? def.ac : U));
+  rows.push(row("攻撃", lv >= 2 ? (def.atk.length ? `${def.atk.length}回（${def.atk.map(diceRange).join("、")}）` : "打撃はしない") : U, true));
+  rows.push(row("効きにくい", lv >= 3 ? (res.length ? res.join("・") : "なし") : U));
+  rows.push(row("呪文を消す", lv >= 3 ? (def.mr ? def.mr + "%" : "なし") : U));
+  rows.push(row("特殊な力", lv >= 3 ? (sp.length ? sp.join("<br>") : "なし") : U, true));
+  h += `<div class="bkgrid">${rows.join("")}</div>`;
+  // 説明文は表の下に（行数が違っても、表の位置がずれないように）
+  h += `<p class="bkdesc">${lv >= 1 && BOOK_DESC[def.id] ? esc(BOOK_DESC[def.id]) : "どんな生き物か、まだよくわからない。"}</p>`;
   if (lv >= 0 && lv < 3) {
     const need = lv <= 0 ? 1 : lv === 1 ? BOOK_LV2 : BOOK_LV3;
     h += `<p class="bknext">あと${need - b.k}体倒すと、さらにくわしくわかる。</p>`;
