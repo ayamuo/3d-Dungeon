@@ -683,11 +683,7 @@ async function elevatorRide(from, to, kind = "elev", dest = null) {
       $("hud").innerHTML = `昇降機 ${down ? "▼" : "▲"} 地下${cur}階`;
     }
   };
-  await new Promise(res => {
-    const t0 = performance.now();
-    const frame = now => { const p = Math.min(1, (now - t0) / T); draw(p); if (p < 1) requestAnimationFrame(frame); else res(); };
-    requestAnimationFrame(frame);
-  });
+  await animate(T, draw);
   fx.remove();
 }
 /* 落とし穴の演出：景色が加速して上へずれ（穴に落ちる）、底に着いた瞬間に「ドスン」と揺れ、ゆっくり元に戻る（はい上がる） */
@@ -709,11 +705,7 @@ async function pitFx() {
     g.drawImage(A, 0, off);
     g.fillStyle = `rgba(0,0,0,${dark.toFixed(3)})`; g.fillRect(0, 0, W, H);
   };
-  await new Promise(res => {
-    const t0 = performance.now();
-    const frame = now => { const p = Math.min(1, (now - t0) / T); draw(p); if (p < 1) requestAnimationFrame(frame); else res(); };
-    requestAnimationFrame(frame);
-  });
+  await animate(T, draw);
   fx.remove();
 }
 /* 瞬間移動の演出。今の景色が青白い光の粒と一緒に渦を巻きながら真ん中へ吸い込まれ、暗闇に小さな星が瞬いたあと、
@@ -757,11 +749,7 @@ async function warpFx(apply) {
       g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, r, 0, 7); g.fill();
     }
   };
-  await new Promise(res => {
-    const t0 = performance.now();
-    const frame = now => { const p = Math.min(1, (now - t0) / T); draw(p); if (p < 1) requestAnimationFrame(frame); else res(); };
-    requestAnimationFrame(frame);
-  });
+  await animate(T, draw);
   fx.remove();
 }
 /* 封印の祭壇（クリア後）。星灯を取り除くと、封印の奥の星喰いが目を覚ます */
@@ -1156,13 +1144,7 @@ function walkMs(kind) {
   const m = { off: 0, fast: 1, normal: 1.7 }[walkSpeed()];
   return m ? (kind === "turn" ? 80 : 100) * m : 0;
 }
-function animate(ms, fn) {
-  return new Promise(res => {
-    const t0 = performance.now();
-    const step = now => { const t = Math.min(1, (now - t0) / ms); fn(t); if (t < 1) requestAnimationFrame(step); else res(); };
-    requestAnimationFrame(step);
-  });
-}
+// 歩く動きも、core.js の animate（時間が来たら必ず終わる）を使う
 async function animForward() {
   const ms = walkMs("move");
   if (!ms || document.hidden) return;
@@ -1306,6 +1288,8 @@ const Amb = (() => {
   }
   return { start };
 })();
+// 別のタブなどから戻ったら、迷宮の空気をすぐ再開する（次に歩くまで止まったままにしない）
+document.addEventListener("visibilitychange", () => { if (!document.hidden) Amb.start(); });
 
 /* 昇降機の鉄の模様をプログラムで作る（一度作ったら使い回す）。細かいざらつき・錆のしみ・引っかき傷。
    端で途切れないよう、しみと傷は上下左右にずらした位置にも描いて、並べたときにつながるようにする */

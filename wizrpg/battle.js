@@ -89,11 +89,7 @@ async function bossReveal(def) {
     else { g.font = `${Math.round(h * .6)}px sans-serif`; g.textAlign = "center"; g.textBaseline = "middle"; g.fillStyle = "#000"; g.fillText(def.g, W / 2, H / 2); }
     g.restore();
   };
-  await new Promise(res => {
-    const t0 = performance.now();
-    const frame = now => { const p = Math.min(1, (now - t0) / T); draw(p); if (p < 1) requestAnimationFrame(frame); else res(); };
-    requestAnimationFrame(frame);
-  });
+  await animate(T, draw);
   await sleep(250);
   return fx;
 }

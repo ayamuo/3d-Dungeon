@@ -23,6 +23,17 @@ function dice(str) { // "3d6+2" を振る
 }
 function diceMax(str) { const m = /^(\d+)(?:d(\d+))?([+-]\d+)?$/.exec(str); if (!m) return 0; return m[2] ? (+m[1]) * (+m[2]) + (m[3] ? +m[3] : 0) : +m[1]; }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+/* 演出のアニメーション：T ミリ秒かけて draw(p)（p＝0〜1）を呼ぶ。
+   画面の描き替えが止まっていても（見えていない画面・省電力など）、時間が来たら最後の絵を描いて必ず終わる（演出で遊びが止まらないように） */
+function animate(T, draw) {
+  return new Promise(res => {
+    const t0 = performance.now(); let done = false;
+    const finish = () => { if (done) return; done = true; try { draw(1); } catch (e) { } res(); };
+    const frame = () => { if (done) return; const p = Math.min(1, (performance.now() - t0) / T); draw(p); if (p < 1) requestAnimationFrame(frame); else finish(); };
+    requestAnimationFrame(frame);
+    setTimeout(finish, T + 400);
+  });
+}
 
 /* ────────── 効果音 ──────────
    あそびコレクションの sfx.js があればその音を使い、無い音はWebAudioで合成する。ミュートは全ゲーム共通。 */
