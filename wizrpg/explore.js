@@ -430,7 +430,6 @@ async function onEnterCell(noRandom) {
       }
     } else if (t.t === "elev") {
       S.elev[f.n] = 1;
-      logMsg("昇降機がある。");
       await elevator();
       return;
     }
@@ -628,8 +627,9 @@ async function elevator() {
     floors.push({ label: `地下${n}階`, value: n, disabled: n === S.pos.f || !reached, sub: n === S.pos.f ? "現在地" : reached ? "" : "未到達" });
   }
   Snd.play("elevator");
+  logMsg("昇降機を操作中……");
   const n = await choose(floors, { title: "昇降機だ。どの階へ行く？", cols: 3, cancel: true, cancelLabel: "降りない" });
-  if (!n) return;
+  if (!n) { logMsg("昇降機の操作をやめた。"); return; }
   Snd.play("elevator");
   const e = FLOORS[n].elev;
   await elevatorRide(S.pos.f, n);

@@ -636,12 +636,82 @@ function bookImg(def, lv, big) {
   if (lv < 0) return `<span class="${cls} ng"><span class="glyph">？</span></span>`;
   return `<span class="${cls}"><span class="glyph">${def.g}</span><img src="wizrpg/monsters/${def.id}.png" alt="" onerror="this.parentNode.classList.add('ng');this.remove()"></span>`;
 }
+/* 図鑑の説明文（1体倒すと読める） */
+const BOOK_DESC = {
+  slime: "坑道の水たまりから湧く泡の塊。触れたものをゆっくり溶かすが、動きは鈍く、踏みつぶせば弾けて消える。",
+  rat: "坑夫の弁当を狙って住みついた大ネズミ。群れで押し寄せ、牙で装備の革までかじり取る。",
+  kobold: "犬の頭をした小柄な亜人。ずる賢く臆病で、数をそろえてからでないと襲ってこない。",
+  orc: "豚の鼻を持つ亜人の戦士。力まかせに棍棒を振るうが、機嫌がよければ話が通じることもある。",
+  bat: "天井の闇にぶら下がる大コウモリ。灯の光に驚くと、群れで一斉に飛びかかってくる。",
+  acolyte: "迷宮で修行を積もうとする見習い僧侶。祈りの言葉はまだたどたどしいが、傷を癒す術を心得ている。",
+  apprent: "腕試しに潜った見習い魔術師。杖の先に灯る火はか細いが、油断すると眠りの術で足をすくわれる。",
+  bushwack: "坑道を根城にする山賊。冒険者の背後から忍び寄り、財布ごと命を奪おうとする。",
+  skeleton: "迷宮で倒れた戦士の骨が、錆びた剣を握ったまま動き出したもの。眠りを知らない。",
+  minerghost: "落盤に巻き込まれた坑夫の霊。今も掘り続けるように、つるはしを振り上げてさまよっている。",
+  banditboss: "地下1階の山賊たちを束ねる頭目。両手斧の一撃は重く、鉄格子の鍵を肌身離さず持っている。",
+  zombie: "腐りかけた死体が、何かに引かれて歩き回るもの。痛みを感じないので、倒れるまで向かってくる。",
+  highway: "黒い頭巾で顔を隠した追い剥ぎ。細身の剣で急所を狙う、ならず者より手慣れた盗賊。",
+  leech: "水路の底に潜む人ほどもある巨大なヒル。丸い口の牙で食いつき、毒を流し込む。",
+  hound: "迷宮に迷い込んで狂った犬。痩せこけているが、二度三度と続けざまに噛みついてくる。",
+  dwarfwar: "鉱脈を求めて潜ったドワーフの戦士。頑固だが義理堅く、無用な争いは好まない。",
+  priestess: "白と紫の法衣をまとう女司祭。仲間を癒し、敵の口を封じる祈りを使い分ける。",
+  gascloud: "坑道にたまった毒の気が、意思を持ったように漂うもの。吐きかける息は肺を焼く。",
+  koboldking: "水路の奥で骨の玉座にふんぞり返るコボルドの王。首には、下の階の扉を開ける鍵を下げている。",
+  coins: "持ち主の欲がしみついた金貨が、寄り集まって這い回るもの。倒せば、その金貨が手に入る。",
+  beetle: "岩盤を掘り進む巨大な甲虫。鎧のような甲殻は硬く、大顎は盾ごと腕を挟み砕く。",
+  wererat: "ネズミの呪いにかかった人間のなれの果て。噛まれると体がしびれて動けなくなる。",
+  vbat: "血の色に染まった吸血コウモリ。噛みついた傷から毒が回る。",
+  ninjaapp: "修行中の若い忍者。まだ未熟だが、ときおり急所を正確に突いてくる。",
+  mage: "深い青のローブの魔術師。炎や冷気の呪文を操り、後ろの列からでも容赦なく撃ってくる。",
+  hellhound: "地の底の熱で生まれた黒い魔犬。口から漏れる炎を、群れで一斉に吐きかける。",
+  bonelord: "かつて迷宮を守った騎士の亡骸。朽ちた甲冑の奥で、目に青い炎を燃やしている。",
+  gargoyle: "回廊を見張る石の魔物。動かなければ像と見分けがつかず、爪と牙で三度続けて襲う。",
+  werewolf: "満月を知らない地下で、狼の姿のまま戻れなくなった男。噛まれると体がしびれる。",
+  ogre: "人を食らう大鬼。知恵は回らないが、木の棍棒の一振りで並の戦士を叩き伏せる。",
+  dpuppy: "まだ若い緑の竜。大型犬ほどの大きさでも、吐く炎は一人前に熱い。",
+  knight: "主を失ってなお迷宮を巡る騎士。鍛えた剣と盾は堅く、礼を尽くせば剣を収めることもある。",
+  guard: "地下4階の詰所を守る番兵たち。揃いの鎧で隊列を組み、侵入者を通さない。",
+  watcher: "詰所を預かる古参の番兵長。封印の欠片を、灰の司祭にも冒険者にも渡すまいと大剣を構える。魔術の心得もある。",
+  bladefox: "尾が刃物のように研ぎ澄まされた小さな狐。すれ違いざまに首筋を切り裂く。",
+  harpy: "鳥の翼と鉤爪を持つ女の魔物。甲高い歌声で、聞いた者を眠りに誘う。",
+  wight: "干からびた死霊。冷たい手で触れた者から、生きてきた年月を吸い取っていく。",
+  hmage: "宙に浮かぶ魔法書を従えた上位魔術師。唱える呪文は重く、呪文への守りも固い。",
+  foxlord: "刃尾ギツネたちの長。三本の刃の尾を持ち、狙った首を外すことはめったにない。",
+  vorpal: "白い毛の小さなウサギ。姿を見せることはまれで、すぐに逃げてしまうが、追い詰められると一瞬で首を刈り取る。",
+  golem: "魔術師が粘土でこねて命を吹き込んだ人形。胸の魔法文字が消えるまで、黙々と拳を振るう。",
+  troll: "細長い手足の巨人。切られた傷がみるみるふさがるので、一気に仕留めないときりがない。",
+  medusa: "髪が生きた蛇の女。その目と目が合った者は、体の先から石に変わっていく。",
+  chimera: "獅子・山羊・蛇の頭を持つ合成獣。三つの口で噛みつき、炎まで吐く。",
+  ninja: "闇に溶ける熟練の忍者。二振りの刃を操り、隙を見せれば一撃で首をはねる。",
+  hpriest: "聖なる光をまとう高司祭。仲間を癒すだけでなく、死の言葉を唱える恐ろしい術者でもある。",
+  vampire: "蒼白い顔の吸血鬼の貴族。牙で生命力を吸い、魔術まで操る。眠ることはない。",
+  poisongiant: "毒の沼のそばに住む巨人。体からも口からも毒の煙を吐き、あたりを腐らせる。",
+  succubus: "コウモリの翼と角を持つ女の悪魔。甘い声で近づき、触れた者の生命力を奪う。",
+  wraith: "フードの奥が闇だけの霊体。鎖を引きずる音が近づいたら、生命力を守る備えを急げ。",
+  wyvern: "二本脚で翼を持つ飛竜。尾の先の毒針で刺されると、体じゅうに毒が回る。",
+  swampking: "毒の沼に潜む主。苔と藻に覆われた巨大なワニの怪物で、牙と毒の息で近づく者を沈める。",
+  firegiant: "炎の髪を持つ巨人。大剣の一振りも、吐く炎も、並の鎧では防ぎきれない。",
+  gdemon: "山羊の角と黒い翼を持つ上級悪魔。強い呪文を操り、呪文への守りも固く、仲間まで呼び寄せる。",
+  frostgiant: "氷の髭を持つ巨人。氷の斧の一撃と凍てつく息で、近づく者を凍らせる。",
+  reddragon: "真紅の鱗の巨竜。迷宮の最も深い層を住みかにし、吐く炎はパーティ全体を包み込む。",
+  mninja: "忍びの頂に立つ上忍。音もなく間合いに入り、狙った首は確実にはねる。",
+  archmage: "光の球を周りに浮かべた老魔術師。迷宮で最も強い呪文を知り、並の呪文はまず効かない。",
+  firekeeper: "宝物庫の前に立ちはだかる炎の巨人。腰に大きな鍵束を下げ、封印の欠片の一つを守っている。",
+  sphinx: "人の顔と獅子の体を持つ番人。問いに正しく答えた者は通し、答えられない者には力を示させる。",
+  demonlord: "星喰いの力に引かれて現れた異形の魔物。星空のような翼を広げ、強い呪文と仲間を呼ぶ声で道をふさぐ。",
+  royalguard: "モルヴァンに仕える灰色の鎧の親衛兵。眠りの術も受けつけず、隊列を崩さない。",
+  vlord: "吸血鬼たちの王。灰の司祭に雇われて道を守る。生命力を吸い尽くし、相手を消し去ることさえある。",
+  morvan: "かつて封印の守り人だった灰の司祭。終わらない見張りに疲れ、星喰いを目覚めさせようとした。",
+  hoshikui: "十の層の底に封じられていた、星を喰らうもの。その名を口にすることさえ、古い記録では禁じられていた。",
+};
 function bookDetail(def) {
   const lv = bookLevel(def), b = bookInit()[def.id] || { s: 0, k: 0 };
   const no = MONSTERS.indexOf(def) + 1;
-  const row = (k, v) => `<tr><th>${k}</th><td>${v}</td></tr>`;
+  // 1行に2項目。wide は1行まるごと使う（長い項目）
+  const row = (k, v, wide) => `<div class="bkc${wide ? " wide" : ""}"><span>${k}</span><b>${v}</b></div>`;
   let h = `<div class="bkhead">${bookImg(def, lv, true)}<div><div class="bkno">No.${no}</div><div class="bkname">${lv > 0 ? esc(def.name) : "？？？"}</div>`;
   h += `<div class="bkunk">${lv >= 0 ? "見た目：" + esc(def.unk) : ""}</div><div class="bkcnt">出会った数 ${b.s}　倒した数 ${b.k}</div></div></div>`;
+  if (lv >= 1 && BOOK_DESC[def.id]) h += `<p class="bkdesc">${esc(BOOK_DESC[def.id])}</p>`;
   const rows = [];
   if (lv >= 1) {
     rows.push(row("種類", MON_TYPE_NAME[def.type] || "―"));
@@ -649,10 +719,10 @@ function bookDetail(def) {
     rows.push(row("経験値", monExp(def).toLocaleString()));
   }
   if (lv >= 2) {
+    rows.push(row("群れ", def.grp[0] === def.grp[1] ? `${def.grp[0]}体` : `${def.grp[0]}〜${def.grp[1]}体`));
     rows.push(row("体力", diceRange(def.hp)));
     rows.push(row("守り（AC）", def.ac));
-    rows.push(row("攻撃", def.atk.length ? `${def.atk.length}回（${def.atk.map(diceRange).join("、")}）` : "打撃はしない"));
-    rows.push(row("群れ", def.grp[0] === def.grp[1] ? `${def.grp[0]}体` : `${def.grp[0]}〜${def.grp[1]}体`));
+    rows.push(row("攻撃", def.atk.length ? `${def.atk.length}回（${def.atk.map(diceRange).join("、")}）` : "打撃はしない", true));
   }
   if (lv >= 3) {
     const sp = MON_ICONS.filter(([f]) => f(def)).filter(([, e]) => e !== "🚫").map(([, e, t]) => `${e}${t}`);
@@ -660,12 +730,12 @@ function bookDetail(def) {
     if (def.hard) sp.push("🛡️どんな攻撃も1しか通らない");
     if (def.flee) sp.push("💨すぐ逃げる");
     if (def.friendly) sp.push("🤝友好的なことがある");
-    rows.push(row("特殊な力", sp.length ? sp.join("<br>") : "なし"));
     const res = (def.res || []).map(r => ({ sleep: "眠り", fire: "炎", cold: "冷気", elec: "雷" }[r] || r));
     rows.push(row("効きにくい", res.length ? res.join("・") : "なし"));
-    rows.push(row("呪文を打ち消す", def.mr ? def.mr + "%" : "なし"));
+    rows.push(row("呪文を消す", def.mr ? def.mr + "%" : "なし"));
+    rows.push(row("特殊な力", sp.length ? sp.join("<br>") : "なし", true));
   }
-  if (rows.length) h += `<table class="bktbl">${rows.join("")}</table>`;
+  if (rows.length) h += `<div class="bkgrid">${rows.join("")}</div>`;
   if (lv >= 0 && lv < 3) {
     const need = lv <= 0 ? 1 : lv === 1 ? BOOK_LV2 : BOOK_LV3;
     h += `<p class="bknext">あと${need - b.k}体倒すと、さらにくわしくわかる。</p>`;

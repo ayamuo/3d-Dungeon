@@ -348,9 +348,12 @@
   .bkno{opacity:.6;font-size:12px;}
   .bkname{font-size:18px;margin:2px 0;}
   .bkunk,.bkcnt{font-size:12px;opacity:.8;}
-  .bktbl{width:100%;border-collapse:collapse;font-size:13px;}
-  .bktbl th{width:7.5em;text-align:left;font-weight:400;opacity:.7;white-space:nowrap;padding:3px 10px 3px 0;vertical-align:top;}
-  .bktbl td{padding:3px 0;}
+  .bkdesc{font-size:12.5px;line-height:1.6;margin:0 0 8px;opacity:.92;}
+  .bkgrid{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;font-size:13px;} /* 1行に2項目 */
+  .bkc{display:flex;gap:6px;align-items:baseline;min-width:0;}
+  .bkc span{opacity:.7;white-space:nowrap;flex:none;}
+  .bkc b{font-weight:400;min-width:0;}
+  .bkc.wide{grid-column:1 / -1;}
   .bknext{font-size:12px;opacity:.75;margin-top:8px;}
   .bpcls span{background:none;border-color:#5a5a5a;color:#5a5a5a;border-radius:4px;}
   .bpcls span.ok{background:none;color:#fff;border-color:#fff;}
