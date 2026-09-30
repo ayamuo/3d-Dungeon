@@ -502,6 +502,7 @@ async function runRound(partyOn, monOn, groupLimit = 99) {
     if (!BT.groups.length) break;
     if (a.c) {
       if (a.c.status !== "ok" || !a.c._act) continue;
+      a.c._act.done = true; renderParty(); // 動き始めたら、HPの欄を行動の名前からHPに戻す
       const r = await playerAct(a.c, a.c._act);
       if (r) return r;
     } else {

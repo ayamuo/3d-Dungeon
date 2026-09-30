@@ -393,11 +393,8 @@ async function onEnterCell(noRandom) {
       noteTrap(f.n, S.pos.x, S.pos.y);
       await pitFx();
       await tell("落とし穴だ！");
-      for (const c of partyChars()) if (isAlive(c) && c.status !== "stone") {
-        if (chance(clamp((c.st.agi - 8) * 0.04, 0, 0.5))) continue;
-        damageChar(c, rr(1, 3 + f.n * 2));
-      }
-      renderParty(); await checkWipeOutside(); if (!S.inMaze) return;
+      await fallDamage(c => chance(clamp((c.st.agi - 8) * 0.04, 0, 0.5)) ? 0 : rr(1, 3 + f.n * 2));
+      await checkWipeOutside(); if (!S.inMaze) return;
     } else if (t.t === "chute") {
       Snd.play("fall"); vibrate(120);
       noteTrap(f.n, S.pos.x, S.pos.y);
@@ -405,8 +402,8 @@ async function onEnterCell(noRandom) {
       await elevatorRide(f.n, f.n + 1, "fall", [S.pos.x, S.pos.y]);
       await changeFloor(f.n + 1, S.pos.x, S.pos.y);
       Snd.play("land"); stageShake(); vibrate(120);
-      for (const c of partyChars()) if (isAlive(c) && c.status !== "stone") damageChar(c, rr(1, 8));
-      renderParty(); await checkWipeOutside();
+      await fallDamage(() => rr(1, 8));
+      await checkWipeOutside();
       return;
     } else if (t.t === "tele") {
       Snd.play("tele");
@@ -464,6 +461,20 @@ async function useTile() {
     await changeFloor(f.n - 1, S.pos.x, S.pos.y);
   } else if (t.t === "down") { await elevatorRide(f.n, f.n + 1, "stairs", [S.pos.x, S.pos.y]); await changeFloor(f.n + 1, S.pos.x, S.pos.y); }
   else if (t.t === "elev") await elevator();
+}
+/* 落とし穴・落とし戸のダメージ。roll(c) が0ならその人はかわした。誰が何ダメージ受けたかをまとめて出す */
+async function fallDamage(roll) {
+  const lines = [];
+  for (const c of partyChars()) {
+    if (!isAlive(c) || c.status === "stone") continue;
+    const d = roll(c);
+    if (!d) { lines.push(`${c.name}は身をかわした。`); continue; }
+    const died = damageChar(c, d);
+    popParty(c.id, "-" + d, "hurt"); shakeParty(c.id);
+    lines.push(died ? `${c.name}は${d}のダメージを受け、死んだ！` : `${c.name}は${d}のダメージを受けた。`);
+  }
+  renderParty();
+  if (lines.length) { Snd.play("hurt"); await tell(lines.join("\n")); }
 }
 async function stairsPrompt(text, act) {
   const r = await choose([{ label: act, value: true, cls: "pri" }, { label: "そのまま", value: false }], { title: text });
