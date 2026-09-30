@@ -260,17 +260,17 @@ function bloodFx(ox, oy, size) {
   if (!innerWidth) return;
   const z = uiZoom || 1, R = size * 3, dpr = Math.min(2, window.devicePixelRatio || 1);
   const cv = document.createElement("canvas"); cv.className = "bloodfx";
-  const L = ox - R, T = oy - R, W = R * 2, H = R * 2.2;
+  const L = ox - R * .4, T = oy - R, W = R * 2, H = R * 2.2;
   Object.assign(cv.style, { left: L / z + "px", top: T / z + "px", width: W / z + "px", height: H / z + "px" });
   cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
   document.body.appendChild(cv);
   const g = cv.getContext("2d"); g.scale(dpr, dpr);
-  const DUR = 1100, x0 = R, y0 = R, grav = size * 15;
-  // しぶきの粒：3回の脈に分けて噴き出す（最初がいちばん強い）。上向きの扇形に飛ぶ
+  const DUR = 1000, x0 = R * .4, y0 = R, grav = size * 11;
+  // しぶきの粒：3回の脈に分けて噴き出す（最初がいちばん強い）。右斜め上へ飛び散る
   const drops = [];
-  for (let i = 0; i < 70; i++) {
-    const pulse = i < 34 ? 0 : i < 56 ? 1 : 2, a = -Math.PI / 2 + (Math.random() - .5) * 1.5, sp = size * (2.2 + Math.random() * 3.8) * (1 - pulse * .22);
-    drops.push({ t0: pulse * 0.16 + Math.random() * 0.07, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: size * (.01 + Math.random() * .028),
+  for (let i = 0; i < 38; i++) {
+    const pulse = i < 18 ? 0 : i < 30 ? 1 : 2, a = -0.45 + (Math.random() - .5) * 1.0, sp = size * (1.8 + Math.random() * 2.6) * (1 - pulse * .22);
+    drops.push({ t0: pulse * 0.16 + Math.random() * 0.07, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, r: size * (.008 + Math.random() * .02),
       col: `rgb(${150 + Math.floor(Math.random() * 70)},${Math.floor(Math.random() * 14)},${10 + Math.floor(Math.random() * 18)})` });
   }
   return animate(DUR, p => {
@@ -278,7 +278,7 @@ function bloodFx(ox, oy, size) {
     const t = p * DUR / 1000, fade = p < .7 ? 1 : 1 - (p - .7) / .3;
     // 切り口から噴き出す赤い霧
     const mist = Math.max(0, 1 - p * 2.2);
-    if (mist > 0) { const gr = g.createRadialGradient(x0, y0, 0, x0, y0, size * .5); gr.addColorStop(0, `rgba(170,0,12,${(.55 * mist).toFixed(3)})`); gr.addColorStop(1, "rgba(120,0,8,0)"); g.fillStyle = gr; g.beginPath(); g.arc(x0, y0, size * .5, 0, 7); g.fill(); }
+    if (mist > 0) { const gr = g.createRadialGradient(x0, y0, 0, x0, y0, size * .3); gr.addColorStop(0, `rgba(170,0,12,${(.55 * mist).toFixed(3)})`); gr.addColorStop(1, "rgba(120,0,8,0)"); g.fillStyle = gr; g.beginPath(); g.arc(x0, y0, size * .3, 0, 7); g.fill(); }
     for (const d of drops) {
       const age = t - d.t0; if (age <= 0) continue;
       const x = x0 + d.vx * age, y = y0 + d.vy * age + grav * age * age / 2;
@@ -293,13 +293,13 @@ function bloodFx(ox, oy, size) {
 function bloodMon(gi) {
   const el = document.querySelector(`#scene .mg[data-g="${gi}"] .mimg`); if (!el) return;
   const img = el.querySelector("img"), r = (img || el).getBoundingClientRect();
-  bloodFx(r.left + r.width / 2, r.top + r.height * .34, Math.min(r.width, r.height) * .3);
+  bloodFx(r.left + r.width / 2, r.top + r.height * .34, Math.min(r.width, r.height) * .2);
 }
 // 仲間の首はね：パーティ表のその人の名前のあたりから、小さめに
 function bloodParty(id) {
   const el = document.querySelector(`#party .prow[data-id="${id}"]`); if (!el) return;
   const r = el.getBoundingClientRect();
-  bloodFx(r.left + Math.min(60, r.width * .2), r.top + r.height / 2, 46);
+  bloodFx(r.left + Math.min(60, r.width * .2), r.top + r.height / 2, 30);
 }
 function stageShake() { const st = $("stage"); st.classList.remove("encshake"); void st.offsetWidth; st.classList.add("encshake"); }
 function hitFx(gi) {
