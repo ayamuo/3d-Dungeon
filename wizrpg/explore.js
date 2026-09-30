@@ -1418,26 +1418,44 @@ function drawView() {
     };
   };
   const P3 = (m, a, v, hw, y) => { const [lx, z] = m(a, v, hw); return P(lx, y, z); };
-  // 下り階段：床の穴。段は入口側（v=0）から奥（v=1）へ下っていく
-  // （実際の透視だと段はふちに隠れて見えないため、穴の中を帯に分けて踏み面と蹴上げを描く）
+  // 下り階段：床の穴。段は入口側（v=0）から奥（v=1）へ、1段ずつ低くなっていく立体の段として描く。
+  // 穴の中は、両側と奥の石壁→遠い段から順に、穴の形で切り抜いて重ねる（切り抜きで、見えない面は自然に消える）。
+  // 実際の深さだと段がふちに隠れてしまうため、1段の落差は浅め（DY）にして、奥ほど暗くして深さを出す
   const drawDownStairs = (l, zn, zf, b, rel) => {
-    const m = cellMap(l, zn, zf, rel), hw = .4, N = 6;
+    // 奥へ下る向き（rel=0）は、遠いほど段がふちに隠れやすいので、1段の落差を距離に合わせて浅くする
+    const m = cellMap(l, zn, zf, rel), hw = .4, N = 6, VE = .84, BOT = -1.6;
+    const DY = rel === 0 ? Math.min(.07, .03 / Math.max(.3, zn)) : .06;
     const F = (a, v) => P3(m, a, v, hw, -.5);
     const hole = [F(-1, 0), F(1, 0), F(1, 1), F(-1, 1)];
     poly(hole, "#020203", null);
     g.save(); pathOf(hole); g.clip();
     const stone = TF || TW; // 段には、その階の床（無ければ壁）の石の模様を貼る
+    // 穴の内側の石壁（上は明るく、下へ行くほど闇に沈む）
+    const wallQ = (a0, v0, a1, v1) => {
+      const q = (a, v, y) => P3(m, a, v, hw, y), zz = m((a0 + a1) / 2, (v0 + v1) / 2, hw)[1];
+      const pts = [q(a0, v0, -.5), q(a1, v1, -.5), q(a1, v1, BOT), q(a0, v0, BOT)];
+      if (TW) texFace(pts, TW, .45, b * .28, zz); else poly(pts, rgbK(32, 34, 42, b), null);
+      const top = (pts[0][1] + pts[1][1]) / 2, bot = (pts[2][1] + pts[3][1]) / 2;
+      const gr = g.createLinearGradient(0, top, 0, bot);
+      gr.addColorStop(0, "rgba(2,2,3,.25)"); gr.addColorStop(.45, "rgba(2,2,3,.9)"); gr.addColorStop(1, "rgba(2,2,3,1)");
+      poly(pts, gr, null);
+    };
+    wallQ(-1, 1, 1, 1); wallQ(-1, 0, -1, 1); wallQ(1, 0, 1, 1);
+    // 段（遠いものから順に）。最後の段の先は、さらに下へ続く闇
+    const steps = [];
     for (let j = 0; j < N; j++) {
-      const k = b * Math.max(.12, 1 - j * .16), v0 = j / N, vm = (j + .45) / N, v1 = (j + 1) / N;
-      const zz = m(0, vm, hw)[1];
-      if (stone) {
-        texFace([F(-1, v0), F(1, v0), F(1, vm), F(-1, vm)], stone, .45, k * .95, zz);
-        texFace([F(-1, vm), F(1, vm), F(1, v1), F(-1, v1)], stone, .45, k * .45, zz);
-      } else {
-        poly([F(-1, v0), F(1, v0), F(1, vm), F(-1, vm)], rgbK(120, 124, 140, k), null);
-        poly([F(-1, vm), F(1, vm), F(1, v1), F(-1, v1)], rgbK(58, 60, 74, k), null);
-      }
-      poly([F(-1, v0), F(1, v0)], null, `rgba(190,205,240,${(.2 + .6 * k).toFixed(3)})`, 1.5 * dpr);
+      const [x0, x1, z0, z1] = boxOf(m, -1, 1, VE * j / N, VE * (j + 1) / N, hw);
+      const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+      steps.push({ j, x0, x1, z0, z1, dist: cx * cx + cz * cz });
+    }
+    steps.sort((p, q) => q.dist - p.dist);
+    for (const s of steps) {
+      const k = b * Math.max(.1, 1 - s.j * .15), top = -.5 - (s.j + 1) * DY;
+      const edge = `rgba(235,220,190,${(.55 * k).toFixed(3)})`; // 段の角に淡い光の線
+      if (stone) drawBoxTex(s.x0, s.x1, BOT, top, s.z0, s.z1, stone, .45, k, edge);
+      else drawBox(s.x0, s.x1, BOT, top, s.z0, s.z1,
+        { front: rgbK(58, 60, 74, k), side: rgbK(48, 50, 62, k), top: rgbK(120, 124, 140, k) },
+        `rgba(190,205,240,${(.2 + .5 * k).toFixed(3)})`);
     }
     g.restore();
     // 穴のふちの石組み
@@ -1561,6 +1579,13 @@ function drawView() {
     for (let i = 0; i < 4; i++) { const dd = (st + i) & 3; if (wall(dd)) return dd; }
     return st;
   };
+  // 下り階段の向き：なるべく両側が壁の向き（通路を横切る向き）に下らせる。
+  // 歩いてくる方から段を横から見る形になり、段の形がわかりやすい（まっすぐ奥へ下る段は、ふちに隠れて見えにくい）
+  const downDir = (qx, qy) => {
+    const st = (qx * 7 + qy * 13) & 3, wall = dd => edgeAt(f, qx, qy, dd) === E_WALL;
+    for (let i = 0; i < 4; i++) { const dd = (st + i) & 3; if (wall(dd) && wall((dd + 2) & 3)) return dd; }
+    return stairDir(qx, qy);
+  };
   // 昇降機の向き：奥の格子戸は壁の側、入口は必ず通れる側を向ける（通路の途中にあっても、歩いてくる方から入口が見える）
   const elevDir = (qx, qy) => {
     const st = (qx * 7 + qy * 13) & 3, wall = dd => edgeAt(f, qx, qy, dd) === E_WALL;
@@ -1670,7 +1695,7 @@ function drawView() {
       // 階段・昇降機はそのマスの壁より手前にあるので、壁のあとに描く
       // 自分が立っているマスの階段・昇降機は、視界をふさがないよう描かない（下り階段の穴は床なので描く）
       if (t && dd <= 4 && (dd + VA.dz > 0.3 || t.t === "down")) {
-        const rel = ((t.t === "elev" ? elevDir(qx, qy) : stairDir(qx, qy)) - d + 4) & 3;
+        const rel = ((t.t === "elev" ? elevDir(qx, qy) : t.t === "down" ? downDir(qx, qy) : stairDir(qx, qy)) - d + 4) & 3;
         if (t.t === "down") drawDownStairs(l, zn, zf, b, rel);
         else if (t.t === "up") drawUpStairs(l, zn, zf, b, rel);
         else if (t.t === "elev") drawElevator(l, zn, zf, b, rel);
