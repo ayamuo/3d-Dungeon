@@ -595,7 +595,7 @@ async function playerAct(c, act) {
     const nm = gName(g);
     if (!hits) { Snd.play("miss"); await bmsg(`${c.name}の攻撃！　${nm}にかわされた。`); return null; }
     Snd.play(crit ? (weaponSnd(wd) === "axe" ? "axecrit" : "crit") : weaponSnd(wd)); hitFx(idx);
-    if (crit) { popDmg(idx, "首はね！", "crit"); bloodMon(idx); stageShake(); vibrate(60); } else popDmgs(idx, each);
+    if (crit) { bloodMon(idx); stageShake(); vibrate(60); } else popDmgs(idx, each);
     if (crit) {
       killMon(g, m); c.kills++;
       await bmsg(`${c.name}は${nm}の首をはねた！`, 800);
@@ -863,7 +863,7 @@ async function monsterAct(g, m) {
   await bmsg(`${nm}の攻撃！　${t.name}に${hits}回当たり、${dmg}のダメージ！`);
   if (died) { Snd.play("death"); await bmsg(`${t.name}は死んだ！`, 700); return; }
   // 特殊攻撃
-  if (def.crit && !saveThrow(t, 0.1) && chance(def.crit)) { Snd.play("ecrit"); t.hp = 0; t.status = "dead"; S.stats.deaths++; bloodParty(t.id); stageShake(); shakeParty(t.id); popParty(t.id, "首はね"); vibrate(150); await bmsg(`${t.name}は首をはねられた！`, 900); return; }
+  if (def.crit && !saveThrow(t, 0.1) && chance(def.crit)) { Snd.play("ecrit"); t.hp = 0; t.status = "dead"; S.stats.deaths++; bloodParty(t.id); stageShake(); shakeParty(t.id); vibrate(150); await bmsg(`${t.name}は首をはねられた！`, 900); return; }
   if (def.drain && chance(def.drain) && !saveThrow(t, 0.25)) {
     Snd.play("leveldrain");
     const lost = drainLevel(t);
