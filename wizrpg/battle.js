@@ -269,6 +269,7 @@ async function battle(spec, opt = {}) {
   const groups = spec ? spec.map(([id, n]) => mkGroup(id, n)) : randomGroups(fn);
   BT = { groups, fixed: !!opt.fixed, boss: !!opt.boss, killed: [], dispelled: [], round: 0, anti: !!FL(fn).anti[cidx(S.pos.x, S.pos.y)] };
   S.stats.battles++;
+  for (const g of groups) bookSee(g.def);
   S.encSteps = 0; // どんな戦闘でも、ランダムエンカウントの歩数カウントはリセット
   partyChars().forEach(c => { c.bac = 0; c.silenced = false; c._parry = false; });
   let result = null;
@@ -489,6 +490,7 @@ async function lunge(g) {
 function killMon(g, m, how) {
   m.hp = 0; g.deathFx = Date.now();
   if (how === "dispel") BT.dispelled.push(g.def); else BT.killed.push(g.def);
+  bookKill(g.def);
 }
 function targetGroup(gi) { return BT.groups[gi] || BT.groups[0]; }
 

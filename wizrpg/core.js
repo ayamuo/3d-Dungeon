@@ -428,7 +428,7 @@ function newState(rule) {
     ver: 1, roster: [], party: [], gold: 0, nextId: 1,
     shop: {}, keys: {}, flags: {}, bodies: [], elev: {}, explored: {}, secretsFound: {}, unlocked: {},
     inMaze: false, pos: null, light: 0, identAll: false, deepest: 0, hiddenFound: {}, hiddenSeen: {},
-    rule: rule || "classic", cleared: false, stats: { battles: 0, kills: 0, deaths: 0, steps: 0, startedAt: Date.now() },
+    rule: rule || "classic", cleared: false, book: {}, stats: { battles: 0, kills: 0, deaths: 0, steps: 0, startedAt: Date.now() },
     speed: 1,
   };
 }

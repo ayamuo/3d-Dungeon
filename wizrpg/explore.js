@@ -908,6 +908,7 @@ async function campMenu() {
       { label: "鑑定", value: "ident", disabled: !canPartyIdent() },
       { label: "並び替え", value: "order" },
       { label: "大事なもの", value: "keys" },
+      { label: "図鑑", value: "book" },
       { label: "設定", value: "opt" },
       { label: "中断してタイトルへ", value: "quit" },
     ], { cancel: true, cancelLabel: "キャンプを出る", title: "⛺ キャンプ" });
@@ -924,6 +925,7 @@ async function campMenu() {
       const ks = Object.keys(S.keys).filter(k => S.keys[k]);
       await dialog(ks.length ? ks.map(k => `<p><b>${KEYITEMS[k].name}</b><br><small>${KEYITEMS[k].desc}</small></p>`).join("") : "<p>なにも持っていない。</p>", null, { title: "大事なもの" });
     }
+    else if (k === "book") await monsterBook();
     else if (k === "opt") await castle_speed();
     else if (k === "quit") {
       if (await confirmBox("冒険を中断してタイトルに戻りますか？\n（今いる場所から再開できます）")) { saveGame(true); location.reload(); return; }

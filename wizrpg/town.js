@@ -588,14 +588,111 @@ async function castle() {
       : "議長「封印は結び直された。君たちはグレイヴンの恩人だ。\n……ただ、封印の守り人の古い記録に、こんな一文がある。『星灯を祭壇より離すことなかれ。眠れるものが目を覚ます』。\nまさか、試そうなどとは思わんだろうな」")
     : S.deepest >= 5 ? "議長「地下深くまで進んだそうだな。モルヴァンは最深部の封印の間にいるはずだ。封印の扉は、三つの欠片がそろえば開くと伝わっている」"
     : "議長「星灯を奪ったのは、かつて封印の守り人だった灰の司祭モルヴァンだ。奴は地下十階の封印の間で、星喰いを目覚めさせようとしている。どうか星灯を取り戻し、祭壇へ戻してくれ」";
-  await dialog(`<p class="king">${esc(msg).replace(/\n/g, "<br>")}</p>
+  const r = await dialog(`<p class="king">${esc(msg).replace(/\n/g, "<br>")}</p>
     <h4>大事なもの</h4><p>${keys.length ? keys.map(esc).join("、") : "なし"}</p>
     <h4>冒険の記録</h4><p>最深到達：${S.deepest ? "地下" + S.deepest + "階" : "―"}<br>戦闘回数：${S.stats.battles}　倒した怪物：${S.stats.kills}<br>死者：${S.stats.deaths}人　歩数：${S.stats.steps}<br>難しさ：${S.rule === "classic" ? "本格（コア向け）" : "救済（カジュアル）"}　プレイ時間：約${played}分</p>
     <h4>メッセージ速度</h4><div class="spd">${[0.6, 1, 1.6, 2.5].map(v => `<button data-v="${v}" class="${S.speed === v ? "pri" : ""}">${{ 0.6: "ゆっくり", 1: "ふつう", 1.6: "はやい", 2.5: "最速" }[v]}</button>`).join("")}</div>
     <h4>BGM</h4><div class="spd"><button data-bgm="1" class="${!S.bgmOff ? "pri" : ""}">オン</button><button data-bgm="0" class="${S.bgmOff ? "pri" : ""}">オフ</button></div>${fontOptHtml()}${walkOptHtml()}${spellDescOptHtml()}`,
-    [{ label: "もどる", value: true, cls: "pri" }], { title: "評議会", onOpen: b => b.querySelectorAll(".spd button").forEach(bt => bt.onclick = () => {
+    [{ label: "図鑑", value: "book" }, { label: "もどる", value: true, cls: "pri" }], { title: "評議会", onOpen: b => b.querySelectorAll(".spd button").forEach(bt => bt.onclick = () => {
       if (fontOptClick(bt, b) || walkOptClick(bt, b) || spellDescOptClick(bt, b)) return;
       if (bt.dataset.bgm) { S.bgmOff = bt.dataset.bgm === "0"; saveGame(); Bgm.sync(); b.querySelectorAll("[data-bgm]").forEach(x => x.classList.toggle("pri", x === bt)); Snd.play("click"); return; } S.speed = +bt.dataset.v; saveGame(); b.querySelectorAll(".spd button[data-v]").forEach(x => x.classList.toggle("pri", x === bt)); Snd.play("click"); }) });
+  if (r === "book") { await monsterBook(); return castle(); }
+}
+
+/* ────────── モンスター図鑑 ──────────
+   S.book[id] = { s: 出会った回数, k: 倒した数 }。倒した数が増えるほど、わかることが増える。
+   出会っただけ：影と見た目の呼び名 / 1体：名前・姿・出る階・経験値 / 3体：体力・守り・攻撃 / 10体：特殊な力・耐性
+   決まった場所にしか出ない相手（ボスなど）は、1回倒せばすべてわかる */
+const BOOK_LV2 = 3, BOOK_LV3 = 10;
+// 図鑑ができる前のセーブでは、すでに勝った決まった場所の戦闘（ボスなど）だけ、倒した記録として埋めておく
+function bookInit() {
+  if (S.book) return S.book;
+  S.book = {};
+  const add = (id, n) => { if (!MONSTER[id]) return; const b = S.book[id] || (S.book[id] = { s: 0, k: 0 }); b.s++; b.k += n; };
+  for (const fl of FLOORS) for (const ev of (fl && fl.ev) || []) if ((ev.t === "fight" || ev.t === "boss") && ev.once && S.flags[ev.once]) for (const [id, n] of ev.mons || []) add(id, n);
+  if (S.flags.hoshikui) { add("hoshikui", 1); add("demonlord", 3); }
+  return S.book;
+}
+const bookOf = id => (bookInit()[id] || (S.book[id] = { s: 0, k: 0 }));
+function bookSee(def) { bookOf(def.id).s++; }
+function bookKill(def) { bookOf(def.id).k++; }
+function bookLevel(def) {
+  const b = bookInit()[def.id];
+  if (!b || (!b.s && !b.k)) return -1; // まだ出会っていない
+  if (!b.k) return 0;
+  if (!def.fl[0]) return 3;
+  return b.k >= BOOK_LV3 ? 3 : b.k >= BOOK_LV2 ? 2 : 1;
+}
+const MON_TYPE_NAME = { slime: "スライム", animal: "獣", human: "人型", undead: "不死", insect: "虫", dragon: "竜", demon: "悪魔", other: "魔法生物" };
+// ダイス表記（2d6+3 など）を「最小〜最大」に
+function diceRange(s) {
+  const m = String(s).match(/^(\d+)d(\d+)([+-]\d+)?$/);
+  if (!m) return String(s);
+  const n = +m[1], f = +m[2], b = +(m[3] || 0);
+  return `${n + b}〜${n * f + b}`;
+}
+function bookImg(def, lv, big) {
+  const cls = "bkimg" + (big ? " big" : "") + (lv <= 0 ? " shadow" : "");
+  if (lv < 0) return `<span class="${cls}"><span class="glyph">？</span></span>`;
+  return `<span class="${cls}"><span class="glyph">${def.g}</span><img src="wizrpg/monsters/${def.id}.png" alt="" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"></span>`;
+}
+function bookDetail(def) {
+  const lv = bookLevel(def), b = bookInit()[def.id] || { s: 0, k: 0 };
+  const no = MONSTERS.indexOf(def) + 1;
+  const row = (k, v) => `<tr><th>${k}</th><td>${v}</td></tr>`;
+  let h = `<div class="bkhead">${bookImg(def, lv, true)}<div><div class="bkno">No.${no}</div><div class="bkname">${lv > 0 ? esc(def.name) : "？？？"}</div>`;
+  h += `<div class="bkunk">${lv >= 0 ? "見た目：" + esc(def.unk) : ""}</div><div class="bkcnt">出会った数 ${b.s}　倒した数 ${b.k}</div></div></div>`;
+  const rows = [];
+  if (lv >= 1) {
+    rows.push(row("種類", MON_TYPE_NAME[def.type] || "―"));
+    rows.push(row("出る場所", def.fl[0] ? `地下${def.fl[0]}〜${def.fl[1]}階` : "決まった場所"));
+    rows.push(row("経験値", monExp(def).toLocaleString()));
+  }
+  if (lv >= 2) {
+    rows.push(row("体力", diceRange(def.hp)));
+    rows.push(row("守り（AC）", def.ac));
+    rows.push(row("攻撃", def.atk.length ? `${def.atk.length}回（${def.atk.map(diceRange).join("、")}）` : "打撃はしない"));
+    rows.push(row("群れ", def.grp[0] === def.grp[1] ? `${def.grp[0]}体` : `${def.grp[0]}〜${def.grp[1]}体`));
+  }
+  if (lv >= 3) {
+    const sp = MON_ICONS.filter(([f]) => f(def)).filter(([, e]) => e !== "🚫").map(([, e, t]) => `${e}${t}`);
+    if (def.spells) sp.push(`（${[def.spells.M && "魔術" + def.spells.M, def.spells.P && "僧侶" + def.spells.P].filter(Boolean).join("・")}レベルまで）`);
+    if (def.hard) sp.push("🛡️どんな攻撃も1しか通らない");
+    if (def.flee) sp.push("💨すぐ逃げる");
+    if (def.friendly) sp.push("🤝友好的なことがある");
+    rows.push(row("特殊な力", sp.length ? sp.join("<br>") : "なし"));
+    const res = (def.res || []).map(r => ({ sleep: "眠り", fire: "炎", cold: "冷気", elec: "雷" }[r] || r));
+    rows.push(row("効きにくい", res.length ? res.join("・") : "なし"));
+    rows.push(row("呪文を打ち消す", def.mr ? def.mr + "%" : "なし"));
+  }
+  if (rows.length) h += `<table class="bktbl">${rows.join("")}</table>`;
+  if (lv >= 0 && lv < 3) {
+    const need = lv <= 0 ? 1 : lv === 1 ? BOOK_LV2 : BOOK_LV3;
+    h += `<p class="bknext">あと${need - b.k}体倒すと、さらにくわしくわかる。</p>`;
+  }
+  return h;
+}
+async function monsterBook() {
+  let last;
+  while (true) {
+    const known = MONSTERS.filter(d => bookLevel(d) >= 1).length;
+    const items = MONSTERS.map((d, i) => {
+      const lv = bookLevel(d), b = bookInit()[d.id];
+      return { html: `<span class="bkrow">${bookImg(d, lv)}<small>No.${i + 1}</small> ${lv > 0 ? esc(d.name) : lv === 0 ? "？？？" : "―――"}</span>`,
+        right: b && b.k ? `${b.k}体` : "", value: d.id, disabled: lv < 0 };
+    });
+    const id = await listPick("モンスター図鑑", items, { right: `${known}/${MONSTERS.length}`, focus: last });
+    if (!id) return;
+    last = id;
+    let i = MONSTERS.findIndex(d => d.id === id);
+    while (true) {
+      const v = await dialog(bookDetail(MONSTERS[i]), [{ label: "◀ 前", value: -1 }, { label: "もどる", value: 0, cls: "pri" }, { label: "次 ▶", value: 1 }], { title: "モンスター図鑑", cls: "book" });
+      if (!v) break;
+      let j = i;
+      do { j = (j + v + MONSTERS.length) % MONSTERS.length; } while (bookLevel(MONSTERS[j]) < 0 && j !== i);
+      i = j; last = MONSTERS[i].id;
+    }
+  }
 }
 /* 最深部で星灯を取り戻した直後に呼ばれる */
 /* エンディング：自分の手で星灯を祭壇に戻す → 封印の間 → 町の人々 → 酒場の宴 → 称号 → タイトルと素材の表記 → 記録 */
