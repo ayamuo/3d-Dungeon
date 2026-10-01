@@ -3,9 +3,8 @@
   "short_name": "星灯の迷宮",
   "start_url": "wizrpg.html",
   "scope": "./",
-  "display": "fullscreen",
+  "display": "standalone",
   "display_override": [
-    "fullscreen",
     "standalone"
   ],
   "background_color": "#07080c",

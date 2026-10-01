@@ -6,7 +6,7 @@
 <!-- このページは最初から暗い配色。ブラウザの「強制ダークモード」に色を塗り替えさせない（背景の絵が黒く潰れるのを防ぐ） -->
 <meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#07080c">
-<!-- ホーム画面に追加すると、ブラウザの帯なしの全画面で開く -->
+<!-- ホーム画面に追加すると、ブラウザの帯なしで開く（上の状態バーは残すので、カメラの切り欠きに隠れない） -->
 <link rel="manifest" href="manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -22,7 +22,9 @@
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
   body{background:radial-gradient(ellipse 700px 380px at 50% -10%,rgba(226,184,92,.10),transparent 60%),linear-gradient(180deg,#10111a,#07080c);color:var(--text);
-    font-family:"DotGothic16",system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;max-width:480px;margin:0 auto;padding:4px 8px calc(6px + env(safe-area-inset-bottom));
+    font-family:"DotGothic16",system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;max-width:480px;margin:0 auto;
+    /* カメラの切り欠き（ノッチ）や角の丸みに隠れないよう、端末が知らせてくる安全な余白を足す */
+    padding:calc(4px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));
     line-break:strict;overflow-wrap:break-word;text-wrap:pretty; /* 禁則処理：句読点・小さい「ゃ」「ー」などを行の頭に来させない。最後の行に1〜2文字だけ残るのも避ける */
     user-select:none;-webkit-user-select:none;touch-action:manipulation;display:flex;flex-direction:column;min-height:100%;overflow-x:hidden;}
   header{display:flex;align-items:center;gap:8px;padding:4px 2px 6px;}
