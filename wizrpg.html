@@ -303,7 +303,7 @@
   #helpOv .hfoot button{width:100%;font:inherit;font-weight:800;padding:10px;border:none;border-radius:10px;background:var(--accent);color:#2a1a02;}
   /* パソコン・タブレット・スマホの横向きなど横長の画面：左に表示窓とメッセージ、右にコマンドとパーティ表 */
   @media (min-width:760px) and (orientation:landscape){
-    body{max-width:1600px;display:grid;grid-template-columns:minmax(0,1fr) 400px;grid-template-rows:auto 1fr;column-gap:16px;padding:6px 16px 12px;}
+    body{max-width:1600px;display:grid;grid-template-columns:minmax(0,1fr) 400px;grid-template-rows:auto 1fr;column-gap:16px;padding:calc(6px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));}
     header{grid-column:1 / -1;}
     #mainCol,#sideCol{display:flex;flex-direction:column;min-width:0;}
     #stage{width:min(100%, calc((var(--vh, 100vh) - 160px) * 1.6));align-self:center;}
