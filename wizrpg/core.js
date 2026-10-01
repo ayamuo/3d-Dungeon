@@ -352,8 +352,22 @@ function priceOf(id) {
   if (isCore()) { if (d.t === "use") return d.price * 3; if (d.tier >= 1) return d.price * 4; }
   return d.price;
 }
+/* 駆け出しの支援（救済ルールだけ）：仲間の平均レベルが ROOKIE_LV 以下の間は、宿屋と聖堂が無料になり、
+   仲間になった人は回復の薬を3つもらえる。序盤でお金が尽きて詰まないようにするため */
+const ROOKIE_LV = 5;
+function rookieHelp() {
+  if (!S || isCore()) return false;
+  const pc = partyChars(); if (!pc.length) return false;
+  return pc.reduce((a, c) => a + c.lvl, 0) / pc.length <= ROOKIE_LV;
+}
 /* 宿屋の部屋。本格は1Gあたりの回復が少ない（何度も泊まる必要がある） */
 function innRooms() {
+  if (rookieHelp()) return [
+    { name: "馬小屋", cost: 0, heal: 0, d: "無料。呪文の回数だけ回復" },
+    { name: "簡易寝台", cost: 0, heal: 0.25, d: "無料。HPが1/4回復" },
+    { name: "エコノミー", cost: 0, heal: 0.5, d: "無料。HPが半分回復" },
+    { name: "スイート", cost: 0, heal: 1, d: "無料。HPが全回復" },
+  ];
   if (isCore()) return [
     { name: "馬小屋", cost: 0, heal: 0, d: "無料。呪文の回数だけ回復" },
     { name: "簡易寝台", cost: 10, heal: 0.05, d: "1人10G。HPが少し回復" },

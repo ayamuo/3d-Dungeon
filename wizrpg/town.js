@@ -88,7 +88,7 @@ async function titleScreen() {
   }
   const rule = await dialog(`<p>パーティが全滅したときの扱いを選んでください。<br>（あとから変更できません）</p>
     <div class="rulebox"><b>本格ルール（コア向け）</b><br>全滅すると遺体は迷宮に残る。別のパーティで回収に行かなければならない。<br>宿屋での回復や魔法の品・薬の値段は、昔ながらの厳しめの設定。</div>
-    <div class="rulebox"><b>救済ルール（カジュアル）</b><br>全滅すると町へ運び戻される（所持金は半分に）。死者は聖堂で蘇生。<br>宿屋や品物の値段は安めで、気軽に遊べる。</div>`,
+    <div class="rulebox"><b>救済ルール（カジュアル）</b><br>全滅すると町へ運び戻される（所持金は半分に）。死者は聖堂で蘇生。<br>宿屋や品物の値段は安めで、気軽に遊べる。<br>序盤（平均レベル5まで）は、宿屋と聖堂が無料。回復の薬ももらえる。</div>`,
     [{ label: "救済（カジュアル）", value: "easy" }, { label: "本格（コア向け）", value: "classic", cls: "pri" }], { title: "ゲームの難しさ" });
   S = newState(rule);
   S.gold = 0;
@@ -129,6 +129,25 @@ function resumeGame() {
 }
 
 /* ────────── 町のメニュー ────────── */
+/* 駆け出しの支度品（救済ルール）：平均レベルが低いうちに仲間になった人へ、回復の薬を3つ渡す（1人1回だけ） */
+async function rookieKit() {
+  if (!rookieHelp()) return;
+  const first = !S.flags.rookieTold;
+  const got = [];
+  for (const c of partyChars()) {
+    if (c.kit) continue;
+    c.kit = 1;
+    let n = 0; for (let i = 0; i < 3; i++) if (addItem(c, "potion", true)) n++;
+    if (n) got.push(c.name);
+  }
+  if (!got.length && !first) return;
+  S.flags.rookieTold = 1;
+  renderParty(); saveGame();
+  if (got.length) Snd.play("sparkle");
+  await tell(`評議会の使い「駆け出しの方々へ、町からの支度品です」${got.length ? `
+${got.join("、")}は、回復の薬を3つずつ受け取った。` : ""}${first ? `
+「皆さんが一人前になるまで（平均レベル${ROOKIE_LV}まで）は、宿屋と聖堂の代金も町が持ちます」` : ""}`);
+}
 async function townMain() {
   S.inMaze = false; saveGame();
   partyTapHandler = c => charSheet(c, "town");
@@ -136,6 +155,7 @@ async function townMain() {
   while (true) {
     showScene("town");
     renderParty();
+    await rookieKit();
     const pc = partyChars();
     const hasAble = pc.some(c => c.status === "ok");
     const k = await choose([
@@ -427,6 +447,7 @@ async function shopUncurseOf(who) {
 
 /* ────────── 聖堂 ────────── */
 function templeFee(c) {
+  if (rookieHelp()) return 0; // 駆け出しのうちは、町が費用を持つ
   return { para: 100, stone: 200, dead: 250, ash: 500 }[c.status] * c.lvl;
 }
 async function temple() {
@@ -438,7 +459,8 @@ async function temple() {
     const id = await listPick("寄付をして治療を受ける", items, { right: `所持金 ${S.gold.toLocaleString()}G`, empty: "治療が必要な者はいない。", cancelLabel: "町へ戻る" });
     if (!id) return;
     const c = charById(id); const fee = templeFee(c);
-    if (!(await confirmBox(`${c.name}の治療に${fee.toLocaleString()}Gを寄付しますか？`))) continue;
+    if (!(await confirmBox(fee ? `${c.name}の治療に${fee.toLocaleString()}Gを寄付しますか？` : `${c.name}の治療を頼みますか？
+（駆け出しのうちは、町が費用を持つ）`))) continue;
     S.gold -= fee;
     let msg;
     if (c.status === "para" || c.status === "stone") {
