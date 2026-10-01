@@ -36,7 +36,7 @@
   /* 画面が縦に収まらないときに、各欄が押しつぶされて重ならないようにする（はみ出した分はスクロール） */
   header,#stage,#msg,#cmd,#party{flex-shrink:0;}
   #mainCol,#sideCol{display:contents;} /* スマホの縦画面では入れ物が無いのと同じ（横長の画面だけ2列に分ける） */
-  #stage{position:relative;width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:#000;border:1px solid #2a2f3d;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.5);flex:0 0 auto;}
+  #stage{position:relative;width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:#000;border:1px solid #2a2f3d;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.5);flex:0 1 auto;min-height:130px;} /* 画面の高さが足りないときは、絵の枠だけが縮んで全体を収める */
   /* 縦横比の指定（aspect-ratio）を知らない古いブラウザでは、高さを幅から決める */
   @supports not (aspect-ratio:1/1){ #stage{height:62.5vw;max-height:60vh;} #mini{width:84px;height:84px;} }
   #view{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;display:block;}
@@ -307,6 +307,10 @@
     #cmd{margin-top:0;}
   }
   @media (max-height:700px){ #stage{aspect-ratio:16/9;} #msg{min-height:56px;max-height:56px;font-size:12.5px;} #cmd{min-height:100px;} #cmd button{padding:7px 5px;} .prow{min-height:26px;padding:2px;} }
+  /* もっと低いとき（ブラウザの帯が出ている小さめのスマホ）は、さらに詰める */
+  @media (max-height:660px) and (orientation:portrait){ #msg{min-height:44px;max-height:44px;} .prow{min-height:23px;padding:1px 2px;} #cmd{min-height:90px;} #cmd button{padding:5px 5px;} #stage{min-height:110px;} }
+  /* 縦長のスマホで高さが少し足りないとき（800pxまで）も、同じように詰める */
+  @media (max-height:800px) and (orientation:portrait){ #stage{aspect-ratio:16/9;} #cmd{min-height:100px;} #cmd button{padding:7px 5px;} .prow{min-height:26px;padding:2px;} }
 
   /* ────────── 昔の家庭用ゲーム機のRPG風の窓 ──────────
      黒い地に白い太線の枠、角は少しだけ丸く。グラデーション・半透明・光る影は使わない。
@@ -661,6 +665,8 @@ window.__boot = (() => {
   const unlock = () => { Snd.ac(); Snd.preloadAll(); Object.keys(BGM_LIST).forEach(k => Bgm.load(k)); document.removeEventListener("pointerdown", unlock); document.removeEventListener("keydown", unlock); };
   document.addEventListener("pointerdown", unlock); document.addEventListener("keydown", unlock);
   window.addEventListener("unhandledrejection", e => { if (e.reason instanceof ToTown) e.preventDefault(); else console.error(e.reason); });
+  // 絵の枠の大きさが変わったら（ボタンの段が増えて枠が縮んだ、など）、迷宮の絵を描き直す
+  try { new ResizeObserver(() => { if (S && S.inMaze && !BT && document.body.dataset.mode === "maze" && !$("scene").className) drawView(); }).observe($("stage")); } catch (e) { }
   titleScreen();
   // 文字とタイトルの絵がそろったら、読み込み画面を消す（どれかが遅くても、6秒たてば先へ進む）
   (() => {
