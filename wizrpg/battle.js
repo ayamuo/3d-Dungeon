@@ -227,7 +227,7 @@ function renderBattle() {
     else if (BT.atkFx && BT.atkFx.g === i && now - BT.atkFx.t < 360) { mv = " atk"; dl = now - BT.atkFx.t; }
     else if (g.deathFx && now - g.deathFx < 360) { mv = " lose"; dl = now - g.deathFx; }
     const sty = (tint ? `--tf:${BT.tint.f};--tc:${BT.tint.c};` : "") + (mv ? `--dl:-${dl}ms;` : "");
-    return `<div class="mg${hit}${tint ? " tint" : ""}${mv}" data-g="${i}"${sty ? ` style="${sty}"` : ""}><div class="mimg${MON_MISS.has(id) ? "" : " hasimg"}" style="--mc:${g.def.col}"><span class="glyph">${g.def.g}</span>${img}<i class="kari">仮</i></div>
+    return `<div class="mg${hit}${tint ? " tint" : ""}${mv}" data-g="${i}"${sty ? ` style="${sty}"` : ""}><div class="mimg${MON_MISS.has(id) ? "" : " hasimg"}${g.ident ? "" : " unk"}" style="--mc:${g.ident ? g.def.col : "#556"}"><span class="glyph">${g.def.g}</span>${img}<i class="kari">仮</i></div>
       <div class="mname">${i + 1}) ${esc(gName(g))}</div>${g.ident ? monIcons(g.def) : `<div class="micons"></div>`}<div class="mcnt">×${lv}<small>（${ab}）</small>${g.ms.some(m => m.hp > 0 && m.status === "sleep") ? " 💤" : ""}${g.silenced ? " 🤐" : ""}</div></div>`;
   }).join("")}</div>`;
   $("hud").innerHTML = BT.boss ? "⚔️ 決戦" : "⚔️ 戦闘中";
@@ -518,13 +518,16 @@ async function runRound(partyOn, monOn, groupLimit = 99) {
     if (c.poison && isAlive(c) && c.status !== "stone" && damageChar(c, 1)) await bmsg(`${c.name}は毒で死んだ。`, 600);
     for (const it of c.items) if (it.eq && ITEM[it.id].regen && isAlive(c) && c.hp < c.maxhp) c.hp = Math.min(c.maxhp, c.hp + ITEM[it.id].regen);
   }
+  const revealed = [];
   for (const g of BT.groups) {
     for (const m of g.ms) {
       if (m.hp > 0 && m.status === "sleep" && chance(0.3)) m.status = "ok";
       if (m.hp > 0 && g.def.regen) m.hp = Math.min(m.maxhp, m.hp + g.def.regen);
     }
-    if (!g.ident && chance(0.25)) g.ident = true;
+    if (!g.ident && livingMs(g).length && chance(0.25)) { g.ident = true; revealed.push(g); }
   }
+  // 戦っているうちに正体がわかった（影だった絵がはっきり見えるようになる）
+  for (const g of revealed) { Snd.play("light"); await bmsg(`${g.def.unk}の正体は、${g.def.name}だった！`, 600); }
   // 行動不能者は後ろへ
   S.party.sort((a, b) => (isDisabled(charById(a)) ? 1 : 0) - (isDisabled(charById(b)) ? 1 : 0));
   renderBattle();
