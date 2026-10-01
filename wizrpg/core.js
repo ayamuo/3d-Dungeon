@@ -37,10 +37,13 @@ function animate(T, draw) {
 
 /* ────────── 効果音 ──────────
    あそびコレクションの sfx.js があればその音を使い、無い音はWebAudioで合成する。ミュートは全ゲーム共通。 */
+// 指で操作する端末（スマホ・タブレット）か。音まわりの軽い設定に使う
+const IS_TOUCH = (() => { try { return matchMedia("(pointer:coarse)").matches; } catch (e) { return false; } })();
 const Snd = (() => {
   let ctx = null;
   const muted = () => { try { return localStorage.getItem("asobi_muted") === "1"; } catch (e) { return false; } };
-  function ac() { if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { } } if (ctx && ctx.state === "suspended" && !document.hidden) ctx.resume(); return ctx; }
+  // スマホ・タブレットでは、音の出力の余裕を大きめにとる（"playback"）。BGMの途切れが減る代わりに、効果音がほんの少し遅れる
+  function ac() { if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; try { ctx = IS_TOUCH ? new AC({ latencyHint: "playback" }) : new AC(); } catch (e) { try { ctx = new AC(); } catch (e2) { } } } if (ctx && ctx.state === "suspended" && !document.hidden) ctx.resume(); return ctx; }
   // 別のタブに切り替えた・最小化した・スマホでホームに戻ったときは音を一時停止し、戻ったら続きから鳴らす
   document.addEventListener("visibilitychange", () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else ctx.resume(); });
   function tone(freq, dur, type = "square", vol = 0.08, slide = 0, delay = 0) {
@@ -275,7 +278,7 @@ const Bgm = (() => {
     if (!x || !c || cur !== token) return; // 読み込み中に止められた・別の曲に変わった
     const vol = muted() ? 0.0001 : d.vol;
     if (d.midi) {
-      token.midi = MidiPlayer.create(c, x, c.destination);
+      token.midi = MidiPlayer.create(c, x, c.destination, 0.35, IS_TOUCH);
       token.midi.start(0.4, vol);
       return;
     }

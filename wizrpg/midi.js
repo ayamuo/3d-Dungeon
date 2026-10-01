@@ -71,7 +71,9 @@ const MidiPlayer = (() => {
   const freq = n => 440 * Math.pow(2, (n - 69) / 12);
 
   /* ── 再生 ── */
-  function create(ctx, song, out, look = 0.35) {
+  /* lite：スマホ向けの軽い鳴らし方。1つの音を1つの波だけで作り（重ねる2つ目の波と揺らしを省く）、先読みも長くする。
+     スマホは音を作る処理が出力に追いつかないと「プツプツ」と途切れるため */
+  function create(ctx, song, out, look = 0.35, lite = false) {
     const master = ctx.createGain(), comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 4; comp.attack.value = 0.005; comp.release.value = 0.2;
     master.connect(comp); comp.connect(out);
@@ -122,15 +124,15 @@ const MidiPlayer = (() => {
       const vg = ctx.createGain();
       vg.connect(c.flt);
       const f0 = freq(n) * Math.pow(2, c.bend / 8192 * 2 / 12);
-      const oscs = P.w.map((w, i) => {
+      const oscs = (lite ? P.w.slice(0, 1) : P.w).map((w, i) => {
         const o = ctx.createOscillator(); o.type = w; o.frequency.setValueAtTime(f0, t);
-        if (P.det) o.detune.setValueAtTime(i ? P.det : -P.det, t);
+        if (P.det && !lite) o.detune.setValueAtTime(i ? P.det : -P.det, t);
         if (i === 0) o.connect(vg);
         else { const og = ctx.createGain(); og.gain.value = P.mix2 !== undefined ? P.mix2 : 0.5; o.connect(og); og.connect(vg); }
         o.start(t); return o;
       });
-      if (P.vib) { const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = 5.2; lg.gain.value = 6; l.connect(lg); oscs.forEach(o => lg.connect(o.detune)); l.start(t + 0.2); oscs.push(l); }
-      const peak = P.g * (v / 127) * 0.5;
+      if (P.vib && !lite) { const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = 5.2; lg.gain.value = 6; l.connect(lg); oscs.forEach(o => lg.connect(o.detune)); l.start(t + 0.2); oscs.push(l); }
+      const peak = P.g * (v / 127) * 0.5 * (lite && P.w.length > 1 ? 1.3 : 1); // 波を1つに減らしたぶん、少し音量を足す
       vg.gain.setValueAtTime(0.0001, t);
       vg.gain.linearRampToValueAtTime(peak, t + P.a);
       vg.gain.setTargetAtTime(peak * P.s + 0.00001, t + P.a, P.d / 3);
@@ -159,7 +161,7 @@ const MidiPlayer = (() => {
     }
 
     // 少し先までの音をまとめて予約していく（ループの継ぎ目でも途切れない）
-    const LOOK = look; // 何秒先まで予約するか（動作確認で一気に書き出すときは大きくする）
+    const LOOK = lite ? Math.max(look, 0.9) : look; // 何秒先まで予約するか（動作確認で一気に書き出すときは大きくする。スマホは処理が遅れても途切れないよう長め）
     let base = 0, i = 0, timer = null;
     const ev = song.ev, loopLen = song.loopEnd - song.loopStart;
     const loopIdx = ev.findIndex(e => e.t >= song.loopStart - 1e-6);
