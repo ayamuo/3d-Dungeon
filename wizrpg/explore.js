@@ -787,7 +787,7 @@ async function altarEvent() {
   await tell("パーティは星灯を祭壇に戻した。\n封印はもう、何も閉じ込めてはいない。\nそれでも星灯は、変わらず町を照らし続けるだろう。");
   for (const c of partyChars()) if (isAlive(c)) c.honor = 2;
   Snd.play("levelup");
-  await tell("生き残った冒険者たちは『星喰いを討ちし者』の称号（★★）を授けられた。");
+  await tell("生き残った冒険者たちは『星喰いを討ちし者』の称号（金色の★）を授けられた。");
   await tell("星喰いが討たれたと聞いて、町の冒険者たちのわだかまりも解けていった。\nこれからは、善と悪の者も同じパーティで旅ができる。");
   saveGame(true);
 }

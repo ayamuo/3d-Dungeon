@@ -796,8 +796,8 @@ function spendSlot(c, sp) {
   if (eye && chance(ITEM[eye.id].spellSave)) { logMsg(`${ITEM[eye.id].name}が輝き、${c.name}の呪文の力は失われなかった！`); return; }
   (sp.sc === "M" ? c.mpM : c.mpP)[sp.lv - 1]--;
 }
-/* 称号の印：クリアで★、星喰いを倒すと★★ */
-const honorMark = c => c.honor ? `<i class="hon">${c.honor >= 2 ? "★★" : "★"}</i>` : "";
+/* 称号の印：クリアで白い★、星喰いを倒すと金色の★（2つ並べると名前の欄が狭くなるので、色で区別する） */
+const honorMark = c => c.honor ? `<i class="hon${c.honor >= 2 ? " hon2" : ""}">★</i>` : "";
 
 /* ────────── パーティ表 ────────── */
 let partyTapHandler = null;
