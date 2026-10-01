@@ -228,8 +228,11 @@ async function membersView() {
     const inParty = c => S.party.includes(c.id);
     const list = partyChars().concat(S.roster.filter(c => !inParty(c) && c.where !== "lost"));
     const items = list.map(c => ({ html: `${honorMark(c)}${esc(c.name)} <small>Lv${c.lvl} ${clsLabel(c)}</small>`, right: (inParty(c) ? "仲間 " : "") + statusLabel(c), value: c.id }));
-    const id = await listPick("誰の持ち物を見る？", items, { empty: "まだ誰も登録されていない。" });
+    // 町でも、呪文でまとめて回復できる（宿屋のお金を節約できる）
+    if (canAutoHeal()) items.unshift({ html: "✨ <b>まとめて回復</b> <small>回復の呪文を自動で唱える</small>", right: "", value: "heal" });
+    const id = await listPick("冒険者（状態・装備・呪文）", items, { empty: "まだ誰も登録されていない。" });
     if (!id) return;
+    if (id === "heal") { await autoHeal(); renderParty(); continue; }
     await charSheet(charById(id), "town");
     renderParty();
   }

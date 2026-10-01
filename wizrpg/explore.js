@@ -921,6 +921,7 @@ async function campMenu() {
     const k = await choose([
       { label: "状態・装備", value: "status" },
       { label: "呪文を唱える", value: "spell", disabled: !hasSpell },
+      { label: "まとめて回復", value: "heal", disabled: !canAutoHeal() },
       { label: "鑑定", value: "ident", disabled: !canPartyIdent() },
       { label: "並び替え", value: "order" },
       { label: "大事なもの", value: "keys" },
@@ -935,6 +936,7 @@ async function campMenu() {
       let c;
       while ((c = await pickMember("誰が呪文を唱える？", c => isAlive(c) && c.status === "ok" && c.known.some(s => SPELL[s].use.includes("c"))))) { await campCast(c); renderParty(); }
     }
+    else if (k === "heal") await autoHeal();
     else if (k === "ident") await partyIdent();
     else if (k === "order") await reorderParty();
     else if (k === "keys") {
@@ -948,6 +950,47 @@ async function campMenu() {
     }
     renderParty();
   }
+}
+/* ────────── まとめて回復 ──────────
+   回復呪文（回復・中回復・大回復）を使える仲間が、けがの重い人から順に自動で唱える。
+   弱い呪文から使い、強い呪文は残す。ほとんど無駄になる（回復量の半分も減っていない）ときは唱えない。
+   完全回復・蘇生・毒などの治療は、ここでは使わない */
+const AUTO_HEALS = ["mend", "mend2", "mend3"];
+function healExpect(id, lvl) {
+  const h = HEAL_SPELL[id], m = h.dice.match(/(\d+)d(\d+)(?:\+(\d+))?/);
+  return Math.min(h.cap, +m[1] * (+m[2] + 1) / 2 + +(m[3] || 0) + h.per * lvl);
+}
+const healCasters = () => partyChars().filter(c => c.status === "ok").flatMap(c =>
+  AUTO_HEALS.filter(id => c.known.includes(id) && spellSlotsLeft(c, SPELL[id]) > 0).map(id => ({ c, sp: SPELL[id], exp: healExpect(id, c.lvl) })));
+const hurtMembers = () => partyChars().filter(c => isAlive(c) && c.status !== "stone" && c.hp < c.maxhp);
+const canAutoHeal = () => hurtMembers().length > 0 && healCasters().length > 0;
+async function autoHeal() {
+  if (S.inMaze && FL(S.pos.f).anti[cidx(S.pos.x, S.pos.y)]) { Snd.play("cancel"); await alertBox("ここでは魔法が封じられている。"); return; }
+  if (!hurtMembers().length) { await alertBox("回復が必要な仲間はいない。"); return; }
+  if (!healCasters().length) { await alertBox("回復の呪文を唱えられる仲間がいない。"); return; }
+  const count = {}, before = {}; partyChars().forEach(c => before[c.id] = c.hp);
+  for (let guard = 0; guard < 300; guard++) {
+    const opts = healCasters().sort((a, b) => a.sp.lv - b.sp.lv || b.exp - a.exp);
+    if (!opts.length) break;
+    // けがの重い人から。その人に唱えて無駄にならない、いちばん弱い呪文を選ぶ
+    let done = false;
+    for (const t of hurtMembers().sort((a, b) => (b.maxhp - b.hp) - (a.maxhp - a.hp))) {
+      const miss = t.maxhp - t.hp, o = opts.find(x => miss >= x.exp * 0.5);
+      if (!o) continue;
+      t.hp = Math.min(t.maxhp, t.hp + healAmount(o.sp, o.c, t));
+      spendSlot(o.c, o.sp);
+      count[o.sp.name] = (count[o.sp.name] || 0) + 1;
+      done = true; break;
+    }
+    if (!done) break;
+  }
+  renderParty(); saveGame();
+  const used = Object.entries(count).map(([n, k]) => `${n}を${k}回`).join("、");
+  if (!used) { await alertBox("どの傷も浅く、呪文を使うほどではない。"); return; }
+  Snd.play("heal");
+  const healed = partyChars().filter(c => c.hp > before[c.id]).map(c => `${c.name}　${before[c.id]} → ${c.hp}${c.hp >= c.maxhp ? "（全快）" : ""}`);
+  const left = hurtMembers().some(c => (c.maxhp - c.hp) >= c.maxhp * 0.25);
+  await alertBox(`${used}唱えた。\n${healed.join("\n")}${left ? "\n\n呪文が足りず、まだ傷の深い仲間がいる。" : ""}`, "まとめて回復");
 }
 async function castle_speed() {
   await dialog(`<h4>メッセージ速度</h4><div class="spd">${[0.6, 1, 1.6, 2.5].map(v => `<button data-v="${v}" class="${S.speed === v ? "pri" : ""}">${{ 0.6: "ゆっくり", 1: "ふつう", 1.6: "はやい", 2.5: "最速" }[v]}</button>`).join("")}</div>
