@@ -399,6 +399,14 @@
   /* タイトル画面：記録の窓も黒地に白枠（絵の上で読めるよう少しだけ透かす） */
   body[data-mode="title"] #cmd:not(:empty){background:rgba(0,0,0,.82);}
   body[data-mode="title"] #cmd button,body[data-mode="title"] #cmd button.pri{background:none;backdrop-filter:none;}
+  /* 読み込み画面 */
+  #boot{position:fixed;top:0;right:0;bottom:0;left:0;z-index:200;background:#07080c;display:flex;align-items:center;justify-content:center;transition:opacity .4s;}
+  #boot.out{opacity:0;pointer-events:none;}
+  #boot .bbox{width:min(280px,70%);text-align:center;color:#e8e8ee;font-size:15px;}
+  #boot .bbar{height:10px;border:2px solid #fff;border-radius:3px;margin-top:12px;background:#000;}
+  #boot .bbar i{display:block;height:100%;width:0;background:#fde68a;transition:width .2s;}
+  #boot .bsub{margin-top:10px;font-size:12px;opacity:.75;min-height:1.4em;}
+  #boot.ng .bbar i{background:#f87171;}
 </style>
 <script>
 /* 文字の種類（設定で「ドット」「標準」を切り替え。端末ごとに覚える）。画面を描く前に決めておく */
@@ -418,6 +426,23 @@ if (!document.documentElement.classList.contains("stdfont")) window.loadDotFont(
 </script>
 </head>
 <body data-mode="title">
+<!-- 読み込み画面：プログラム・文字・タイトルの絵がそろうまで出す（どこまで進んだかを棒で見せる） -->
+<div id="boot"><div class="bbox"><div class="btxt" id="bootTxt">読み込み中…</div><div class="bbar"><i id="bootBar"></i></div><div class="bsub" id="bootSub"></div></div></div>
+<script>
+window.__boot = (() => {
+  const TOTAL = 13; // プログラム9つ＋文字＋タイトルの絵＋ロゴ＋準備完了
+  let n = 0, finished = false;
+  const bar = document.getElementById("bootBar"), txt = document.getElementById("bootTxt"), sub = document.getElementById("bootSub"), el = document.getElementById("boot");
+  const draw = () => { bar.style.width = Math.min(100, Math.round(n / TOTAL * 100)) + "%"; };
+  const done = () => { if (finished) return; finished = true; n = TOTAL; draw(); el.classList.add("out"); setTimeout(() => el.remove(), 450); };
+  const fail = m => { if (finished) return; txt.textContent = "読み込めませんでした"; sub.textContent = "ページを開き直してみてください。" + (m ? "（" + m + "）" : ""); el.classList.add("ng"); };
+  // 途中でプログラムが止まったら、暗い画面のままにせず知らせる
+  window.addEventListener("error", e => { if (!finished && e && e.message && !/^Script error/.test(e.message)) fail(String(e.message).slice(0, 80)); });
+  // 回線が遅いときは、まだ読み込んでいることを伝える
+  setTimeout(() => { if (!finished && !el.classList.contains("ng")) sub.textContent = "回線が遅いと、少し時間がかかります。"; }, 8000);
+  return { step: () => { if (finished) return; n++; draw(); }, done, fail };
+})();
+</script>
 <header><a href="index.html">← もどる</a><h1 id="ttl">星灯の迷宮<small id="loc"></small></h1><span id="goldTag"></span><button id="muteBtn">🔊</button><button id="fsBtn" hidden title="全画面">⤢</button><button id="logBtn">📜</button><button id="helpBtn">？</button></header>
 <div id="mainCol"><div id="stage"><canvas id="view"></canvas><div id="scene"></div><div id="hud"></div><canvas id="mini"></canvas></div>
 <div id="msg"></div></div>
@@ -586,15 +611,15 @@ if (!document.documentElement.classList.contains("stdfont")) window.loadDotFont(
   <div class="hfoot"><button id="helpClose">とじる</button></div>
 </div></div>
 <script src="sfx.js"></script>
-<script src="wizrpg/data.js"></script>
-<script src="wizrpg/maze.js"></script>
-<script src="wizrpg/midi.js"></script>
-<script src="wizrpg/bgm/bgm_data.js"></script>
-<script src="wizrpg/core.js"></script>
-<script src="wizrpg/town.js"></script>
-<script src="wizrpg/explore.js"></script>
-<script src="wizrpg/battle.js"></script>
-<script src="wizrpg/input.js"></script>
+<script src="wizrpg/data.js"></script><script>__boot.step()</script>
+<script src="wizrpg/maze.js"></script><script>__boot.step()</script>
+<script src="wizrpg/midi.js"></script><script>__boot.step()</script>
+<script src="wizrpg/bgm/bgm_data.js"></script><script>__boot.step()</script>
+<script src="wizrpg/core.js"></script><script>__boot.step()</script>
+<script src="wizrpg/town.js"></script><script>__boot.step()</script>
+<script src="wizrpg/explore.js"></script><script>__boot.step()</script>
+<script src="wizrpg/battle.js"></script><script>__boot.step()</script>
+<script src="wizrpg/input.js"></script><script>__boot.step()</script>
 <script>
 "use strict";
 (function () {
@@ -637,6 +662,15 @@ if (!document.documentElement.classList.contains("stdfont")) window.loadDotFont(
   document.addEventListener("pointerdown", unlock); document.addEventListener("keydown", unlock);
   window.addEventListener("unhandledrejection", e => { if (e.reason instanceof ToTown) e.preventDefault(); else console.error(e.reason); });
   titleScreen();
+  // 文字とタイトルの絵がそろったら、読み込み画面を消す（どれかが遅くても、6秒たてば先へ進む）
+  (() => {
+    let left = 3; const one = () => { __boot.step(); if (--left <= 0) { __boot.step(); __boot.done(); } };
+    const img = src => { const i = new Image(); let d = false; const f = () => { if (!d) { d = true; one(); } }; i.onload = f; i.onerror = f; i.src = src; };
+    img("wizrpg/bg/" + (matchMedia("(min-width:760px) and (orientation:landscape)").matches ? "title" : "title_v") + ".jpg");
+    img("wizrpg/bg/title_logo.png");
+    try { (document.documentElement.classList.contains("stdfont") || !document.fonts ? Promise.resolve() : document.fonts.load('16px "DotGothic16"', "星灯の迷宮")).then(one, one); } catch (e) { one(); }
+    setTimeout(() => __boot.done(), 6000);
+  })();
 })();
 </script>
 </body>
