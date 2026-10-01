@@ -194,18 +194,84 @@ async function confirmMixedRemove(c) {
   if (!opp || !rest.some(x => x.align === opp)) return true;
   return confirmBox(`${c.name}（${ALIGNS[c.align]}）を外すと、${ALIGNS[opp]}の仲間がいるため、もう一度このパーティに加えることはできません。\n外しますか？`, "外す", "やめる");
 }
+/* ────────── 酒場の世間話 ──────────
+   冒険に役立つ話を、酒場の客が1つずつ聞かせてくれる。
+   min：その階まで下りたことがあると出る話（次に向かう階の話は、1つ手前から聞ける）。
+   まだ聞いていない話を先に出し、ひととおり聞いたらまた最初から */
+const RUMORS = [
+  // いつでも聞ける、冒険の基本
+  { who: "酒場の主人", text: "経験を積んだら、宿屋で一晩休みな。\nレベルが上がるのは、ぐっすり眠ったあとだ。" },
+  { who: "古参の冒険者", text: "武器が届くのは、前に立つ3人だけだ。\n後ろの3人には、呪文や道具を持たせておけ。" },
+  { who: "古参の冒険者", text: "宝箱は盗賊に調べさせな。\n罠の見立ては、盗賊がいちばん確かだ。" },
+  { who: "酔った坑夫", text: "行き止まりこそ怪しいもんだ。\n壁に向かって調べると、隠し扉が見つかることがある。" },
+  { who: "旅の僧侶", text: "灯りの呪文を唱えておくといい。\n隠し扉がひとりでに見つかるし、まわりの見取り図まで浮かんでくる。" },
+  { who: "旅の僧侶", text: "正体のわからぬ相手は、影にしか見えん。\n『正体看破』を唱えておけば、探索のあいだずっと見抜ける。" },
+  { who: "若い魔術師", text: "『透視』の呪文は、まわりの地形だけじゃない。\n落とし穴や転移の床まで、地図に書き込んでくれるんだ。" },
+  { who: "酔った坑夫", text: "昇降機は、乗り場を自分の足で見つけた階にしか止まらねえ。\n新しい階に着いたら、まず乗り場を探しとけ。" },
+  { who: "酒場の主人", text: "善の者と悪の者は、同じ卓にはつかないよ。\n仲間を組むときは、気をつけておくれ。" },
+  { who: "古参の冒険者", text: "分が悪いと思ったら、逃げるのも手だ。\nうまく逃げれば、ひとつ手前の場所まで下がれる。" },
+  { who: "聖堂帰りの男", text: "聖堂の蘇生は、いつもうまくいくわけじゃない。\n体の弱い者ほど、灰になりやすいそうだ。" },
+  { who: "古参の冒険者", text: "不死の化け物には、僧侶のディスペルが効く。\nただし、相手の正体がわかっていないと使えない。" },
+  // 地下1階
+  { min: 0, who: "酔った坑夫", text: "地下1階の鉄格子の鍵かい？\nあれは、南東をねぐらにしてるならず者の頭が持ってるよ。" },
+  { min: 0, who: "酔った坑夫", text: "旧坑道の北西の崩れた奥に、年寄りの坑夫が居ついてる。\n気前のいい爺さんだ。顔を出してやんな。" },
+  // 地下2階
+  { min: 1, who: "古参の冒険者", text: "地下水路のコボルドどもは、王を戴いている。\n王の広間は隠し通路の先だ。風の吹いてくる壁を調べてみろ。" },
+  { min: 1, who: "酔った坑夫", text: "水路には、片側からしか開かねえ扉がある。\n通ったら戻れねえから、道を覚えときな。" },
+  // 地下3階
+  { min: 2, who: "古参の冒険者", text: "石板の回廊の奥の扉は、錆びた鍵束で開く。\nコボルドの王が、首から下げているやつだ。" },
+  { min: 2, who: "若い魔術師", text: "石板の回廊には、踏むと向きを狂わされる床があるんです。\n道がおかしいと思ったら、地図で北を確かめてください。" },
+  // 地下4階
+  { min: 3, who: "古参の冒険者", text: "最深部の封印の扉は、欠片が三つそろわないと開かんそうだ。\nひとつは、地下4階の番兵長が持っている。" },
+  { min: 3, who: "酔った坑夫", text: "地下4階から下で、白い小さなウサギを見たって奴がいる。\nすぐ逃げちまうが、仕留めりゃ大した経験になるらしい。……首には気をつけな。" },
+  // 地下5階
+  { min: 4, who: "若い魔術師", text: "蒼き紋の迷宮には、踏むと別の場所へ飛ばされる床があります。\n『透視』で先に見つけておくと安心です。" },
+  { min: 4, who: "古参の冒険者", text: "刃の尾を持つ狐の長が、風の護符を守っている。\nひとつ下の階の扉を開けるのに要るぞ。" },
+  { min: 4, who: "聖堂帰りの男", text: "深い階には、触れただけで力を吸い取る死霊がいる。\n吸われたレベルは、宿で休んでも戻らないぞ。" },
+  // 地下6階
+  { min: 5, who: "若い魔術師", text: "石像の広間には、呪文がまったく働かない場所があります。\nそこでは、剣と薬だけが頼りです。" },
+  { min: 5, who: "古参の冒険者", text: "蛇の髪の女どもは、目を合わせた者を石にする。\nあいつらは、二つ目の欠片と水門の鍵を持っているそうだ。" },
+  // 地下7階
+  { min: 6, who: "酔った坑夫", text: "泥濘の底の毒沼は、歩くだけで体を蝕む。\nどこかに澄んだ泉が湧いてるって話だ。" },
+  { min: 6, who: "古参の冒険者", text: "泥濘の底の水門は、石像の広間で手に入る鍵で開く。\n沼の奥には、主が潜んでいるぞ。" },
+  // 地下8階
+  { min: 7, who: "酔った坑夫", text: "ひび割れた深層は、床が抜ける。\n落とし穴ならまだいいが、下の階まで落ちる穴もあるんだ。" },
+  { min: 7, who: "古参の冒険者", text: "三つ目の欠片は、地下8階の宝物庫の前にいる炎の巨人が守っている。" },
+  // 地下9階
+  { min: 8, who: "旅の僧侶", text: "黒曜の回廊の番人は、通る者に謎をかける。\n朝・昼・夕べと、足の数が変わるものだそうだ。我が身を振り返ってみよ。" },
+  { min: 8, who: "若い魔術師", text: "黒曜の回廊は、暗闇の場所が多いんです。\n暗闇の中は、地図にも残りません。" },
+  // 地下10階
+  { min: 9, who: "古参の冒険者", text: "灰の司祭は、親衛兵と吸血鬼の王を従えている。\n封印の間にも、呪文の働かない場所があるそうだ。" },
+  // クリア後
+  { cond: () => S.cleared && !S.flags.hoshikui, who: "酔った坑夫", text: "守り人の古い言い伝えじゃ、星灯を祭壇から離すと、\n眠っているものが目を覚ますそうだ。……まさか、試す気じゃねえだろうな。" },
+  { cond: () => !!S.flags.hoshikui, who: "酒場の主人", text: "星喰いを討った英雄に、乾杯！\n今夜の酒は、店のおごりだよ。" },
+];
+async function rumor() {
+  const pool = RUMORS.map((r, i) => ({ r, i })).filter(({ r }) => r.cond ? r.cond() : (r.min === undefined || (S.deepest || 0) >= r.min));
+  const heard = S.rumors || (S.rumors = []);
+  let fresh = pool.filter(x => !heard.includes(x.i));
+  if (!fresh.length) { S.rumors = heard.filter(i => !pool.some(x => x.i === i)); fresh = pool; } // ひととおり聞いたら、また最初から
+  // まだ聞いていない話の中では、いま向かっている階の話（min が大きいもの）を出やすくする
+  const top = Math.max(...fresh.map(x => x.r.cond ? 99 : x.r.min === undefined ? -1 : x.r.min));
+  const near = fresh.filter(x => (x.r.cond ? 99 : x.r.min === undefined ? -1 : x.r.min) === top);
+  const x = pick(chance(0.6) ? near : fresh);
+  S.rumors.push(x.i); saveGame();
+  await tell(`${x.r.who}「${x.r.text}」`);
+}
 async function tavern() {
   while (true) {
     showScene("tavern");
     renderParty();
     const k = await choose([
-      { label: "仲間に加える", value: "add", disabled: S.party.length >= 6 },
-      { label: "仲間から外す", value: "rem", disabled: !S.party.length },
-      { label: "並び替える", value: "order", disabled: S.party.length < 2 },
+      { label: "加える", value: "add", disabled: S.party.length >= 6 },
+      { label: "外す", value: "rem", disabled: !S.party.length },
+      { label: "並び替え", value: "order", disabled: S.party.length < 2 },
       { label: "全員外す", value: "remall", disabled: !S.party.length },
-      { label: "名簿を見る", value: "roster" },
-    ], { cancel: true, cancelLabel: "町へ戻る" });
+      { label: "名簿", value: "roster" },
+      { label: "世間話", value: "rumor" },
+    ], { cancel: true, cancelLabel: "町へ戻る", cols: 3 });
     if (!k) return;
+    if (k === "rumor") { await rumor(); continue; }
     if (k === "add") {
       while (S.party.length < 6) {
         const cand = S.roster.filter(c => !S.party.includes(c.id));
