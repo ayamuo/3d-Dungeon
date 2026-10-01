@@ -168,6 +168,8 @@
   .pad .camp{grid-column:1/-1;font-size:14px !important;padding:9px !important;}
   .pad .camp.half{grid-column:span 1;}
   .pad .camp.half.pri{grid-column:span 2;}
+  /* 縦長の画面（スマホ）では、移動のボタンは絵だけにして高さを詰める（文字はヘルプに書いてある） */
+  @media (orientation:portrait){ #cmd .pad button small{display:none;} .pad button{font-size:24px !important;padding:7px 4px !important;min-height:44px;} .pad button.sm{font-size:21px !important;} .pad .camp{font-size:14px !important;min-height:40px;padding:7px !important;} }
 
   /* パーティ表 */
   #party{margin-top:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px 8px;font-size:15px;}

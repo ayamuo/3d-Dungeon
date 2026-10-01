@@ -89,8 +89,8 @@ function waitMazeInput() {
   const t = FL(S.pos.f).tile[cidx(S.pos.x, S.pos.y)];
   const tl = t && { up: "▲ 階段をのぼる", down: "▼ 階段をおりる", elev: "昇降機を使う" }[t.t];
   cmd.innerHTML = `<div class="pad">
-    <button data-a="map" class="sm">🗺️<small>地図</small></button><button data-a="fwd" class="arr">▲<small>前進</small></button><button data-a="search" class="sm">🔍<small>調べる</small></button>
-    <button data-a="left" class="arr">↰<small>左を向く</small></button><button data-a="back" class="arr">⟲<small>振り返る</small></button><button data-a="right" class="arr">↱<small>右を向く</small></button>
+    <button data-a="map" class="sm" aria-label="地図">🗺️<small>地図</small></button><button data-a="fwd" class="arr" aria-label="前進">▲<small>前進</small></button><button data-a="search" class="sm" aria-label="調べる">🔍<small>調べる</small></button>
+    <button data-a="left" class="arr" aria-label="左を向く">↰<small>左を向く</small></button><button data-a="back" class="arr" aria-label="振り返る">⟲<small>振り返る</small></button><button data-a="right" class="arr" aria-label="右を向く">↱<small>右を向く</small></button>
     <button data-a="camp" class="camp${tl ? " half" : ""}">⛺ キャンプ</button>${tl ? `<button data-a="tile" class="camp half pri">${tl}</button>` : ""}</div>`;
   return new Promise(res => {
     inputResolver = a => { inputResolver = null; res(a); };
