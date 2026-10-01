@@ -26,13 +26,15 @@
   header,#stage,#msg,#cmd,#party{flex-shrink:0;}
   #mainCol,#sideCol{display:contents;} /* スマホの縦画面では入れ物が無いのと同じ（横長の画面だけ2列に分ける） */
   #stage{position:relative;width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:#000;border:1px solid #2a2f3d;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.5);flex:0 0 auto;}
-  #view{position:absolute;inset:0;width:100%;height:100%;display:block;}
+  /* 縦横比の指定（aspect-ratio）を知らない古いブラウザでは、高さを幅から決める */
+  @supports not (aspect-ratio:1/1){ #stage{height:62.5vw;max-height:60vh;} #mini{width:84px;height:84px;} }
+  #view{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;display:block;}
   /* ミニマップ（灯りの間だけ）。戦闘やイベントの絵が出ている間、迷宮の外では出さない */
   #mini{position:absolute;right:8px;top:8px;width:22%;min-width:84px;max-width:160px;aspect-ratio:1;border:1px solid rgba(255,255,255,.4);border-radius:4px;opacity:.9;z-index:3;display:none;cursor:pointer;}
   #scene.on ~ #mini,body:not([data-mode="maze"]) #mini{display:none !important;}
   #hud{position:absolute;left:8px;top:6px;font-size:12px;color:#cfd6e6;text-shadow:0 1px 2px #000;pointer-events:none;z-index:3;}
   #hud b{color:var(--accent);}
-  #scene{position:absolute;inset:0;display:none;z-index:2;transition:box-shadow .15s;}
+  #scene{position:absolute;top:0;right:0;bottom:0;left:0;display:none;z-index:2;transition:box-shadow .15s;}
   #scene.on{display:flex;align-items:center;justify-content:center;}
   #scene.town,#scene.chest,#scene.wipe{background:radial-gradient(ellipse at 50% 40%,#2a2536,#0d0c13 75%);}
   #scene.title{background:radial-gradient(ellipse at 50% 30%,#3a2a1a,#0b0a0e 70%);}
@@ -53,7 +55,7 @@
   .ttl .t2{font-size:14px;color:#e8d8b8;margin-top:8px;letter-spacing:3px;font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;}
   .ttl .t3{font-size:9px;color:#8a7a60;margin-top:10px;letter-spacing:2px;}
   /* タイトル画面：絵を画面いっぱいに敷き、タイトルの文字を上に、記録のボタンを下に重ねる */
-  body[data-mode="title"] #stage{position:fixed;inset:0;width:auto;aspect-ratio:auto;align-self:stretch;border:none;border-radius:0;box-shadow:none;z-index:0;}
+  body[data-mode="title"] #stage{position:fixed;top:0;right:0;bottom:0;left:0;width:auto;aspect-ratio:auto;align-self:stretch;border:none;border-radius:0;box-shadow:none;z-index:0;}
   body[data-mode="title"] #msg,body[data-mode="title"] #party{display:none;}
   body[data-mode="title"] header{position:fixed;top:0;left:0;right:0;z-index:3;padding:8px 12px;}
   body[data-mode="title"] header h1,body[data-mode="title"] #goldTag{visibility:hidden;}
@@ -77,7 +79,7 @@
   .mimg{position:relative;width:100%;flex:1;min-height:0;border-radius:10px;background:radial-gradient(circle at 50% 45%,color-mix(in srgb,var(--mc) 55%,transparent),rgba(0,0,0,.2) 70%);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.08);overflow:hidden;}
   .mimg .glyph{font-size:min(15vw,54px);filter:drop-shadow(0 4px 6px rgba(0,0,0,.7));}
   .mgs.n1 .mimg .glyph{font-size:72px;}
-  .mimg img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
+  .mimg img{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;object-fit:contain;}
   .mimg.hasimg .glyph,.mimg.hasimg .kari{display:none;}
   /* 画像があるときは枠と背景の光を消して、絵だけを見せる（足元に影を付けて浮かないように） */
   .mimg.hasimg{background:none;border:none;border-radius:0;overflow:visible;}
@@ -86,13 +88,13 @@
   .mimg.unk img{filter:brightness(0) invert(.3) drop-shadow(0 0 3px rgba(190,205,255,.3));}
   .mimg.unk .glyph{filter:brightness(0) invert(.3);}
   /* 遭遇の演出 */
-  .encfx{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;pointer-events:none;}
-  .encfx canvas{position:absolute;inset:0;width:100%;height:100%;}
-  .ambfx{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;} /* 迷宮の空気（塵・水滴） */
+  .encfx{position:absolute;top:0;right:0;bottom:0;left:0;z-index:6;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+  .encfx canvas{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;}
+  .ambfx{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;} /* 迷宮の空気（塵・水滴） */
   /* 宝箱の罠の煙 */
-  .smoke{position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse 60% 55% at 50% 62%,var(--sm),transparent 70%),radial-gradient(ellipse 40% 35% at 30% 45%,var(--sm),transparent 70%),radial-gradient(ellipse 40% 35% at 72% 48%,var(--sm),transparent 70%);animation:smoke 1.6s ease-out forwards;}
+  .smoke{position:absolute;top:0;right:0;bottom:0;left:0;z-index:5;pointer-events:none;background:radial-gradient(ellipse 60% 55% at 50% 62%,var(--sm),transparent 70%),radial-gradient(ellipse 40% 35% at 30% 45%,var(--sm),transparent 70%),radial-gradient(ellipse 40% 35% at 72% 48%,var(--sm),transparent 70%);animation:smoke 1.6s ease-out forwards;}
   @keyframes smoke{0%{opacity:0;transform:scale(.4) translateY(20%);}25%{opacity:.9;}100%{opacity:0;transform:scale(1.5) translateY(-12%);}}
-  .elevfx{position:absolute;inset:0;width:100%;height:100%;z-index:2;} /* 昇降機の移動の演出（左上の表示は上に重ねる） */
+  .elevfx{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;z-index:2;} /* 昇降機の移動の演出（左上の表示は上に重ねる） */
   html.stdfont body{font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;}
   html.stdfont .encfx b{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;font-weight:900;}
   .encfx b{position:relative;font:30px/1 "DotGothic16",sans-serif;color:#fff;letter-spacing:3px;
@@ -185,7 +187,7 @@
   .prow .plv{font-style:normal;font-size:12px;font-weight:800;color:#fcd34d;margin-right:5px;letter-spacing:0;}
 
   /* オーバーレイ（リスト・ダイアログ） */
-  #ov{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:20;padding:14px;}
+  #ov{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:20;padding:14px;}
   #ov.on{display:flex;}
   .sheet{background:var(--panel);border:1px solid #384058;border-radius:14px;width:100%;max-width:440px;max-height:calc(var(--vh, 100vh) * 0.88);display:flex;flex-direction:column;overflow:hidden;animation:pop .15s ease-out;}
   .sheet.small{max-width:360px;}
@@ -247,7 +249,7 @@
   .maplegend{font-size:10.5px;color:var(--dim);text-align:center;}
   /* 遊び方 */
   /* 蘇生の儀式 */
-  .ritual{position:absolute;inset:0;z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;pointer-events:none;
+  .ritual{position:absolute;top:0;right:0;bottom:0;left:0;z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;pointer-events:none;
     background:radial-gradient(ellipse at 50% 50%,rgba(14,20,48,.94),rgba(0,0,0,.96) 75%);animation:rfade .4s;}
   @keyframes rfade{from{opacity:0;}}
   .ritual .rl{font:700 20px/1.35 "Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif;color:#dfe8ff;letter-spacing:5px;text-shadow:0 0 10px #7da2ff;opacity:0;animation:rline .7s forwards;}
@@ -269,7 +271,7 @@
   .backlog .blsep{margin:10px 0 4px;color:var(--accent);font-size:12px;text-align:center;letter-spacing:2px;}
   /* キーボード・コントローラーで選んでいる項目 */
   .gfocus{outline:3px solid #7dd3fc !important;outline-offset:2px;box-shadow:0 0 14px rgba(125,211,252,.75) !important;position:relative;z-index:1;}
-  #helpOv{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:30;padding:16px;}
+  #helpOv{position:fixed;top:0;right:0;bottom:0;left:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:30;padding:16px;}
   #helpOv.on{display:flex;}
   #helpOv .hbox{background:var(--panel);border:1px solid #384058;border-radius:14px;max-width:440px;width:100%;max-height:calc(var(--vh, 100vh) * 0.86);display:flex;flex-direction:column;}
   #helpOv .htabs{display:flex;flex-wrap:wrap;gap:4px;padding:10px 12px;border-bottom:1px solid var(--line);}
@@ -345,7 +347,7 @@
   .bkrow{display:flex;align-items:center;gap:8px;}
   .bkrow small{opacity:.6;min-width:3.2em;}
   .bkimg{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;}
-  .bkimg img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;}
+  .bkimg img{position:absolute;top:0;right:0;bottom:0;left:0;width:100%;height:100%;object-fit:contain;}
   .bkimg .glyph{font-size:22px;line-height:1;}
   .bkimg .glyph{display:none;} .bkimg.ng .glyph{display:inline;} /* 仮の絵文字は、絵が読み込めなかったときだけ出す */
   .bkimg.shadow{filter:brightness(0) invert(.32);}

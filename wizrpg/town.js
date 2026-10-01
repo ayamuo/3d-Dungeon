@@ -38,7 +38,8 @@ function setTitleBg() {
   setSceneBg("title_v");
   preloadBg("title_v", null, () => { if (document.body.dataset.mode === "title") setSceneBg("title"); });
 }
-WIDE_MQ.addEventListener("change", () => { if (document.body.dataset.mode === "title") setTitleBg(); });
+// 古いブラウザは addEventListener を持たないので、あるほうを使う
+{ const f = () => { if (document.body.dataset.mode === "title") setTitleBg(); }; if (WIDE_MQ.addEventListener) WIDE_MQ.addEventListener("change", f); else if (WIDE_MQ.addListener) WIDE_MQ.addListener(f); }
 async function titleScreen() {
   document.body.dataset.mode = "title";
   const sc = $("scene");
