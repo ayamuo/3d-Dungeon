@@ -837,7 +837,9 @@ function renderParty() {
    「。」「！」「？」のあとに次の文が続くときは、そこで行を改める。
    文の途中で折り返すより読みやすいため。ボタンやリストの行は高さが変わると使いにくいので対象外。
    画面に文章が足されるたびに自動でかける（描画の前に処理されるので、ちらつかない） */
-const SENT_SPLIT = /(?<=[。！？])(?=[^\s。！？」』）〉】…―、])/;
+// （「後ろを見る」正規表現は古い iPhone のブラウザが読めず、このファイルごと動かなくなるので使わない）
+const SENT_END = /([。！？])(?=[^\s。！？」』）〉】…―、])/g;
+const sentSplit = s => s.replace(SENT_END, "$1\u0000").split("\u0000");
 const SENT_SKIP = "button,.srow,.nobr,input,textarea,script,style";
 function sentenceBreak(node) {
   const texts = [];
@@ -853,9 +855,10 @@ function sentenceBreak(node) {
     // 文が終わってすぐ次の文が太字などで始まるとき（「〜休む。<b>酒場</b>で〜」）も改行する
     const nx = t.nextSibling;
     if (/[。！？]$/.test(t.data) && nx && nx.nodeType === 1 && !/^(BR|DIV|P|UL|OL|LI|TABLE|H\d)$/.test(nx.tagName) && /^[^\s。！？」』）〉】…―、]/.test(nx.textContent)) t.after(document.createElement("br"));
-    if (!SENT_SPLIT.test(t.data)) continue;
+    const parts = sentSplit(t.data);
+    if (parts.length < 2) continue;
     const frag = document.createDocumentFragment();
-    t.data.split(SENT_SPLIT).forEach((s, i) => { if (i) frag.appendChild(document.createElement("br")); frag.appendChild(document.createTextNode(s)); });
+    parts.forEach((s, i) => { if (i) frag.appendChild(document.createElement("br")); frag.appendChild(document.createTextNode(s)); });
     t.replaceWith(frag);
   }
 }
