@@ -144,6 +144,8 @@
 
   /* コマンド */
   #cmd{margin-top:6px;min-height:120px;}
+  /* 迷宮の中（移動中・戦闘中）は、仲間の表を行動のボタンより上に出す（ボタンは画面のいちばん下で、親指が届きやすい） */
+  body[data-mode="maze"] #cmd{order:1;}
   .ctitle{font-size:12px;color:var(--accent);margin:0 2px 5px;font-weight:700;}
   .cgrid{display:grid;gap:6px;}
   .cgrid.c1{grid-template-columns:1fr;} .cgrid.c2{grid-template-columns:1fr 1fr;} .cgrid.c3{grid-template-columns:1fr 1fr 1fr;}
