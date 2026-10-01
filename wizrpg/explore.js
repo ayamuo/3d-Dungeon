@@ -1087,6 +1087,11 @@ function drawAutomap(cv, fn) {
   cv.width = size * dpr; cv.height = size * dpr;
   const g = cv.getContext("2d");
   g.scale(dpr, dpr);
+  paintAutomap(g, fn, size);
+}
+/* 地図の中身を描く（全体の地図と、灯りの間に出るミニマップで共通） */
+function paintAutomap(g, fn, size) {
+  const f = FL(fn), ex = S.explored[fn] || "0".repeat(400);
   // 外周の壁の線が端で切れたり、角丸で隠れたりしないよう、周りに余白をとる
   const pad = 8, cs = (size - pad * 2) / 20;
   g.fillStyle = "#0b0d12"; g.fillRect(0, 0, size, size);
@@ -1153,6 +1158,33 @@ function drawAutomap(cv, fn) {
     g.fillStyle = "#4ade80"; g.beginPath(); g.moveTo(0, -cs * 0.38); g.lineTo(cs * 0.3, cs * 0.3); g.lineTo(-cs * 0.3, cs * 0.3); g.closePath(); g.fill();
     g.restore();
   }
+}
+
+/* ────────── ミニマップ ──────────
+   灯り・大灯りが効いている間だけ、迷宮の画面の右上に、自分のまわり9×9マスの地図を出す（北が上）。
+   全体の地図を見えないキャンバスに描いておき、自分のまわりだけ切り出す。暗闇の中では出さない */
+const MINI = { cv: null, key: "", N: 9, BIG: 420, SC: 2 };
+// ミニマップを押すと、全体の地図を開く
+document.addEventListener("click", e => { if (e.target && e.target.id === "mini" && inputResolver) inputResolver("map"); });
+function drawMini() {
+  const el = $("mini"); if (!el) return;
+  const on = !!(S && S.inMaze && S.pos && S.light > 0 && !f_isDark());
+  el.style.display = on ? "block" : "none";
+  if (!on) return;
+  const { N, BIG, SC } = MINI, fn = S.pos.f;
+  const key = [fn, S.pos.x, S.pos.y, S.pos.d, S.explored[fn], JSON.stringify((S.mapMarks && S.mapMarks[fn]) || 0), JSON.stringify((S.knownTraps && S.knownTraps[fn]) || 0), S.bodies.length].join("|");
+  if (!MINI.cv) { MINI.cv = document.createElement("canvas"); MINI.cv.width = MINI.cv.height = BIG * SC; }
+  if (MINI.key !== key) { MINI.key = key; const g0 = MINI.cv.getContext("2d"); g0.setTransform(SC, 0, 0, SC, 0, 0); paintAutomap(g0, fn, BIG); }
+  const w = el.clientWidth; if (!w) return;
+  const px = Math.round(w * Math.min(2, window.devicePixelRatio || 1));
+  if (el.width !== px) el.width = el.height = px;
+  const g = el.getContext("2d");
+  g.fillStyle = "#0b0d12"; g.fillRect(0, 0, px, px);
+  const pad = 8, cs = (BIG - pad * 2) / 20, sw = N * cs * SC;
+  const sx = (pad + (S.pos.x - (N - 1) / 2) * cs) * SC, sy = (pad + (19 - S.pos.y - (N - 1) / 2) * cs) * SC;
+  // 階の端では、地図の外にはみ出すぶんを切り落として描く
+  const x0 = Math.max(0, sx), y0 = Math.max(0, sy), x1 = Math.min(BIG * SC, sx + sw), y1 = Math.min(BIG * SC, sy + sw), k = px / sw;
+  g.drawImage(MINI.cv, x0, y0, x1 - x0, y1 - y0, (x0 - sx) * k, (y0 - sy) * k, (x1 - x0) * k, (y1 - y0) * k);
 }
 
 /* ────────── 歩く動き ──────────
@@ -1338,6 +1370,7 @@ function procTex(kind) {
 
 function drawView() {
   if (!S || !S.pos) return;
+  drawMini();
   Amb.start(); // 迷宮の空気（塵・水滴）。すでに動いていれば何もしない
   const cv = $("view"); const dpr = sizeCanvas(cv);
   const g = cv.getContext("2d");

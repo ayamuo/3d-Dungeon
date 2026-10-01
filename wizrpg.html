@@ -27,6 +27,9 @@
   #mainCol,#sideCol{display:contents;} /* スマホの縦画面では入れ物が無いのと同じ（横長の画面だけ2列に分ける） */
   #stage{position:relative;width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;background:#000;border:1px solid #2a2f3d;box-shadow:0 0 0 1px #000,0 6px 18px rgba(0,0,0,.5);flex:0 0 auto;}
   #view{position:absolute;inset:0;width:100%;height:100%;display:block;}
+  /* ミニマップ（灯りの間だけ）。戦闘やイベントの絵が出ている間、迷宮の外では出さない */
+  #mini{position:absolute;right:8px;top:8px;width:22%;min-width:84px;max-width:160px;aspect-ratio:1;border:1px solid rgba(255,255,255,.4);border-radius:4px;opacity:.9;z-index:3;display:none;cursor:pointer;}
+  #scene.on ~ #mini,body:not([data-mode="maze"]) #mini{display:none !important;}
   #hud{position:absolute;left:8px;top:6px;font-size:12px;color:#cfd6e6;text-shadow:0 1px 2px #000;pointer-events:none;z-index:3;}
   #hud b{color:var(--accent);}
   #scene{position:absolute;inset:0;display:none;z-index:2;transition:box-shadow .15s;}
@@ -401,7 +404,7 @@ if (!document.documentElement.classList.contains("stdfont")) window.loadDotFont(
 </head>
 <body data-mode="title">
 <header><a href="index.html">← もどる</a><h1 id="ttl">星灯の迷宮<small id="loc"></small></h1><span id="goldTag"></span><button id="muteBtn">🔊</button><button id="logBtn">📜</button><button id="helpBtn">？</button></header>
-<div id="mainCol"><div id="stage"><canvas id="view"></canvas><div id="scene"></div><div id="hud"></div></div>
+<div id="mainCol"><div id="stage"><canvas id="view"></canvas><div id="scene"></div><div id="hud"></div><canvas id="mini"></canvas></div>
 <div id="msg"></div></div>
 <div id="sideCol"><div id="cmd"></div>
 <div id="party"></div></div>
@@ -441,6 +444,7 @@ if (!document.documentElement.classList.contains("stdfont")) window.loadDotFont(
       パソコンでは矢印キー（またはWASD）、Cでキャンプ、Mで地図、Enterで階段・昇降機。
       <h3>調べる</h3>
       正面の壁を調べる。<b>隠し扉</b>が見つかることがある。「灯り」の呪文（または灯りの巻物）を使うと、見えている範囲の隠し扉が自動で見つかる。<br>
+      灯りが効いている間は、画面の右上に、自分のまわりの小さな地図も出る（押すと全体の地図が開く。暗闇の中では出ない）。<br>
       各階には、<b>隠されたお金や品物</b>もいくつかある。行き止まりのような場所で調べると見つかることがある。「透視」の呪文を使うと、近くに隠された場所があれば地図に ✦ で印が付く。
       <h3>キャンプ</h3>
       迷宮の中で、装備の変更・呪文（回復など）・並び替えができる。パーティ表の名前をタップしてもキャラクター画面が開く。<br>
