@@ -163,15 +163,17 @@
   #cmd button.wide2{grid-column:1/-1;} #cmd button.span2{grid-column:span 2;}
   #cmd button.wide{width:100%;padding:12px;}
   .cgrid.c1 button{text-align:left;padding:10px 12px;}
-  .pad{display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:6px;}
-  .pad button{padding:8px 4px !important;font-size:20px !important;}
-  .pad button small{font-size:10px !important;}
-  .pad button.sm{font-size:16px !important;}
-  .pad .camp{grid-column:1/-1;font-size:14px !important;padding:9px !important;}
+  /* 迷宮のボタン：3列を同じ幅にそろえ、絵（ドット絵）を真ん中に置く */
+  .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+  .pad button{padding:6px 4px !important;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:52px;}
+  .pad .pix{width:26px;height:26px;display:block;flex:none;}
+  .pad button small{font-size:10px !important;margin-top:0 !important;}
+  .pad .camp{grid-column:1/-1;flex-direction:row;gap:7px;font-size:14px !important;min-height:42px;}
+  .pad .camp .pix{width:20px;height:20px;}
   .pad .camp.half{grid-column:span 1;}
   .pad .camp.half.pri{grid-column:span 2;}
   /* 縦長の画面（スマホ）では、移動のボタンは絵だけにして高さを詰める（文字はヘルプに書いてある） */
-  @media (orientation:portrait){ #cmd .pad button small{display:none;} .pad button{font-size:24px !important;padding:7px 4px !important;min-height:44px;} .pad button.sm{font-size:21px !important;} .pad .camp{font-size:14px !important;min-height:40px;padding:7px !important;} }
+  @media (orientation:portrait){ #cmd .pad button small{display:none;} .pad button{min-height:46px;} .pad .pix{width:28px;height:28px;} .pad .camp{min-height:40px;} .pad .camp .pix{width:20px;height:20px;} }
 
   /* パーティ表 */
   #party{margin-top:6px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px 8px;font-size:15px;}
