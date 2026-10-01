@@ -3,8 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<!-- このページは最初から暗い配色。ブラウザの「強制ダークモード」に色を塗り替えさせない（背景の絵が黒く潰れるのを防ぐ） -->
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#07080c">
 <title>星灯の迷宮</title>
 <style>
+  :root{color-scheme:dark;}
   /* 文字はレトロなドット文字（DotGothic16・SIL Open Font License。wizrpg/font/OFL.txt） */
   @font-face{font-family:"DotGothic16";src:url("wizrpg/font/DotGothic16-Regular.ttf") format("truetype");font-display:swap;}
   :root{--bg:#0b0c12;--panel:#1a1d28;--panel2:#232838;--line:#2c3244;--text:#e8e8ee;--dim:#8890a0;--accent:#e2b85c;--ok:#4ade80;--bad:#f87171;}
