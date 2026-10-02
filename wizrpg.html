@@ -355,6 +355,10 @@
   @media (pointer:coarse){
     #cmd button,.sheet .sfoot button,.sheet .csnav,.spd button,.mapnav button,.bprow button,#helpOv .hfoot button,#helpOv .htabs button{
       border:1px solid rgba(255,255,255,.34) !important;border-radius:6px !important;background:rgba(255,255,255,.06) !important;min-height:44px;}
+    /* ▶ 用の左の余白をやめて、文字を枠の真ん中に置く（コントローラをつないで ▶ が出ている間は、余白を残す） */
+    body:not(.navmode) #cmd button,body:not(.navmode) .sheet .sfoot button,body:not(.navmode) .spd button,body:not(.navmode) .mapnav button,body:not(.navmode) .bprow button,body:not(.navmode) #helpOv .hfoot button,body:not(.navmode) #helpOv .htabs button{
+      padding-left:8px !important;padding-right:8px !important;text-align:center;}
+    body:not(.navmode) .sheet .slist .srow,body:not(.navmode) .sheet .slist.g2 .srow{padding-left:10px !important;padding-right:10px !important;}
     #cmd button:disabled,.sheet .sfoot button:disabled{border-color:rgba(255,255,255,.12) !important;background:none !important;}
     .cgrid{gap:6px;} .sfoot{gap:6px;}
     /* 押している間は、白地に黒い文字 */
