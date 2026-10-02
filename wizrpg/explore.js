@@ -839,7 +839,7 @@ async function foundBodies(bi) {
   await tell(`${take.map(c => c.name).join("、")}をパーティに加えた。\n町の聖堂で蘇生してもらおう。`);
 }
 async function partyWiped() {
-  Bgm.stop(0.8);
+  Bgm.play("wipe"); // 全滅の曲（町へ戻ると、町の曲に替わる）
   Snd.play("lose");
   $("scene").className = "on wipe";
   setSceneBg("wipe");
@@ -872,7 +872,7 @@ async function partyWiped() {
    本格ルール：パーティは岩に閉ざされ、二度と戻らない（仲間は名簿から消える）。救済ルール：全滅と同じ扱い */
 const inRock = (fn, x, y) => !!(FL(fn).rock && FL(fn).rock[cidx(x, y)]);
 async function buriedInRock() {
-  Bgm.stop(0.8);
+  Bgm.play("wipe"); // 全滅の曲（町へ戻ると、町の曲に替わる）
   Snd.play("lose"); vibrate(200);
   $("scene").className = "on wipe";
   setSceneBg("wipe");

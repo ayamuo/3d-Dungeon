@@ -225,6 +225,7 @@ const BGM_LIST = {
   battle: { midi: "maou_game_battle19.mid", vol: 0.4 },     // 戦闘：とても速く激しい（テンポ280・歪んだギター）
   boss: { midi: "maou_game_battle18.mid", vol: 0.4 },       // 各階の番人との戦い：短調で激しい
   lastboss: { midi: "maou_game_battle20.mid", vol: 0.4 },   // 最後の戦い（灰の司祭モルヴァン）：音数が最も多い
+  wipe: { midi: "maou_game_event38.mid", vol: 0.45 },      // 全滅したとき
   town: { midi: "maou_game_town25b.mid", vol: 0.42 },       // 町：ゆったりした長調・ピチカートと鉄琴
   dangeon01: { midi: "maou_game_dangeon01.mid", vol: 0.46 }, // 高い音域・ハープと合唱：神秘的
   dangeon02: { midi: "maou_game_dangeon02.mid", vol: 0.42 }, // 中くらいの速さ・歪んだギター：重苦しい

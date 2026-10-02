@@ -620,50 +620,75 @@ function eligibleClasses(st, align) {
     return true;
   });
 }
+/* キャラクターを作る。名前 → 種族 → 性格 → ボーナスの割り振り → 職業 → 最後の確認。
+   途中の画面は「もどる」で1つ前へ戻れる（割り振った能力値は残る）。やめるときは、作りかけが消えることを確かめる */
 async function createChar() {
   const name = await inputName("");
   if (!name) return;
-  const race = await listPick("種族を選ぶ", Object.keys(RACES).map(k => {
-    const b = RACES[k].base;
-    return { html: `<b>${RACES[k].name}</b> <small>力${b.str} 知${b.iq} 信${b.pie} 生${b.vit} 素${b.agi} 運${b.luk}</small><br><small>${RACES[k].desc}。${RACES[k].trait}。</small>`, value: k };
-  }));
-  if (!race) return;
-  const align = await listPick("性格を選ぶ", [
-    { html: "<b>善</b> <small>僧侶・司教・侍・君主になれる</small>", value: "G" },
-    { html: "<b>中立</b> <small>盗賊・侍になれる</small>", value: "N" },
-    { html: "<b>悪</b> <small>僧侶・盗賊・司教・忍者になれる</small>", value: "E" },
-  ]);
-  if (!align) return;
-  // ボーナスポイントの割り振り
-  const base = RACES[race].base;
-  let bonus = rollBonus(), left = bonus;
-  const st = { ...base };
-  const res = await dialog(`<div id="bpBox"></div>`, [
-    { label: "やめる", value: null },
-    { label: "振り直す", value: body => { bonus = rollBonus(); left = bonus; Object.assign(st, base); draw(body); Snd.play("move"); return false; } },
-    { label: "決定", cls: "pri", value: body => {
+  const quit = extra => confirmBox(`${name}を作っている途中です。${extra || ""}\n作るのをやめますか？`, "やめる", "つづける");
+  let step = "race", race = null, align = null, cls = null;
+  let base = null, bonus = 0, left = 0, st = null;
+  while (true) {
+    if (step === "race") {
+      const r = await listPick("種族を選ぶ", Object.keys(RACES).map(k => {
+        const b = RACES[k].base;
+        return { html: `<b>${RACES[k].name}</b> <small>力${b.str} 知${b.iq} 信${b.pie} 生${b.vit} 素${b.agi} 運${b.luk}</small><br><small>${RACES[k].desc}。${RACES[k].trait}。</small>`, value: k };
+      }), { cancelLabel: "やめる" });
+      if (!r) { if (await quit()) return; continue; }
+      if (r !== race) st = null; // 種族を変えたら、割り振りはやり直し
+      race = r; step = "align";
+    } else if (step === "align") {
+      const r = await listPick("性格を選ぶ", [
+        { html: "<b>善</b> <small>僧侶・司教・侍・君主になれる</small>", value: "G" },
+        { html: "<b>中立</b> <small>盗賊・侍になれる</small>", value: "N" },
+        { html: "<b>悪</b> <small>僧侶・盗賊・司教・忍者になれる</small>", value: "E" },
+      ], { cancelLabel: "もどる" });
+      if (!r) { step = "race"; continue; }
+      align = r; step = "bonus";
+    } else if (step === "bonus") {
+      // ボーナスポイントの割り振り（前の画面から戻ってきたときは、割り振った値を残す）
+      base = RACES[race].base;
+      if (!st) { bonus = rollBonus(); left = bonus; st = { ...base }; }
+      const draw = body => {
+        const el = eligibleClasses(st, align);
+        body.querySelector("#bpBox").innerHTML =
+          `<div class="bpleft">ボーナス <b>${left}</b> / ${bonus}${bonus >= 15 ? ' <span class="lucky">大当たり！</span>' : ""}</div>` +
+          STATS.map(k => `<div class="bprow"><span>${STAT_NAMES[k]}</span><button data-k="${k}" data-d="-1">－</button><b>${st[k]}</b><button data-k="${k}" data-d="1">＋</button></div>`).join("") +
+          `<div class="bpcls">${CLASS_ORDER.map(k => `<span class="${el.includes(k) ? "ok" : ""}">${CLASSES[k].name}</span>`).join("")}</div><div class="bpwarn"></div>`;
+        body.querySelectorAll(".bprow button").forEach(b => b.onclick = () => {
+          const k = b.dataset.k, d = +b.dataset.d;
+          if (d > 0 && (left <= 0 || st[k] >= 18)) return;
+          if (d < 0 && st[k] <= base[k]) return;
+          st[k] += d; left -= d; Snd.play("move"); draw(body);
+        });
+      };
+      const res = await dialog(`<div id="bpBox"></div>`, [
+        { label: "やめる", value: "quit" },
+        { label: "振り直す", value: body => { bonus = rollBonus(); left = bonus; Object.assign(st, base); draw(body); Snd.play("move"); return false; } },
+        { label: "決定", cls: "pri", value: body => {
+          const el = eligibleClasses(st, align);
+          if (!el.length) { body.querySelector(".bpwarn").textContent = "なれる職業がまだない。ポイントを割り振ろう。"; return false; }
+          return "ok";
+        } },
+      ], { title: `${name}（${RACES[race].name}・${ALIGNS[align]}）`, onOpen: b => draw(b) });
+      if (res !== "ok") { if (await quit(`\nボーナス${bonus}点の割り振りは失われます。`)) return; continue; } // 「つづける」なら、同じ割り振りのまま開き直す
+      step = "class";
+    } else if (step === "class") {
       const el = eligibleClasses(st, align);
-      if (!el.length) { body.querySelector(".bpwarn").textContent = "なれる職業がまだない。ポイントを割り振ろう。"; return false; }
-      return true;
-    } },
-  ], { title: `${name}（${RACES[race].name}・${ALIGNS[align]}）`, onOpen: b => draw(b) });
-  function draw(body) {
-    const el = eligibleClasses(st, align);
-    body.querySelector("#bpBox").innerHTML =
-      `<div class="bpleft">ボーナス <b>${left}</b> / ${bonus}${bonus >= 15 ? ' <span class="lucky">大当たり！</span>' : ""}</div>` +
-      STATS.map(k => `<div class="bprow"><span>${STAT_NAMES[k]}</span><button data-k="${k}" data-d="-1">－</button><b>${st[k]}</b><button data-k="${k}" data-d="1">＋</button></div>`).join("") +
-      `<div class="bpcls">${CLASS_ORDER.map(k => `<span class="${el.includes(k) ? "ok" : ""}">${CLASSES[k].name}</span>`).join("")}</div><div class="bpwarn"></div>`;
-    body.querySelectorAll(".bprow button").forEach(b => b.onclick = () => {
-      const k = b.dataset.k, d = +b.dataset.d;
-      if (d > 0 && (left <= 0 || st[k] >= 18)) return;
-      if (d < 0 && st[k] <= base[k]) return;
-      st[k] += d; left -= d; Snd.play("move"); draw(body);
-    });
+      const r = await listPick("職業を選ぶ", el.map(k => ({ html: `<b>${CLASSES[k].name}</b><br><small>${CLASSES[k].desc}</small>`, value: k })),
+        { note: left ? `※ 残りのボーナス${left}点は失われる` : "", cancelLabel: "もどる" });
+      if (!r) { step = "bonus"; continue; }
+      cls = r; step = "confirm";
+    } else {
+      // 最後の確認（押し間違いで決まってしまわないように）
+      const ok = await dialog(`<p><b>${esc(name)}</b><br>${RACES[race].name}・${ALIGNS[align]}・${CLASSES[cls].name}</p>
+        <p>${STATS.map(k => `${STAT_NAMES[k]} ${st[k]}`).join("　")}</p>${left ? `<p>※ 残りのボーナス${left}点は失われる</p>` : ""}
+        <p>この内容で登録しますか？</p>`,
+        [{ label: "選び直す", value: false }, { label: "登録する", value: true, cls: "pri" }], { title: "キャラクターの登録", small: true });
+      if (!ok) { step = "class"; continue; }
+      break;
+    }
   }
-  if (!res) return;
-  const el = eligibleClasses(st, align);
-  const cls = await listPick("職業を選ぶ", el.map(k => ({ html: `<b>${CLASSES[k].name}</b><br><small>${CLASSES[k].desc}</small>`, value: k })), { note: left ? `※ 残りのボーナス${left}点は失われる。` : "" });
-  if (!cls) return;
   const c = makeChar(name, race, align, cls, st);
   S.roster.push(c);
   const g = rr(90, 190); S.gold += g;
