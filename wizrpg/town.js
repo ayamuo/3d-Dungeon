@@ -625,8 +625,8 @@ async function createChar() {
   if (!name) return;
   const race = await listPick("種族を選ぶ", Object.keys(RACES).map(k => {
     const b = RACES[k].base;
-    return { html: `<b>${RACES[k].name}</b>`, rhtml: `<small>力${b.str} 知${b.iq} 信${b.pie} 生${b.vit} 素${b.agi} 運${b.luk}</small>`, value: k };
-  }));
+    return { html: `<b>${RACES[k].name}</b> <small>力${b.str} 知${b.iq} 信${b.pie} 生${b.vit} 素${b.agi} 運${b.luk}</small><br><small>${RACES[k].desc}。${RACES[k].trait}。</small>`, value: k };
+  }), { note: "能力値は、最初の値から10まで伸びる。" });
   if (!race) return;
   const align = await listPick("性格を選ぶ", [
     { html: "<b>善</b> <small>僧侶・司教・侍・君主になれる</small>", value: "G" },
@@ -655,7 +655,7 @@ async function createChar() {
       `<div class="bpcls">${CLASS_ORDER.map(k => `<span class="${el.includes(k) ? "ok" : ""}">${CLASSES[k].name}</span>`).join("")}</div><div class="bpwarn"></div>`;
     body.querySelectorAll(".bprow button").forEach(b => b.onclick = () => {
       const k = b.dataset.k, d = +b.dataset.d;
-      if (d > 0 && (left <= 0 || st[k] >= 18)) return;
+      if (d > 0 && (left <= 0 || st[k] >= base[k] + 10)) return;
       if (d < 0 && st[k] <= base[k]) return;
       st[k] += d; left -= d; Snd.play("move"); draw(body);
     });
@@ -944,7 +944,8 @@ async function charSheet(c, ctx) {
         <div>HP <b>${c.hp}</b>/${c.maxhp}</div><div>AC <b>${computeAC(c)}</b></div><div>状態 <b>${statusLabel(c) || "正常"}</b></div>
         <div class="w2">経験値 ${c.exp.toLocaleString()}<br><small>${c.exp >= nextExp(c) ? '<b style="color:#fcd34d">宿屋で休むとレベルアップ！</b>' : "次のLvまで " + (nextExp(c) - c.exp).toLocaleString()}</small></div><div>攻撃回数 ${swings(c)}</div>
       </div>
-      <div class="csst">${STATS.map(k => `<div><small>${STAT_NAMES[k]}</small><b>${c.st[k]}</b></div>`).join("")}</div>
+      <div class="csst">${STATS.map(k => `<div><small>${STAT_NAMES[k]}</small><b>${c.st[k]}</b><i class="cap">/${statCap(c, k)}</i></div>`).join("")}</div>
+      <div class="csrace">${RACES[c.race].name}：${RACES[c.race].trait}</div>
       <div class="csmp">魔術 ${slotStr("M")}<br>僧侶 ${slotStr("P")}</div>
       ${spellsHtml}
       <div class="csit"><div class="csh">持ち物 ${c.items.length}/8</div>${itemsHtml}</div>

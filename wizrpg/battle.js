@@ -646,7 +646,7 @@ async function playerAct(c, act) {
 }
 async function spellEffect(c, sp, tgt, fromItem) {
   Snd.play(ITEM_SND[fromItem] || SPELL_SND[sp.id] || "light");
-  const resist = (g) => g.def.mr && chance(g.def.mr / 100);
+  const resist = (g) => g.def.mr && chance(g.def.mr / 100 * (raceOf(c).pierce || 1)); // エルフの呪文は、打ち消されにくい
   const kind = spellFxKind(sp);
   switch (sp.eff) {
     case "dmg": case "undead": {
@@ -802,7 +802,8 @@ function frontTargets() {
   const front = pc.slice(0, 3).filter(c => isAlive(c) && c.status !== "stone");
   return front.length ? front : pc.filter(c => isAlive(c) && c.status !== "stone");
 }
-function saveThrow(c, base) { return chance(clamp(base + (c.st.luk - 10) * 0.02 + c.lvl * 0.01, 0, 0.8)); }
+// kind：何に対する抵抗か（毒・石化・眠り・麻痺・首はね）。種族がそれに強ければ、まず半分の確率ではねのける
+function saveThrow(c, base, kind) { if (kind && raceResist(c, kind)) return true; return chance(clamp(base + (c.st.luk - 10) * 0.02 + c.lvl * 0.01, 0, 0.8)); }
 function partyAC(c) { return computeAC(c, true) + (c._parry ? -2 : 0) + (c.status === "sleep" ? 5 : 0); }
 async function monsterAct(g, m) {
   const def = g.def, nm = gName(g);
@@ -845,7 +846,7 @@ async function monsterAct(g, m) {
       if (!isAlive(c) || c.status === "stone") continue;
       let d = base; if (saveThrow(c, 0.25)) d = Math.floor(d / 2);
       if (damageChar(c, d)) lines.push(`${c.name}は死んだ！`);
-      else if (def.breath === "gas" && !saveThrow(c, 0.3)) c.poison = 1;
+      else if (def.breath === "gas" && !saveThrow(c, 0.3, "poison")) c.poison = 1;
     }
     vibrate(80); shakeParty();
     await bmsg(`パーティ全員に約${base}のダメージ！`);
@@ -867,17 +868,17 @@ async function monsterAct(g, m) {
   await bmsg(`${nm}の攻撃！　${t.name}に${hits}回当たり、${dmg}のダメージ！`);
   if (died) { Snd.play("death"); await bmsg(`${t.name}は死んだ！`, 700); return; }
   // 特殊攻撃
-  if (def.crit && !saveThrow(t, 0.1) && chance(def.crit)) { Snd.play("ecrit"); t.hp = 0; t.status = "dead"; S.stats.deaths++; bloodParty(t.id); stageShake(); shakeParty(t.id); vibrate(150); await bmsg(`${t.name}は首をはねられた！`, 900); return; }
+  if (def.crit && !saveThrow(t, 0.1, "crit") && chance(def.crit)) { Snd.play("ecrit"); t.hp = 0; t.status = "dead"; S.stats.deaths++; bloodParty(t.id); stageShake(); shakeParty(t.id); vibrate(150); await bmsg(`${t.name}は首をはねられた！`, 900); return; }
   if (def.drain && chance(def.drain) && !saveThrow(t, 0.25)) {
     Snd.play("leveldrain");
     const lost = drainLevel(t);
     if (lost) { t.hp = 0; await bmsg(`${t.name}は生命力を吸い尽くされ、消滅した……`, 900); removeLost(t); return; }
     await bmsg(`${t.name}はレベルを吸い取られた！（Lv${t.lvl}）`, 700);
   }
-  if (def.stone && chance(def.stone) && !saveThrow(t, 0.15)) { Snd.play("stone"); t.status = "stone"; await bmsg(`${t.name}は石になった！`, 700); return; }
-  if (def.para && chance(def.para) && !saveThrow(t, 0.15)) { Snd.play("para"); t.status = "para"; await bmsg(`${t.name}は麻痺した！`, 700); return; }
-  if (def.sleepAtk && chance(def.sleepAtk) && !saveThrow(t, 0.15)) { Snd.play("sleep"); t.status = "sleep"; await bmsg(`${t.name}は眠ってしまった！`, 600); return; }
-  if (def.poison && chance(def.poison) && !t.poison && !saveThrow(t, 0.15)) { Snd.play("poison"); t.poison = 1; await bmsg(`${t.name}は毒に冒された！`, 600); }
+  if (def.stone && chance(def.stone) && !saveThrow(t, 0.15, "stone")) { Snd.play("stone"); t.status = "stone"; await bmsg(`${t.name}は石になった！`, 700); return; }
+  if (def.para && chance(def.para) && !saveThrow(t, 0.15, "para")) { Snd.play("para"); t.status = "para"; await bmsg(`${t.name}は麻痺した！`, 700); return; }
+  if (def.sleepAtk && chance(def.sleepAtk) && !saveThrow(t, 0.15, "sleep")) { Snd.play("sleep"); t.status = "sleep"; await bmsg(`${t.name}は眠ってしまった！`, 600); return; }
+  if (def.poison && chance(def.poison) && !t.poison && !saveThrow(t, 0.15, "poison")) { Snd.play("poison"); t.poison = 1; await bmsg(`${t.name}は毒に冒された！`, 600); }
 }
 function shakeParty(id) {
   const el = id ? document.querySelector(`#party .prow[data-id="${id}"]`) : $("party");
@@ -903,7 +904,7 @@ async function monsterSpell(def, sp) {
   }
   if (sp.eff === "sleep") {
     let n = 0;
-    for (const c of alive) if (c.status === "ok" && !saveThrow(c, 0.3)) { c.status = "sleep"; n++; }
+    for (const c of alive) if (c.status === "ok" && !saveThrow(c, 0.3, "sleep")) { c.status = "sleep"; n++; }
     await bmsg(n ? `${n}人が眠ってしまった！` : "誰も眠らなかった。"); return;
   }
   if (sp.eff === "silence") {
@@ -1004,7 +1005,7 @@ async function chestBody({ gold, items, trapLv }) {
     if (k === "inspect") {
       const c = await pickMember("誰が調べる？", x => x.status === "ok");
       if (!c) continue;
-      const skill = thiefLike(c) ? clamp(0.6 + c.lvl * 0.03 + (c.st.agi - 10) * 0.02, 0.5, 0.95) * CLASSES[c.cls].thief : clamp(0.15 + c.lvl * 0.02, 0.1, 0.4);
+      const skill = Math.min(0.97, (thiefLike(c) ? clamp(0.6 + c.lvl * 0.03 + (c.st.agi - 10) * 0.02, 0.5, 0.95) * CLASSES[c.cls].thief : clamp(0.15 + c.lvl * 0.02, 0.1, 0.4)) + (raceOf(c).trap || 0));
       if (!thiefLike(c) && chance(0.08)) { await tell(`${c.name}は罠を作動させてしまった！`); const r = await springTrap(trap, c, trapLv); if (r === "gone") return; break; }
       const guess = chance(skill) ? trap : pick(TRAPS.filter(t => t.min <= trapLv)).id;
       Snd.play("move");
@@ -1030,7 +1031,7 @@ async function chestBody({ gold, items, trapLv }) {
         break;
       }
       if (trap === "none") { await tell("罠はなかった。"); break; }
-      const skill = thiefLike(c) ? clamp(0.55 + c.lvl * 0.04 + (c.st.agi - 10) * 0.02, 0.4, 0.95) * CLASSES[c.cls].thief : clamp(0.1 + c.lvl * 0.01, 0.05, 0.3);
+      const skill = Math.min(0.97, (thiefLike(c) ? clamp(0.55 + c.lvl * 0.04 + (c.st.agi - 10) * 0.02, 0.4, 0.95) * CLASSES[c.cls].thief : clamp(0.1 + c.lvl * 0.01, 0.05, 0.3)) + (raceOf(c).trap || 0));
       if (chance(skill)) { Snd.play("sparkle"); await tell(`${c.name}は${trapName(trap)}を外した！`); c.exp += 10 * trapLv; break; }
       if (chance(0.5)) { await tell(`${c.name}は失敗して罠を作動させた！`); const r = await springTrap(trap, c, trapLv); if (r === "gone") return; break; }
       await tell("うまく外せなかった……（もう一度試せる）");
@@ -1065,10 +1066,10 @@ async function springTrap(trap, c, lv) {
   const hurt = (x, d) => { if (damageChar(x, d)) deaths.push(x.name); };
   let msg = "";
   switch (trap) {
-    case "needle": c.poison = 1; msg = `毒針だ！　${c.name}は毒に冒された。`; break;
+    case "needle": if (raceResist(c, "poison")) msg = `毒針だ！　しかし${c.name}は毒をはねのけた。`; else { c.poison = 1; msg = `毒針だ！　${c.name}は毒に冒された。`; } break;
     case "arrow": { const d = rr(1, lv * 4 + 4); hurt(c, d); msg = `石弓の矢が飛び出した！　${c.name}に${d}のダメージ。`; break; }
-    case "gas": alive.forEach(x => { if (!saveThrow(x, 0.3)) x.poison = 1; }); msg = "ガス爆弾だ！　毒ガスが噴き出した！"; break;
-    case "stunner": if (!saveThrow(c, 0.2)) { c.status = "para"; msg = `痺れ針だ！　${c.name}は麻痺した！`; } else msg = `スタナーだ！　${c.name}は何とか耐えた。`; break;
+    case "gas": alive.forEach(x => { if (!saveThrow(x, 0.3, "poison")) x.poison = 1; }); msg = "ガス爆弾だ！　毒ガスが噴き出した！"; break;
+    case "stunner": if (!saveThrow(c, 0.2, "para")) { c.status = "para"; msg = `痺れ針だ！　${c.name}は麻痺した！`; } else msg = `スタナーだ！　${c.name}は何とか耐えた。`; break;
     case "bomb": alive.forEach(x => hurt(x, saveThrow(x, 0.3) ? rr(1, lv * 2 + 2) : rr(1, lv * 3 + 4))); msg = "爆弾だ！　宝箱が爆発した！"; break;
     case "teleport": {
       [S.pos.x, S.pos.y] = randomTeleportCell(); prevCell = -1; markExplored();
@@ -1086,8 +1087,8 @@ async function springTrap(trap, c, lv) {
       $("scene").innerHTML = `<div class="plc"><div class="pg">🧰</div><div class="pn">宝箱</div></div>`;
       return "ok";
     }
-    case "mblast": alive.forEach(x => { if ((x.known.some(s => SPELL[s].sc === "M")) && !saveThrow(x, 0.2)) x.status = "para"; }); msg = "魔術師殺しだ！　呪文使いたちが麻痺した！"; break;
-    case "pblast": alive.forEach(x => { if ((x.known.some(s => SPELL[s].sc === "P")) && !saveThrow(x, 0.2)) x.status = "para"; }); msg = "僧侶殺しだ！　僧侶たちが麻痺した！"; break;
+    case "mblast": alive.forEach(x => { if ((x.known.some(s => SPELL[s].sc === "M")) && !saveThrow(x, 0.2, "para")) x.status = "para"; }); msg = "魔術師殺しだ！　呪文使いたちが麻痺した！"; break;
+    case "pblast": alive.forEach(x => { if ((x.known.some(s => SPELL[s].sc === "P")) && !saveThrow(x, 0.2, "para")) x.status = "para"; }); msg = "僧侶殺しだ！　僧侶たちが麻痺した！"; break;
   }
   renderParty();
   if (msg) await tell(msg);

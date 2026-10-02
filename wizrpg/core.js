@@ -508,10 +508,17 @@ function canEquip(c, itemId) {
   if (d.align && d.align !== c.align) return false;
   return d.cls === "*" || d.cls.includes(CLASS_LETTER[c.cls]);
 }
-const strDmg = s => s >= 18 ? 3 : s >= 17 ? 2 : s >= 16 ? 1 : s <= 5 ? -1 : 0;
-const strHit = s => s >= 18 ? 2 : s >= 16 ? 1 : s <= 5 ? -1 : 0;
-const agiBonus = a => a >= 18 ? 3 : a >= 16 ? 2 : a >= 14 ? 1 : a <= 5 ? -1 : 0;
-const vitHp = v => v >= 18 ? 3 : v >= 17 ? 2 : v >= 16 ? 1 : v <= 5 ? -1 : 0;
+// 18を超えた分は、2ごとに1ずつ効きが増える（種族の伸びしろで18を超えられる）
+const over18 = v => v > 18 ? Math.floor((v - 18) / 2) : 0;
+const strDmg = s => s >= 18 ? 3 + over18(s) : s >= 17 ? 2 : s >= 16 ? 1 : s <= 5 ? -1 : 0;
+const strHit = s => s >= 18 ? 2 + over18(s) : s >= 16 ? 1 : s <= 5 ? -1 : 0;
+const agiBonus = a => a >= 18 ? 3 + over18(a) : a >= 16 ? 2 : a >= 14 ? 1 : a <= 5 ? -1 : 0;
+const vitHp = v => v >= 18 ? 3 + over18(v) : v >= 17 ? 2 : v >= 16 ? 1 : v <= 5 ? -1 : 0;
+/* 種族ごとの決まり */
+const raceOf = c => RACES[c.race] || RACES.human;
+const statCap = (c, k) => raceOf(c).base[k] + 10;                     // 能力値の上限（最初の値＋10）
+const expNeed = (c, lvl) => Math.round(expForLevel(c.cls, lvl) * (raceOf(c).exp || 1)); // そのレベルに必要な経験値
+const raceResist = (c, kind) => !!(raceOf(c).resist && raceOf(c).resist.includes(kind) && chance(0.5)); // かかりにくい異常を、半分の確率ではねのける
 function swings(c) {
   const ci = clsInfo(c);
   let n = ci.swing ? 1 + Math.floor(c.lvl / 5) : 1;
@@ -564,7 +571,7 @@ function makeChar(name, race, align, cls, st) {
   learnSpells(c); restoreMP(c);
   return c;
 }
-function nextExp(c) { return expForLevel(c.cls, c.lvl + 1); }
+function nextExp(c) { return expNeed(c, c.lvl + 1); }
 
 /* 宿屋でのレベルアップ判定。メッセージの配列を返す */
 function tryLevelUp(c) {
@@ -578,7 +585,7 @@ function tryLevelUp(c) {
     const ch = [];
     for (const k of STATS) {
       const r = Math.random();
-      if (r < 0.35 && c.st[k] < 18) { c.st[k]++; ch.push(STAT_NAMES[k] + "+1"); }
+      if (r < 0.35 && c.st[k] < statCap(c, k)) { c.st[k]++; ch.push(STAT_NAMES[k] + "+1"); }
       else if (r > 0.95 && c.st[k] > 3 && c.lvl > 3) { c.st[k]--; ch.push(STAT_NAMES[k] + "-1"); }
     }
     msgs.push(`${c.name}はレベル${c.lvl}になった！ (最大HP+${gain}${ch.length ? "、" + ch.join("、") : ""})`);
@@ -589,7 +596,7 @@ function tryLevelUp(c) {
 }
 function drainLevel(c) {
   if (c.lvl <= 1) { c.status = "lost"; return true; }
-  c.lvl--; c.exp = expForLevel(c.cls, c.lvl);
+  c.lvl--; c.exp = expNeed(c, c.lvl);
   const loss = Math.max(1, Math.round(c.maxhp / (c.lvl + 1)));
   c.maxhp = Math.max(1, c.maxhp - loss); c.hp = Math.min(c.hp, c.maxhp);
   c.mpM = c.mpM.map((v, i) => Math.min(v, maxSlots(c, "M")[i])); c.mpP = c.mpP.map((v, i) => Math.min(v, maxSlots(c, "P")[i]));

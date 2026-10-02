@@ -364,6 +364,8 @@
   .spd{gap:0 14px;flex-wrap:wrap;} .spd button{flex:0 0 auto;color:#8a8a8a;}
   .spd button.pri{color:#fff;text-decoration:underline;text-underline-offset:4px;} /* 今選ばれている項目 */
   .sheet.narrow{max-width:280px;}
+  .csst .cap{font-style:normal;font-size:10px;opacity:.55;margin-left:1px;} /* 能力値の上限（種族ごとに違う） */
+  .csrace{font-size:12px;opacity:.85;margin:4px 0 6px;}
   /* モンスター図鑑 */
   .bloodfx{position:fixed;pointer-events:none;z-index:60;}
   .sheet.book{max-width:380px;height:min(560px, calc(var(--vh, 100vh) * 0.88));animation:none;} /* 図鑑は一覧も詳しい画面も同じ大きさのまま（めくっても窓が伸び縮みしない） */
@@ -559,6 +561,13 @@ window.__boot = (() => {
         <tr><td>君主</td><td>善</td><td>力14 知恵11 信仰14 生命14 素早12 運13</td></tr>
         <tr><td>忍者</td><td>悪</td><td>力15 知恵14 信仰12 生命14 素早17 運15</td></tr>
       </table>
+      <h3>種族</h3>
+      能力値は、種族の最初の値から10まで伸びる（ドワーフの力は21まで、エルフの知恵は21まで、など）。18を超えた分も、少しずつ効く。<br>
+      <b>人間</b>：ほかの種族より1割少ない経験でレベルが上がる。<br>
+      <b>エルフ</b>：唱えた呪文を、敵に打ち消されにくい。<br>
+      <b>ドワーフ</b>：毒と石化にかかりにくい。素早さが17に届かないので、忍者にはなれない。<br>
+      <b>ノーム</b>：眠りと麻痺にかかりにくい。<br>
+      <b>ホビット</b>：罠の扱いがうまく、首をはねられにくい。<br>
       <h3>ボーナスポイント</h3>
       キャラ作成時に振られる。多いほど上級職を狙いやすい。何度でも振り直せる。
       <h3>転職</h3>

@@ -322,7 +322,7 @@ async function stepEffects() {
     logMsg("毒の沼に足をとられた！");
     for (const c of partyChars()) if (isAlive(c) && c.status !== "stone") {
       if (damageChar(c, 1)) died.push(c.name + "は沼に沈んだ"); // 1歩ごとに1（HPの少ない魔術師でも歩けるように）
-      else if (chance(0.2)) c.poison = 1;
+      else if (chance(0.2) && !raceResist(c, "poison")) c.poison = 1;
     }
   }
   renderParty();

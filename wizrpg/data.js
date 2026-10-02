@@ -6,12 +6,20 @@
 const STATS = ["str", "iq", "pie", "vit", "agi", "luk"];
 const STAT_NAMES = { str: "力", iq: "知恵", pie: "信仰心", vit: "生命力", agi: "素早さ", luk: "運の強さ" };
 
+/* 種族。base：最初の能力値。能力値は「最初の値＋10」まで伸びる（種族ごとに伸びしろが違う）。
+   特技　exp：レベルアップに必要な経験値の倍率 / pierce：敵に呪文を打ち消されにくい（打ち消す確率にかける倍率）
+   　　　resist：かかりにくい異常（半分の確率ではねのける）/ trap：罠を調べる・外すときの腕前に足す値 */
 const RACES = {
-  human:  { name: "人間",     base: { str: 8, iq: 8,  pie: 7,  vit: 8,  agi: 8,  luk: 8 } },
-  elf:    { name: "エルフ",   base: { str: 6, iq: 11, pie: 9,  vit: 6,  agi: 9,  luk: 7 } },
-  dwarf:  { name: "ドワーフ", base: { str: 11, iq: 6, pie: 9,  vit: 11, agi: 5,  luk: 6 } },
-  gnome:  { name: "ノーム",   base: { str: 7, iq: 8,  pie: 11, vit: 7,  agi: 9,  luk: 7 } },
-  hobbit: { name: "ホビット", base: { str: 5, iq: 7,  pie: 7,  vit: 7,  agi: 11, luk: 13 } },
+  human:  { name: "人間",     base: { str: 8, iq: 8,  pie: 7,  vit: 8,  agi: 8,  luk: 8 }, exp: 0.9,
+            desc: "得意も苦手もない。どの職業にも向く", trait: "ほかの種族より1割少ない経験でレベルが上がる" },
+  elf:    { name: "エルフ",   base: { str: 6, iq: 11, pie: 9,  vit: 6,  agi: 9,  luk: 7 }, pierce: 0.7,
+            desc: "知恵が高く、体は弱い。魔術師・司教向き", trait: "唱えた呪文を、敵に打ち消されにくい" },
+  dwarf:  { name: "ドワーフ", base: { str: 11, iq: 6, pie: 9,  vit: 11, agi: 5,  luk: 6 }, resist: ["poison", "stone"],
+            desc: "力と生命が高く、動きは遅い。戦士・僧侶向き", trait: "毒と石化にかかりにくい" },
+  gnome:  { name: "ノーム",   base: { str: 7, iq: 8,  pie: 11, vit: 7,  agi: 9,  luk: 7 }, resist: ["sleep", "para"],
+            desc: "信仰が高い。僧侶・司教向き", trait: "眠りと麻痺にかかりにくい" },
+  hobbit: { name: "ホビット", base: { str: 5, iq: 7,  pie: 7,  vit: 7,  agi: 11, luk: 13 }, resist: ["crit"], trap: 0.1,
+            desc: "素早く運がよいが、力は弱い。盗賊向き", trait: "罠の扱いがうまく、首をはねられにくい" },
 };
 
 const ALIGNS = { G: "善", N: "中立", E: "悪" };
