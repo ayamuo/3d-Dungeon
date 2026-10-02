@@ -951,8 +951,7 @@ async function charSheet(c, ctx) {
         <div>HP <b>${c.hp}</b>/${c.maxhp}</div><div>AC <b>${computeAC(c)}</b></div><div>状態 <b>${statusLabel(c) || "正常"}</b></div>
         <div class="w2">経験値 ${c.exp.toLocaleString()}<br><small>${c.exp >= nextExp(c) ? '<b style="color:#fcd34d">宿屋で休むとレベルアップ！</b>' : "次のLvまで " + (nextExp(c) - c.exp).toLocaleString()}</small></div><div>攻撃回数 ${swings(c)}</div>
       </div>
-      <div class="csst">${STATS.map(k => `<div><small>${STAT_NAMES[k]}</small><b>${c.st[k]}</b><i class="cap">/${statCap(c, k)}</i></div>`).join("")}</div>
-      <div class="csrace">${RACES[c.race].name}：${RACES[c.race].trait}</div>
+      <div class="csst">${STATS.map(k => `<div><small>${STAT_NAMES[k]}</small><b>${c.st[k]}</b></div>`).join("")}</div>
       <div class="csmp">魔術 ${slotStr("M")}<br>僧侶 ${slotStr("P")}</div>
       ${spellsHtml}
       <div class="csit"><div class="csh">持ち物 ${c.items.length}/8</div>${itemsHtml}</div>
