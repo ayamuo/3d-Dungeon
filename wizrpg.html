@@ -350,6 +350,24 @@
   /* キーボード・コントローラーで選んでいる項目：光る枠の代わりに ▶（ボタン以外の行は白い細線で囲む） */
   .gfocus{outline:none !important;box-shadow:none !important;}
   .prow.gfocus,.prow.cur{outline:1px solid #fff !important;outline-offset:-1px;background:none;border-radius:0;}
+  /* ── 指で操作する端末（スマホ・タブレット）：押せる範囲がわかるようにする ──
+     ▶ のカーソルはキーボード・コントローラ用なので、指のときは、選択肢を薄い枠で囲み、押した瞬間に色を反転させる */
+  @media (pointer:coarse){
+    #cmd button,.sheet .sfoot button,.sheet .csnav,.spd button,.mapnav button,.bprow button,#helpOv .hfoot button,#helpOv .htabs button{
+      border:1px solid rgba(255,255,255,.34) !important;border-radius:6px !important;background:rgba(255,255,255,.06) !important;min-height:44px;}
+    #cmd button:disabled,.sheet .sfoot button:disabled{border-color:rgba(255,255,255,.12) !important;background:none !important;}
+    .cgrid{gap:6px;} .sfoot{gap:6px;}
+    /* 押している間は、白地に黒い文字 */
+    #cmd button:not(:disabled):active,.sheet button:not(:disabled):active,#helpOv button:active{background:#fff !important;color:#000 !important;}
+    #cmd button:not(:disabled):active small,#cmd button:not(:disabled):active .pix{color:#000 !important;}
+    button:active::before{content:none;}
+    /* 一覧の行：区切りの線を入れ、押しやすい高さにする */
+    .sheet .slist .srow{border-bottom:1px solid rgba(255,255,255,.16) !important;min-height:44px;}
+    .sheet .slist .srow:not(:disabled):active{background:#fff !important;color:#000 !important;}
+    .sheet .slist .srow:not(:disabled):active small{color:#000 !important;}
+    /* 町では、仲間の表の行を押すとその人の画面が開く。押している間は白い枠を出す */
+    body[data-mode="town"] #party .prow[data-id]:active{outline:1px solid #fff;outline-offset:-1px;}
+  }
   /* ダイアログ・一覧 */
   .shead{border-bottom:1px solid #fff;} .shead b{color:#fff;}
   /* 下の「とじる」「はい」「いいえ」などは文字の幅にして真ん中に並べ、▶ が文字のすぐ左に来るようにする */
@@ -495,7 +513,7 @@ window.__boot = (() => {
     <div class="hpage" data-t="迷宮">
       <h3>操作</h3>
       ▲前進 / ↰↱ 向きを変える / ⟲ 振り返る<br>
-      表示窓をタップでも前進。左右にスワイプで向きを変える。<br>
+      表示窓をタップでも前進。左右にスワイプで向きを変える。下にスワイプで振り返る。<br>
       パソコンでは矢印キー（またはWASD）、Cでキャンプ、Mで地図、Enterで階段・昇降機。
       <h3>調べる</h3>
       正面の壁を調べる。<b>隠し扉</b>が見つかることがある。「灯り」の呪文（または灯りの巻物）を使うと、見えている範囲の隠し扉が自動で見つかる。<br>
@@ -610,7 +628,7 @@ window.__boot = (() => {
     </div>
     <div class="hpage" data-t="操作">
       <h3>画面をタップ（スマホ）</h3>
-      ボタンをタップして操作する。迷宮では、表示窓をタップで前進、左右スワイプで向きを変える。
+      ボタンをタップして操作する。迷宮では、表示窓をタップで前進、左右スワイプで向きを変える。下にスワイプで振り返る。町では、仲間の表の名前をタップすると、その人の画面が開く。
       <h3>コントローラー（パソコン）</h3>
       <table>
         <tr><th>ボタン</th><th>迷宮の中</th><th>メニュー・戦闘</th></tr>
