@@ -366,6 +366,11 @@
   .sheet.narrow{max-width:280px;}
   .csst .cap{font-style:normal;font-size:10px;opacity:.55;margin-left:1px;} /* 能力値の上限（種族ごとに違う） */
   .csrace{font-size:12px;opacity:.85;margin:4px 0 6px;}
+  /* キャラクターの画面：前後の人へめくるボタン（見出しの左右） */
+  .cshead{align-items:center;} .cshead .csname{flex:1;min-width:0;}
+  .sheet .csnav{flex:none;width:34px;height:34px;padding:0 !important;font-size:15px;margin:0 2px;}
+  .sfoot .navhid{display:none;}
+  .sheet.csheet{height:min(640px, calc(var(--vh, 100vh) * 0.88));} /* めくっても窓の大きさが変わらないように */
   /* モンスター図鑑 */
   .bloodfx{position:fixed;pointer-events:none;z-index:60;}
   .sheet.book{max-width:380px;height:min(560px, calc(var(--vh, 100vh) * 0.88));animation:none;} /* 図鑑は一覧も詳しい画面も同じ大きさのまま（めくっても窓が伸び縮みしない） */
@@ -562,12 +567,12 @@ window.__boot = (() => {
         <tr><td>忍者</td><td>悪</td><td>力15 知恵14 信仰12 生命14 素早17 運15</td></tr>
       </table>
       <h3>種族</h3>
-      能力値は、種族の最初の値から10まで伸びる（ドワーフの力は21まで、エルフの知恵は21まで、など）。18を超えた分も、少しずつ効く。<br>
-      <b>人間</b>：ほかの種族より1割少ない経験でレベルが上がる。<br>
-      <b>エルフ</b>：唱えた呪文を、敵に打ち消されにくい。<br>
-      <b>ドワーフ</b>：毒と石化にかかりにくい。素早さが17に届かないので、忍者にはなれない。<br>
-      <b>ノーム</b>：眠りと麻痺にかかりにくい。<br>
-      <b>ホビット</b>：罠の扱いがうまく、首をはねられにくい。<br>
+      能力値は、どの種族も18まで伸びる。人間以外は、いちばん得意な能力だけ20まで伸びる（18を超えた分も効く）。<br>
+      <b>人間</b>：ほかの種族より1割少ない経験でレベルが上がる。能力値は18まで。<br>
+      <b>エルフ</b>：唱えた呪文を、敵に打ち消されにくい。知恵が20まで伸びる。<br>
+      <b>ドワーフ</b>：毒と石化にかかりにくい。力と生命が20まで伸びる。<br>
+      <b>ノーム</b>：眠りと麻痺にかかりにくい。信仰が20まで伸びる。<br>
+      <b>ホビット</b>：罠の扱いがうまく、首をはねられにくい。運が20まで伸びる。<br>
       <h3>ボーナスポイント</h3>
       キャラ作成時に振られる。多いほど上級職を狙いやすい。何度でも振り直せる。
       <h3>転職</h3>

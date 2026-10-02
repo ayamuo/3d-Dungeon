@@ -508,7 +508,7 @@ function canEquip(c, itemId) {
   if (d.align && d.align !== c.align) return false;
   return d.cls === "*" || d.cls.includes(CLASS_LETTER[c.cls]);
 }
-// 18を超えた分は、2ごとに1ずつ効きが増える（種族の伸びしろで18を超えられる）
+// 18を超えた分は、2ごとに1ずつ効きが増える（種族のいちばん得意な能力は20まで伸びる）
 const over18 = v => v > 18 ? Math.floor((v - 18) / 2) : 0;
 const strDmg = s => s >= 18 ? 3 + over18(s) : s >= 17 ? 2 : s >= 16 ? 1 : s <= 5 ? -1 : 0;
 const strHit = s => s >= 18 ? 2 + over18(s) : s >= 16 ? 1 : s <= 5 ? -1 : 0;
@@ -516,7 +516,7 @@ const agiBonus = a => a >= 18 ? 3 + over18(a) : a >= 16 ? 2 : a >= 14 ? 1 : a <=
 const vitHp = v => v >= 18 ? 3 + over18(v) : v >= 17 ? 2 : v >= 16 ? 1 : v <= 5 ? -1 : 0;
 /* 種族ごとの決まり */
 const raceOf = c => RACES[c.race] || RACES.human;
-const statCap = (c, k) => raceOf(c).base[k] + 10;                     // 能力値の上限（最初の値＋10）
+const statCap = (c, k) => (raceOf(c).top || []).includes(k) ? 20 : 18; // 能力値の上限（どの種族も18。いちばん得意な能力だけ20）
 const expNeed = (c, lvl) => Math.round(expForLevel(c.cls, lvl) * (raceOf(c).exp || 1)); // そのレベルに必要な経験値
 const raceResist = (c, kind) => !!(raceOf(c).resist && raceOf(c).resist.includes(kind) && chance(0.5)); // かかりにくい異常を、半分の確率ではねのける
 function swings(c) {

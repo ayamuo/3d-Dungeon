@@ -626,7 +626,7 @@ async function createChar() {
   const race = await listPick("種族を選ぶ", Object.keys(RACES).map(k => {
     const b = RACES[k].base;
     return { html: `<b>${RACES[k].name}</b> <small>力${b.str} 知${b.iq} 信${b.pie} 生${b.vit} 素${b.agi} 運${b.luk}</small><br><small>${RACES[k].desc}。${RACES[k].trait}。</small>`, value: k };
-  }), { note: "能力値は、最初の値から10まで伸びる。" });
+  }));
   if (!race) return;
   const align = await listPick("性格を選ぶ", [
     { html: "<b>善</b> <small>僧侶・司教・侍・君主になれる</small>", value: "G" },
@@ -655,7 +655,7 @@ async function createChar() {
       `<div class="bpcls">${CLASS_ORDER.map(k => `<span class="${el.includes(k) ? "ok" : ""}">${CLASSES[k].name}</span>`).join("")}</div><div class="bpwarn"></div>`;
     body.querySelectorAll(".bprow button").forEach(b => b.onclick = () => {
       const k = b.dataset.k, d = +b.dataset.d;
-      if (d > 0 && (left <= 0 || st[k] >= base[k] + 10)) return;
+      if (d > 0 && (left <= 0 || st[k] >= 18)) return;
       if (d < 0 && st[k] <= base[k]) return;
       st[k] += d; left -= d; Snd.play("move"); draw(body);
     });
@@ -919,6 +919,10 @@ async function charSheet(c, ctx) {
   if (!c) return;
   while (true) {
     sortItems(c);
+    // 前後にめくれる相手：仲間（町では、そのあとに酒場で待っている人も続く）
+    const inP = x => S.party.includes(x.id);
+    const group = ctx === "view" ? S.roster.slice() : ctx === "camp" ? partyChars() : partyChars().concat(S.roster.filter(x => !inP(x) && x.where !== "lost"));
+    const gi = group.findIndex(x => x.id === c.id), canFlip = gi >= 0 && group.length > 1;
     const ci = clsInfo(c);
     const mx = { M: maxSlots(c, "M"), P: maxSlots(c, "P") };
     const slotStr = sc => { const cur = sc === "M" ? c.mpM : c.mpP; return mx[sc].some(v => v) ? mx[sc].map((v, i) => `${cur[i] || 0}`).join("/") : "―"; };
@@ -937,9 +941,12 @@ async function charSheet(c, ctx) {
     if (ctx !== "view" && ci.identify && c.items.some(i => !i.known)) acts.push({ label: "鑑定", value: "ident" });
     if ((inMaze || ctx === "town") && c.known.some(s => castableHere(SPELL[s]))) acts.push({ label: "呪文", value: "spell", cls: "pri" });
     acts.push({ label: "とじる", value: null });
+    // めくるボタンは見出しに置く（下の欄は行動のボタンでいっぱいなので）。下の欄には見えない押し先だけ置く
+    if (canFlip) { acts.push({ label: "前の人", value: "prev", cls: "navhid" }); acts.push({ label: "次の人", value: "next", cls: "navhid" }); }
+    const flip = d => canFlip ? `<button class="csnav" data-flip="${d}" aria-label="${d < 0 ? "前の人" : "次の人"}">${d < 0 ? "◀" : "▶"}</button>` : "";
     const ageStr = c.age ? `${c.age}歳` : "";
     const html = `<div class="cs">
-      <div class="cshead"><div><b class="nm">${honorMark(c)}${esc(c.name)}</b><span>${ALIGNS[c.align]}・${RACES[c.race].name}・${ci.name}　${ageStr}</span></div><div class="lv">Lv<b>${c.lvl}</b></div></div>
+      <div class="cshead">${flip(-1)}<div class="csname"><b class="nm">${honorMark(c)}${esc(c.name)}</b><span>${ALIGNS[c.align]}・${RACES[c.race].name}・${ci.name}　${ageStr}</span></div><div class="lv">Lv<b>${c.lvl}</b></div>${flip(1)}</div>
       <div class="csgrid">
         <div>HP <b>${c.hp}</b>/${c.maxhp}</div><div>AC <b>${computeAC(c)}</b></div><div>状態 <b>${statusLabel(c) || "正常"}</b></div>
         <div class="w2">経験値 ${c.exp.toLocaleString()}<br><small>${c.exp >= nextExp(c) ? '<b style="color:#fcd34d">宿屋で休むとレベルアップ！</b>' : "次のLvまで " + (nextExp(c) - c.exp).toLocaleString()}</small></div><div>攻撃回数 ${swings(c)}</div>
@@ -951,8 +958,10 @@ async function charSheet(c, ctx) {
       <div class="csit"><div class="csh">持ち物 ${c.items.length}/8</div>${itemsHtml}</div>
       <div class="csdesc">${esc(ci.desc)}</div>
     </div>`;
-    const a = await dialog(html, acts, { title: "キャラクター" });
+    const a = await dialog(html, acts, { title: canFlip ? `キャラクター（${gi + 1}/${group.length}）` : "キャラクター", cls: "csheet",
+      onOpen: body => body.querySelectorAll(".csnav").forEach(b => b.onclick = () => { const f = [...body.parentNode.querySelectorAll(".sfoot .navhid")].find(x => x.textContent === (b.dataset.flip < 0 ? "前の人" : "次の人")); if (f) f.click(); }) });
     if (!a) return;
+    if (a === "prev" || a === "next") { c = group[(gi + (a === "prev" ? -1 : 1) + group.length) % group.length]; continue; }
     if (a === "equip") await equipMenu(c);
     else if (a === "use") await useMenu(c, ctx);
     else if (a === "give") await giveMenu(c);
