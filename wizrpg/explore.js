@@ -1424,6 +1424,37 @@ function procTex(kind) {
   return (PROC_TEX[kind] = cv);
 }
 
+/* ────────── 昇降機の立体の絵 ──────────
+   Blender で作ったモデルを、ゲームと同じ見え方で、位置と向きごとに描き出した絵（wizrpg/elev/。作り方は make_elev.py）。
+   絵は必要になったときに読み込み、読み込めるまで（または絵が無いとき）は、今までの線画で描く。
+   明るさは均一に描き出してあるので、遠いほど暗くする処理はここでかける */
+const ELEV3D = { img: {}, shaded: {} };
+function elevSprite(dd, l, rel) {
+  const man = window.ELEV_DATA; if (!man) return null;
+  const key = dd + "," + l + "," + rel, it = man.items[key];
+  if (!it) return dd >= 1 && dd <= 4 ? "none" : null; // 描き出した範囲で絵が無い＝その位置からは見えない
+  let e = ELEV3D.img[key];
+  if (!e) {
+    e = ELEV3D.img[key] = { ok: false, im: new Image() };
+    e.im.onload = () => { e.ok = true; if (S && S.inMaze && !BT && !VA.dz) drawView(); };
+    e.im.onerror = () => { e.ng = true; };
+    e.im.src = "wizrpg/elev/" + it[0];
+  }
+  return e.ok ? { key, it, im: e.im, man } : null;
+}
+function elevShaded(sp, b) {
+  const q = Math.round(clamp(b, 0, 1) * 16);
+  if (q >= 16) return sp.im;
+  const k = sp.key + "|" + q;
+  let c = ELEV3D.shaded[k];
+  if (!c) {
+    const keys = Object.keys(ELEV3D.shaded); if (keys.length > 60) keys.slice(0, 30).forEach(x => delete ELEV3D.shaded[x]);
+    c = ELEV3D.shaded[k] = document.createElement("canvas"); c.width = sp.im.width; c.height = sp.im.height;
+    const cg = c.getContext("2d"); cg.drawImage(sp.im, 0, 0);
+    cg.globalCompositeOperation = "source-atop"; cg.fillStyle = `rgba(0,0,0,${((1 - q / 16) * 0.92).toFixed(3)})`; cg.fillRect(0, 0, c.width, c.height);
+  }
+  return c;
+}
 function drawView() {
   if (!S || !S.pos) return;
   drawMini();
@@ -1611,6 +1642,14 @@ function drawView() {
      奥（v=1）は蛇腹の格子戸とその向こうの縦穴、天井の穴へ伸びる2本の吊り索、片隅のランタンと入口の操作レバー。
      見る向きが変わっても重なりが崩れないよう、部品を遠いものから順に描く */
   const drawElevator = (l, zn, zf, b, rel) => {
+    // 立体の絵があれば、それを貼る（歩く動きの途中は、カメラが下がった分だけ縮める）
+    const dd3 = Math.round(zn - ZO), sp = elevSprite(dd3, l, rel);
+    if (sp === "none") return;
+    if (sp) {
+      const cz = dd3 + ZO + 0.5, s = W / sp.man.w * (cz / Math.max(0.2, cz + VA.dz));
+      g.drawImage(elevShaded(sp, b), cx + (sp.it[1] - sp.man.w / 2) * s, cy + (sp.it[2] - sp.man.h / 2) * s, sp.it[3] * s, sp.it[4] * s);
+      return;
+    }
     const m = cellMap(l, zn, zf, rel), hw = .42, YT = .40; // YT：ケージの天井の枠の高さ
     const iron = k => rgbK(82, 76, 68, b * k), ironHi = rgbK(112, 102, 88, b), rust = rgbK(118, 74, 42, b);
     const lw = z => Math.max(1, .02 / Math.max(.12, z) * K);
