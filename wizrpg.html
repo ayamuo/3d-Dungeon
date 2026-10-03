@@ -653,7 +653,6 @@ window.__boot = (() => {
   </div>
   <div class="hfoot"><button id="helpClose">とじる</button></div>
 </div></div>
-<script src="sfx.js"></script>
 <script src="wizrpg/data.js"></script><script>__boot.step()</script>
 <script src="wizrpg/maze.js"></script><script>__boot.step()</script>
 <script src="wizrpg/midi.js"></script><script>__boot.step()</script>
@@ -692,9 +691,9 @@ window.__boot = (() => {
     };
   })();
   ov.onclick = e => { if (e.target === ov) ov.classList.remove("on"); };
-  // 音のオン/オフ（sfx.jsがあればそちらのボタン処理に任せる）
+  // 音のオン/オフ
   const refresh = () => { $("muteBtn").textContent = Snd.muted() ? "🔇" : "🔊"; };
-  if (!window.SFX) $("muteBtn").onclick = () => { try { localStorage.setItem("asobi_muted", Snd.muted() ? "0" : "1"); } catch (e) { } refresh(); };
+  $("muteBtn").onclick = () => { try { localStorage.setItem("asobi_muted", Snd.muted() ? "0" : "1"); } catch (e) { } refresh(); };
   $("muteBtn").addEventListener("click", () => setTimeout(() => Bgm.sync(), 0)); // 音のオン/オフをBGMにも反映
   // アプリを切り替えたり画面を閉じたりしたら音を止め、戻ったら再開する
   // 画面を離れる・閉じるときは、保存待ちの分もすぐ書き込む

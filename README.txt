@@ -29,7 +29,7 @@
   wizrpg.html と wizrpg フォルダを asobi_collection 直下にコピーし、
   index.html にカードを1枚追加済み。
   こちらのフォルダを修正したら、同じ2つを asobi_collection へ上書きコピーする（battle_SE は除く）。
-  効果音は asobi_collection の sfx.js があればそれを使い、無い音はその場で合成する。
+  効果音は、すべて wizrpg/se/ のファイルで鳴らす（決定・取り消し・足音・勝利などの8つは、asobi_collection/se から同じものをコピーして入れてある）。
 
 ■ セーブ
   ブラウザの localStorage（キー: wizrpg_save_v2）に自動保存。

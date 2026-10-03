@@ -47,8 +47,8 @@ function rep(a, b) { if (h.split(a).length !== 2) throw new Error("見つから�
 // ・「← もどる」（行き先が無い）を、版の表記に替える
 rep(`<a href="index.html">← もどる</a>`, `<span class="vtag">${VERSION}</span>`);
 rep(`</style>`, `  header .vtag{font-size:11px;color:#9a9a9a;white-space:nowrap;}\n</style>`);
-// ・ホーム画面に追加する設定（PLiCy の中では使えない）と、コレクション用の効果音の読み込みを外す
-h = h.split("\n").filter(l => !/rel="manifest"|mobile-web-app-capable|apple-touch-icon|<script src="sfx\.js">/.test(l)).join("\n");
+// ・ホーム画面に追加する設定（PLiCy の中では使えない）を外す
+h = h.split("\n").filter(l => !/rel="manifest"|mobile-web-app-capable|apple-touch-icon/.test(l)).join("\n");
 fs.writeFileSync(path.join(OUT, "index.html"), h);
 n++; bytes += Buffer.byteLength(h);
 
