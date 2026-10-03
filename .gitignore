@@ -38,3 +38,12 @@ wizrpg/monsters/ghostmonk.png
 wizrpg/monsters/bunnyking.png
 wizrpg/monsters/werdona.png
 wizrpg/monsters/variants/
+
+# PLiCy に上げるためのフォルダ（make_plicy.js で作る。作り直せるので公開しない）
+plicy/
+plicy.zip
+
+# PLiCy に上げるためのフォルダ（make_plicy.js で作る。作り直せるので公開しない）
+plicy/
+plicy.zip
+plicy_説明文の下書き.txt
