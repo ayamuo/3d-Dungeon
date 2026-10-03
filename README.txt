@@ -13,11 +13,15 @@
   wizrpg/battle.js     戦闘・宝箱
   wizrpg/input.js      キーボード・ゲームパッド操作
   wizrpg/midi.js       MIDIのBGMを鳴らす簡易シンセ
-  wizrpg/monsters/     モンスター画像の置き場（README.txt に全63体の作成指示）
+  wizrpg/monsters/     モンスター画像の置き場（README.txt に全65体の作成指示）
   wizrpg/bg/           町・タイトルなどの背景画像の置き場（README.txt に全11枚の作成指示）
   wizrpg/tex/          迷宮の壁・床・天井・扉の画像の置き場（README.txt に作成指示。階ごとの差し替えも可）
   wizrpg/se/           戦闘の効果音（効果音ラボ。README.txt に割り当て一覧）
   wizrpg/bgm/          BGM（魔王魂のMIDI。曲を変えたら node make_bgm_data.js で bgm_data.js を作り直す）
+  wizrpg/obj3d/        昇降機・上り階段・下り階段の立体の絵（Blenderで作ったモデルを、位置と向きごとに描き出したもの。
+                       作り直すときは make_obj3d.py を Blender で実行する。一覧は obj3d_data.js）
+  wizrpg/icon-*.png    ホーム画面に追加したときのアイコン（manifest.json から参照）
+  manifest.json        ホーム画面に追加したとき、ブラウザの帯なしで開くための設定
   wizrpg/font/         文字のフォント（DotGothic16・SIL Open Font License。OFL.txt を同梱。font_data.js はファイルを直接開いたとき用の埋め込み）
   wizrpg/battle_SE/    効果音の元素材一式（コレクションへはコピーしない）
 

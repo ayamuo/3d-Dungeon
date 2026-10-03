@@ -180,11 +180,9 @@ async function townMain() {
 }
 
 /* ────────── 酒場 ────────── */
-/* テスト用：true の間は、善と悪を同じパーティに入れられる（本番に戻すときは false にする） */
-const ALLOW_MIXED_ALIGN = false;
 const mixedAlign = list => list.some(c => c.align === "G") && list.some(c => c.align === "E");
 // 星喰いを倒したあとは、善と悪を同じパーティに入れられる（おまけ）
-const allowMixedAlign = () => ALLOW_MIXED_ALIGN || !!(S && S.flags && S.flags.hoshikui);
+const allowMixedAlign = () => !!(S && S.flags && S.flags.hoshikui);
 function alignConflict(list) { return !allowMixedAlign() && mixedAlign(list); }
 /* 性格が変わって善悪が混ざったパーティから外すと、もう戻せなくなることがある。そのときは確認する */
 async function confirmMixedRemove(c) {
@@ -727,11 +725,8 @@ async function castle() {
   const r = await dialog(`<p class="king">${esc(msg).replace(/\n/g, "<br>")}</p>
     <h4>大事なもの</h4><p>${keys.length ? keys.map(esc).join("、") : "なし"}</p>
     <h4>冒険の記録</h4><p>最深到達：${S.deepest ? "地下" + S.deepest + "階" : "―"}<br>戦闘回数：${S.stats.battles}　倒した怪物：${S.stats.kills}<br>死者：${S.stats.deaths}人　歩数：${S.stats.steps}<br>難しさ：${S.rule === "classic" ? "本格（コア向け）" : "救済（カジュアル）"}　プレイ時間：約${played}分</p>
-    <h4>メッセージ速度</h4><div class="spd">${[0.6, 1, 1.6, 2.5].map(v => `<button data-v="${v}" class="${S.speed === v ? "pri" : ""}">${{ 0.6: "ゆっくり", 1: "ふつう", 1.6: "はやい", 2.5: "最速" }[v]}</button>`).join("")}</div>
-    <h4>BGM</h4><div class="spd"><button data-bgm="1" class="${!S.bgmOff ? "pri" : ""}">オン</button><button data-bgm="0" class="${S.bgmOff ? "pri" : ""}">オフ</button></div>${fontOptHtml()}${walkOptHtml()}${spellDescOptHtml()}`,
-    [{ label: "図鑑", value: "book" }, { label: "もどる", value: true, cls: "pri" }], { title: "評議会", onOpen: b => b.querySelectorAll(".spd button").forEach(bt => bt.onclick = () => {
-      if (fontOptClick(bt, b) || walkOptClick(bt, b) || spellDescOptClick(bt, b)) return;
-      if (bt.dataset.bgm) { S.bgmOff = bt.dataset.bgm === "0"; saveGame(); Bgm.sync(); b.querySelectorAll("[data-bgm]").forEach(x => x.classList.toggle("pri", x === bt)); Snd.play("click"); return; } S.speed = +bt.dataset.v; saveGame(); b.querySelectorAll(".spd button[data-v]").forEach(x => x.classList.toggle("pri", x === bt)); Snd.play("click"); }) });
+    ${settingsHtml()}`,
+    [{ label: "図鑑", value: "book" }, { label: "もどる", value: true, cls: "pri" }], { title: "評議会", onOpen: settingsBind });
   if (r === "book") { await monsterBook(); return castle(); }
 }
 
@@ -760,13 +755,6 @@ function bookLevel(def) {
   return b.k >= BOOK_LV3 ? 3 : b.k >= BOOK_LV2 ? 2 : 1;
 }
 const MON_TYPE_NAME = { slime: "スライム", animal: "獣", human: "人型", undead: "不死", insect: "虫", dragon: "竜", demon: "悪魔", other: "魔法生物" };
-// ダイス表記（2d6+3 など）を「最小〜最大」に
-function diceRange(s) {
-  const m = String(s).match(/^(\d+)d(\d+)([+-]\d+)?$/);
-  if (!m) return String(s);
-  const n = +m[1], f = +m[2], b = +(m[3] || 0);
-  return `${n + b}〜${n * f + b}`;
-}
 function bookImg(def, lv, big) {
   const cls = "bkimg" + (big ? " big" : "") + (lv <= 0 ? " shadow" : "");
   if (lv < 0) return `<span class="${cls} ng"><span class="glyph">？</span></span>`;

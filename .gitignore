@@ -15,6 +15,9 @@ wizrpg/se/牢屋の扉を閉める.mp3
 wizrpg/se/刀で斬る1.mp3
 wizrpg/se/逃走.mp3
 wizrpg/se/block.mp3
+wizrpg/se/crit.mp3
+wizrpg/se/axecrit.mp3
+wizrpg/se/ecrit.mp3
 wizrpg/se/trap_bomb.mp3
 
 # ゲームで使っていないBGM
@@ -29,3 +32,9 @@ wizrpg/bgm/*.mid
 
 # 首はねの位置の確認用画像（作業用）
 首はね位置/
+
+# ゲームで使っていないモンスターの絵（古い設定のもの・見比べ用の別案）
+wizrpg/monsters/ghostmonk.png
+wizrpg/monsters/bunnyking.png
+wizrpg/monsters/werdona.png
+wizrpg/monsters/variants/

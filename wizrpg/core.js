@@ -21,7 +21,6 @@ function dice(str) { // "3d6+2" を振る
   let t = 0; for (let i = 0; i < n; i++) t += 1 + rand(s);
   return t + b;
 }
-function diceMax(str) { const m = /^(\d+)(?:d(\d+))?([+-]\d+)?$/.exec(str); if (!m) return 0; return m[2] ? (+m[1]) * (+m[2]) + (m[3] ? +m[3] : 0) : +m[1]; }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 /* 演出のアニメーション：T ミリ秒かけて draw(p)（p＝0〜1）を呼ぶ。
    画面の描き替えが止まっていても（見えていない画面・省電力など）、時間が来たら最後の絵を描いて必ず終わる（演出で遊びが止まらないように） */
@@ -110,10 +109,10 @@ const Snd = (() => {
     poison: "poison", stone: "stone", para: "para", leveldrain: "leveldrain", call: "call", roar_dragon: "roar_dragon", flee: "flee",
     // 呪文
     cast: "cast", fire_s: "fire_s", fire_m: "fire_m", fire_l: "fire_l", ice_s: "ice_s", ice_m: "ice_m", ice_l: "ice_l",
-    thunder: "thunder", thunder_l: "thunder_l", nuke: "nuke", fire: "fire_m", cold: "ice_m", boom: "nuke",
+    thunder: "thunder", thunder_l: "thunder_l", nuke: "nuke", fire: "fire_m", cold: "ice_m",
     heal: "heal_s", heal_m: "heal_m", heal_l: "heal_l", raise: "raise", cure_poison: "cure_poison", cure_all: "cure_all",
     buff: "buff", buff_party: "buff_party", shield: "shield", debuff: "debuff", sleep: "sleep", darkspell: "darkspell", holy: "holy",
-    drainspell: "drainspell", tele: "warp", light: "light", magic: "light",
+    drainspell: "drainspell", tele: "warp", light: "light",
     // 罠・迷宮
     stairs: "stairs", door: "door", elevator: "elevator", drip: "drip", clank: "clank",
     potion_l: "heal_l", // 上等な回復薬（呪文の大回復と同じ音を短くして使う）
@@ -125,7 +124,7 @@ const Snd = (() => {
   const MAXLEN = {
     rumble: 3.0, heal_l: 1.8, nuke: 2.2, para: 1.4, holy: 1.8, darkspell: 1.8, breath_ice: 1.6, fire_l: 1.8,
     heal_m: 1.5, cast: 0.9, breath_fire: 1.8, fire_m: 1.6, ice_m: 1.5, sleep: 1.3, drainspell: 1.5, thunder_l: 1.7,
-    ice_l: 1.6, leveldrain: 1.5, stone: 1.5, crit: 1.4, behead: 1.4, breath_gas: 1.4, cure_poison: 1.3, ice_s: 1.2, cure_all: 1.3,
+    ice_l: 1.6, leveldrain: 1.5, stone: 1.5, behead: 1.4, breath_gas: 1.4, cure_poison: 1.3, ice_s: 1.2, cure_all: 1.3,
     heal_s: 1.3, trap_bomb: 1.5, explosion: 2.0, buff: 1.2, buff_party: 1.2, debuff: 1.2, roar_dragon: 1.6,
   };
   const FADE = 0.35;
@@ -427,6 +426,19 @@ function spellDescOptClick(bt, box) {
   Snd.play("click");
   return true;
 }
+/* 設定の項目（メッセージ速度・BGM・文字・歩く動き・呪文の説明）。評議会とキャンプの設定で共通に使う。
+   settingsHtml() の中身を置いたら、settingsBind(その入れ物) でボタンを働かせる */
+function settingsHtml() {
+  return `<h4>メッセージ速度</h4><div class="spd">${[0.6, 1, 1.6, 2.5].map(v => `<button data-v="${v}" class="${S.speed === v ? "pri" : ""}">${{ 0.6: "ゆっくり", 1: "ふつう", 1.6: "はやい", 2.5: "最速" }[v]}</button>`).join("")}</div>
+    <h4>BGM</h4><div class="spd"><button data-bgm="1" class="${!S.bgmOff ? "pri" : ""}">オン</button><button data-bgm="0" class="${S.bgmOff ? "pri" : ""}">オフ</button></div>${fontOptHtml()}${walkOptHtml()}${spellDescOptHtml()}`;
+}
+function settingsBind(b) {
+  b.querySelectorAll(".spd button").forEach(bt => bt.onclick = () => {
+    if (fontOptClick(bt, b) || walkOptClick(bt, b) || spellDescOptClick(bt, b)) return;
+    if (bt.dataset.bgm) { S.bgmOff = bt.dataset.bgm === "0"; saveGame(); Bgm.sync(); b.querySelectorAll("[data-bgm]").forEach(x => x.classList.toggle("pri", x === bt)); Snd.play("click"); return; }
+    S.speed = +bt.dataset.v; saveGame(); b.querySelectorAll(".spd button[data-v]").forEach(x => x.classList.toggle("pri", x === bt)); Snd.play("click");
+  });
+}
 /* "2d3" や "1d8+2" を「2〜6」「3〜10」の形にする（画面の表示用） */
 function diceRange(s) {
   const m = /^(\d+)d(\d+)([+-]\d+)?$/.exec(String(s)); if (!m) return String(s);
@@ -484,7 +496,6 @@ function lastSlot() {
 const charById = id => S.roster.find(c => c.id === id);
 const partyChars = () => S.party.map(charById).filter(Boolean);
 const isAlive = c => !["dead", "ash", "lost"].includes(c.status);
-const canAct = c => c.status === "ok"; // 行動できる（毒は行動可、状態はpoisonフラグ）
 const isDisabled = c => ["dead", "ash", "lost", "stone", "para"].includes(c.status);
 const STATUS_NAME = { ok: "正常", sleep: "眠り", para: "麻痺", stone: "石化", dead: "死亡", ash: "灰", lost: "消失" };
 function statusLabel(c) {
@@ -531,11 +542,6 @@ function hitSkill(c) {
 }
 
 /* 呪文の回数（呪文レベルごと） */
-function spellUnlock(c, school) { // その職業で学べる呪文レベル上限
-  const p = clsInfo(c)[school === "M" ? "mage" : "priest"];
-  if (!p || c.lvl < p.start) return 0;
-  return Math.min(7, 1 + Math.floor((c.lvl - p.start) / p.step));
-}
 function maxSlots(c, school) {
   const p = clsInfo(c)[school === "M" ? "mage" : "priest"];
   const keep = (school === "M" ? c.keepM : c.keepP) || [0, 0, 0, 0, 0, 0, 0];
@@ -561,7 +567,6 @@ function learnSpells(c) { // 使えるレベルの呪文を覚える。新しく
   return learned;
 }
 function restoreMP(c) { c.mpM = maxSlots(c, "M"); c.mpP = maxSlots(c, "P"); }
-function knowsAnySpell(c) { return c.known.length > 0; }
 
 function makeChar(name, race, align, cls, st) {
   const ci = CLASSES[cls];
@@ -627,12 +632,10 @@ function hasKey(req) {
 }
 
 /* 能力値の目安表示 */
-function statLine(c) { return STATS.map(k => `${STAT_NAMES[k]} ${c.st[k]}`).join(" / "); }
 
 /* ────────── 画面部品（すべて Promise で待てる） ────────── */
 const UI = {};
 UI.fast = false;
-function setMsg(html) { $("msg").innerHTML = html; }
 /* ────────── バックログ（メッセージの履歴） ──────────
    メッセージ欄は4行しか出ないので、流れたメッセージをここに残し、📜ボタンで読み返せるようにする */
 const BACKLOG = [];

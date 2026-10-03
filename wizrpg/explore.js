@@ -957,7 +957,7 @@ async function campMenu() {
       await dialog(ks.length ? ks.map(k => `<p><b>${KEYITEMS[k].name}</b><br><small>${KEYITEMS[k].desc}</small></p>`).join("") : "<p>なにも持っていない。</p>", null, { title: "大事なもの" });
     }
     else if (k === "book") await monsterBook();
-    else if (k === "opt") await castle_speed();
+    else if (k === "opt") await settingsDialog();
     else if (k === "quit") {
       if (await confirmBox("冒険を中断してタイトルに戻りますか？\n（今いる場所から再開できます）")) { saveGame(true); location.reload(); return; }
     }
@@ -1005,12 +1005,8 @@ async function autoHeal() {
   const left = hurtMembers().some(c => (c.maxhp - c.hp) >= c.maxhp * 0.25);
   await alertBox(`${used}唱えた。\n${healed.join("\n")}${left ? "\n\n呪文が足りず、まだ傷の深い仲間がいる。" : ""}`, "まとめて回復");
 }
-async function castle_speed() {
-  await dialog(`<h4>メッセージ速度</h4><div class="spd">${[0.6, 1, 1.6, 2.5].map(v => `<button data-v="${v}" class="${S.speed === v ? "pri" : ""}">${{ 0.6: "ゆっくり", 1: "ふつう", 1.6: "はやい", 2.5: "最速" }[v]}</button>`).join("")}</div>
-    <h4>BGM</h4><div class="spd"><button data-bgm="1" class="${!S.bgmOff ? "pri" : ""}">オン</button><button data-bgm="0" class="${S.bgmOff ? "pri" : ""}">オフ</button></div>${fontOptHtml()}${walkOptHtml()}${spellDescOptHtml()}`,
-    null, { title: "設定", onOpen: b => b.querySelectorAll(".spd button").forEach(bt => bt.onclick = () => {
-      if (fontOptClick(bt, b) || walkOptClick(bt, b) || spellDescOptClick(bt, b)) return;
-      if (bt.dataset.bgm) { S.bgmOff = bt.dataset.bgm === "0"; saveGame(); Bgm.sync(); b.querySelectorAll("[data-bgm]").forEach(x => x.classList.toggle("pri", x === bt)); Snd.play("click"); return; } S.speed = +bt.dataset.v; saveGame(); b.querySelectorAll(".spd button[data-v]").forEach(x => x.classList.toggle("pri", x === bt)); Snd.play("click"); }) });
+async function settingsDialog() {
+  await dialog(settingsHtml(), null, { title: "設定", onOpen: settingsBind });
 }
 const TOWN_SPELL_EFFS = ["heal", "cure", "fullheal", "raise", "raise2"];
 /* 今いる場所で唱えられる呪文か（町では回復・治療・蘇生だけ） */
@@ -1549,7 +1545,9 @@ function drawView() {
     }
   };
 
-  // ── 階段・昇降機の立体表示 ──
+  // ── 階段・昇降機の線画（予備）──
+  // ふだんは Blender で描き出した立体の絵（drawObj3d）を貼る。ここから下の線画は、その絵をまだ読み込めていない間と、
+  // 読み込めなかったときにだけ使う（階段や昇降機が何も描かれない、ということが起きないように残してある）
   const rgbK = (r, gg, bb, k) => `rgb(${Math.round(r * k)},${Math.round(gg * k)},${Math.round(bb * k)})`;
   const pathOf = pts => { g.beginPath(); g.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]); g.closePath(); };
   /* 階段・昇降機は迷宮の中で決まった向きを持つ（入口側から反対側へ上る/下る）。
