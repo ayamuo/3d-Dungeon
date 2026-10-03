@@ -1733,21 +1733,8 @@ function drawView() {
     } });
     parts.sort((p, q) => q.d - p.d).forEach(p => p.draw());
   };
-  // 階段・昇降機の向き：壁に向かって上る/下る（奥が壁で反対側が通れる向きを優先）。迷宮の形から毎回同じ向きに決まる
-  const stairDir = (qx, qy) => {
-    const st = (qx * 7 + qy * 13) & 3, wall = dd => edgeAt(f, qx, qy, dd) === E_WALL;
-    for (let i = 0; i < 4; i++) { const dd = (st + i) & 3; if (wall(dd) && !wall((dd + 2) & 3)) return dd; }
-    for (let i = 0; i < 4; i++) { const dd = (st + i) & 3; if (wall(dd)) return dd; }
-    return st;
-  };
-  // 下り階段の向き：なるべく両側が壁の向き（通路を横切る向き）に下らせる。
-  // 歩いてくる方から段を横から見る形になり、段の形がわかりやすい（まっすぐ奥へ下る段は、ふちに隠れて見えにくい）
-  const downDir = (qx, qy) => {
-    const st = (qx * 7 + qy * 13) & 3, wall = dd => edgeAt(f, qx, qy, dd) === E_WALL;
-    for (let i = 0; i < 4; i++) { const dd = (st + i) & 3; if (wall(dd) && wall((dd + 2) & 3)) return dd; }
-    return stairDir(qx, qy);
-  };
-  // 昇降機の向き：奥の格子戸は壁の側、入口は必ず通れる側を向ける（通路の途中にあっても、歩いてくる方から入口が見える）
+  // 階段・昇降機の向き：入口は必ず通れる側（通路）を向け、奥は壁の側にする。行き止まりでは、歩いてくる方から入口が正面に見える。
+  // 迷宮の形から毎回同じ向きに決まる
   const elevDir = (qx, qy) => {
     const st = (qx * 7 + qy * 13) & 3, wall = dd => edgeAt(f, qx, qy, dd) === E_WALL;
     for (let i = 0; i < 4; i++) { const dd = (st + i) & 3; if (wall(dd) && !wall((dd + 2) & 3)) return dd; }
@@ -1856,7 +1843,7 @@ function drawView() {
       // 階段・昇降機はそのマスの壁より手前にあるので、壁のあとに描く
       // 自分が立っているマスの階段・昇降機は、視界をふさがないよう描かない（下り階段の穴は床なので描く）
       if (t && dd <= 4 && (dd + VA.dz > 0.3 || t.t === "down")) {
-        const rel = ((t.t === "elev" ? elevDir(qx, qy) : t.t === "down" ? downDir(qx, qy) : stairDir(qx, qy)) - d + 4) & 3;
+        const rel = (elevDir(qx, qy) - d + 4) & 3;
         if (t.t === "down") drawDownStairs(l, zn, zf, b, rel);
         else if (t.t === "up") drawUpStairs(l, zn, zf, b, rel);
         else if (t.t === "elev") drawElevator(l, zn, zf, b, rel);
