@@ -1424,32 +1424,32 @@ function procTex(kind) {
   return (PROC_TEX[kind] = cv);
 }
 
-/* ────────── 昇降機の立体の絵 ──────────
-   Blender で作ったモデルを、ゲームと同じ見え方で、位置と向きごとに描き出した絵（wizrpg/elev/。作り方は make_elev.py）。
+/* ────────── 立体の絵（昇降機・上り階段・下り階段）──────────
+   Blender で作ったモデルを、ゲームと同じ見え方で、位置と向きごとに描き出した絵（wizrpg/obj3d/。作り方は make_obj3d.py）。
    絵は必要になったときに読み込み、読み込めるまで（または絵が無いとき）は、今までの線画で描く。
    明るさは均一に描き出してあるので、遠いほど暗くする処理はここでかける */
-const ELEV3D = { img: {}, shaded: {} };
-function elevSprite(dd, l, rel) {
-  const man = window.ELEV_DATA; if (!man) return null;
-  const key = dd + "," + l + "," + rel, it = man.items[key];
-  if (!it) return dd >= 1 && dd <= 4 ? "none" : null; // 描き出した範囲で絵が無い＝その位置からは見えない
-  let e = ELEV3D.img[key];
+const OBJ3D = { img: {}, shaded: {} };
+function objSprite(kind, dd, l, rel) {
+  const man = window.OBJ3D_DATA && window.OBJ3D_DATA[kind]; if (!man) return null;
+  const it = man.items[dd + "," + l + "," + rel], key = kind + ":" + dd + "," + l + "," + rel;
+  if (!it) return dd >= (kind === "down" ? 0 : 1) && dd <= 4 ? "none" : null; // 描き出した範囲で絵が無い＝その位置からは見えない
+  let e = OBJ3D.img[key];
   if (!e) {
-    e = ELEV3D.img[key] = { ok: false, im: new Image() };
+    e = OBJ3D.img[key] = { ok: false, im: new Image() };
     e.im.onload = () => { e.ok = true; if (S && S.inMaze && !BT && !VA.dz) drawView(); };
     e.im.onerror = () => { e.ng = true; };
-    e.im.src = "wizrpg/elev/" + it[0];
+    e.im.src = "wizrpg/obj3d/" + it[0];
   }
   return e.ok ? { key, it, im: e.im, man } : null;
 }
-function elevShaded(sp, b) {
+function objShaded(sp, b) {
   const q = Math.round(clamp(b, 0, 1) * 16);
   if (q >= 16) return sp.im;
   const k = sp.key + "|" + q;
-  let c = ELEV3D.shaded[k];
+  let c = OBJ3D.shaded[k];
   if (!c) {
-    const keys = Object.keys(ELEV3D.shaded); if (keys.length > 60) keys.slice(0, 30).forEach(x => delete ELEV3D.shaded[x]);
-    c = ELEV3D.shaded[k] = document.createElement("canvas"); c.width = sp.im.width; c.height = sp.im.height;
+    const keys = Object.keys(OBJ3D.shaded); if (keys.length > 80) keys.slice(0, 40).forEach(x => delete OBJ3D.shaded[x]);
+    c = OBJ3D.shaded[k] = document.createElement("canvas"); c.width = sp.im.width; c.height = sp.im.height;
     const cg = c.getContext("2d"); cg.drawImage(sp.im, 0, 0);
     cg.globalCompositeOperation = "source-atop"; cg.fillStyle = `rgba(0,0,0,${((1 - q / 16) * 0.92).toFixed(3)})`; cg.fillRect(0, 0, c.width, c.height);
   }
@@ -1562,7 +1562,17 @@ function drawView() {
   // 下り階段：床の穴。段は入口側（v=0）から奥（v=1）へ、1段ずつ低くなっていく立体の段として描く。
   // 穴の中は、両側と奥の石壁→遠い段から順に、穴の形で切り抜いて重ねる（切り抜きで、見えない面は自然に消える）。
   // 実際の深さだと段がふちに隠れてしまうため、1段の落差は浅め（DY）にして、奥ほど暗くして深さを出す
+  // 立体の絵があれば、それを貼る（歩く動きの途中は、カメラが下がった分だけ縮める）。貼れたら（または、その位置からは見えないなら）true
+  const drawObj3d = (kind, l, zn, b, rel) => {
+    const dd3 = Math.round(zn - ZO), sp = objSprite(kind, dd3, l, rel);
+    if (sp === "none") return true;
+    if (!sp) return false;
+    const cz = dd3 + ZO + 0.5, s = W / sp.man.w * (cz / Math.max(0.2, cz + VA.dz));
+    g.drawImage(objShaded(sp, b), cx + (sp.it[1] - sp.man.w / 2) * s, cy + (sp.it[2] - sp.man.h / 2) * s, sp.it[3] * s, sp.it[4] * s);
+    return true;
+  };
   const drawDownStairs = (l, zn, zf, b, rel) => {
+    if (drawObj3d("down", l, zn, b, rel)) return;
     // 奥へ下る向き（rel=0）は、遠いほど段がふちに隠れやすいので、1段の落差を距離に合わせて浅くする
     const m = cellMap(l, zn, zf, rel), hw = .4, N = 6, VE = .84, BOT = -1.6;
     const DY = rel === 0 ? Math.min(.07, .03 / Math.max(.3, zn)) : .06;
@@ -1617,6 +1627,7 @@ function drawView() {
   };
   // 上り階段：入口側（v=0）から奥（v=1）へ、天井の穴まで上っていく
   const drawUpStairs = (l, zn, zf, b, rel) => {
+    if (drawObj3d("up", l, zn, b, rel)) return;
     const m = cellMap(l, zn, zf, rel), hw = .36, N = 7, H = 1 / N;
     // 天井の穴
     const [hx0, hx1, hz0, hz1] = boxOf(m, -1, 1, (N - 2) / N, 1, hw);
@@ -1642,14 +1653,7 @@ function drawView() {
      奥（v=1）は蛇腹の格子戸とその向こうの縦穴、天井の穴へ伸びる2本の吊り索、片隅のランタンと入口の操作レバー。
      見る向きが変わっても重なりが崩れないよう、部品を遠いものから順に描く */
   const drawElevator = (l, zn, zf, b, rel) => {
-    // 立体の絵があれば、それを貼る（歩く動きの途中は、カメラが下がった分だけ縮める）
-    const dd3 = Math.round(zn - ZO), sp = elevSprite(dd3, l, rel);
-    if (sp === "none") return;
-    if (sp) {
-      const cz = dd3 + ZO + 0.5, s = W / sp.man.w * (cz / Math.max(0.2, cz + VA.dz));
-      g.drawImage(elevShaded(sp, b), cx + (sp.it[1] - sp.man.w / 2) * s, cy + (sp.it[2] - sp.man.h / 2) * s, sp.it[3] * s, sp.it[4] * s);
-      return;
-    }
+    if (drawObj3d("elev", l, zn, b, rel)) return;
     const m = cellMap(l, zn, zf, rel), hw = .42, YT = .40; // YT：ケージの天井の枠の高さ
     const iron = k => rgbK(82, 76, 68, b * k), ironHi = rgbK(112, 102, 88, b), rust = rgbK(118, 74, 42, b);
     const lw = z => Math.max(1, .02 / Math.max(.12, z) * K);
