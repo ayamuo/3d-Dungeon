@@ -142,6 +142,10 @@ const Nav = (() => {
       else if (!repeat && ["a", "b", "start", "select"].includes(k)) $("helpClose").click();
       return;
     }
+    if (k === "lt" || k === "rt") { if (!repeat) toggleBacklog(); return; }
+    // これまでのメッセージを開いているあいだは、上下で読み進める
+    const bl = document.querySelector("#ov.on .backlog");
+    if (bl && (k === "up" || k === "down")) { bl.closest(".sbody").scrollBy(0, k === "down" ? 90 : -90); return; }
     if (mazePad()) {
       if (repeat && k !== "up") return; // 押しっぱなしで進めるのは前進だけ
       const m = { up: "fwd", down: "back", left: "left", right: "right", lb: "left", rb: "right", x: "map", y: "camp", start: "camp" }[k];
@@ -172,6 +176,7 @@ const Nav = (() => {
   document.addEventListener("keydown", e => {
     const inInput = e.target && e.target.tagName === "INPUT";
     if (inInput && !["Enter", "Escape", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+    if (e.code === "KeyL" && !inInput && !help()) { if (!e.repeat) { e.preventDefault(); toggleBacklog(); } return; }
     if (mazePad() && !help()) {
       // 迷宮の移動キー（矢印・WASDなど）は explore.js 側で処理している。ここでは決定キーと遊び方だけ
       if (["Enter", " "].includes(e.key)) { e.preventDefault(); setNav(true); mazeA(); }
@@ -185,7 +190,7 @@ const Nav = (() => {
     press(k, e.repeat);
   });
 
-  /* ── ゲームパッド（標準配置：A=0 B=1 X=2 Y=3 LB=4 RB=5 SELECT=8 START=9 十字キー=12〜15） ── */
+  /* ── ゲームパッド（標準配置：A=0 B=1 X=2 Y=3 LB=4 RB=5 LT=6 RT=7 SELECT=8 START=9 十字キー=12〜15） ── */
   let prev = {}, next = {}, running = false;
   function poll(t) {
     const pads = navigator.getGamepads ? [...navigator.getGamepads()].filter(Boolean) : [];
@@ -193,7 +198,7 @@ const Nav = (() => {
     const p = pads[0], b = i => !!(p.buttons[i] && p.buttons[i].pressed);
     const ax = p.axes[0] || 0, ay = p.axes[1] || 0;
     const st = { up: b(12) || ay < -0.55, down: b(13) || ay > 0.55, left: b(14) || ax < -0.55, right: b(15) || ax > 0.55,
-      a: b(0), b: b(1), x: b(2), y: b(3), lb: b(4), rb: b(5), select: b(8), start: b(9) };
+      a: b(0), b: b(1), x: b(2), y: b(3), lb: b(4), rb: b(5), lt: b(6), rt: b(7), select: b(8), start: b(9) };
     for (const k in st) {
       if (st[k] && !prev[k]) { press(k, false); next[k] = t + 380; }
       else if (st[k] && next[k] && t > next[k] && ["up", "down", "left", "right"].includes(k)) {

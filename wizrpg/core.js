@@ -653,6 +653,12 @@ function showBacklog() {
   dialog(`<div class="backlog">${rows || '<div class="empty">まだメッセージはない。</div>'}</div>`, [{ label: "とじる", value: null }],
     { title: "これまでのメッセージ", onOpen: b => { const box = b.closest(".sheet").querySelector(".sbody"); box.scrollTop = box.scrollHeight; } });
 }
+// キーボードの L・コントローラーの LT／RT 用：開いていれば閉じ、ほかの窓が出ていなければ開く
+function toggleBacklog() {
+  const ov = $("ov");
+  if (!ov.classList.contains("on")) { showBacklog(); return; }
+  if (ov.querySelector(".backlog")) { const b = ov.querySelector(".sfoot button, button"); if (b) b.click(); }
+}
 
 function logMsg(text) { // メッセージ欄に1行足す（古い行は消える）
   pushLog(text);
