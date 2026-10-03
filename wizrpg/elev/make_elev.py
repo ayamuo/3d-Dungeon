@@ -116,7 +116,12 @@ for i in range(n):
 for i in range(n + 1):
     xa = -HW + P + i * span
     bar((xa, yg, FL + 0.03), (xa, yg, TOP), 0.006, RUST)
-box(-HW + P, HW - P, yg + 0.02, yg + 0.024, FL + 0.03, TOP, DARK, bevel=0)
+# 縦穴の闇は、入口の側から見たときだけ見える片面の板にする（戸の裏側から見たときは透けて、かごの中が見える。
+# 両面の板だと、裏から見たときに黒い壁のように見えてしまう）
+DARK1 = mat_plain("dark1", (0.004, 0.004, 0.006), rough=1.0); DARK1.use_backface_culling = True
+_x0, _x1, _y, _z0, _z1 = -HW + P, HW - P, yg + 0.02, FL + 0.03, TOP
+_me = bpy.data.meshes.new("shaft"); _me.from_pydata([(_x0, _y, _z0), (_x1, _y, _z0), (_x1, _y, _z1), (_x0, _y, _z1)], [], [(0, 1, 2, 3)]); _me.update()
+_me.materials.append(DARK1); _o = bpy.data.objects.new("shaft", _me); _o.parent = root; scene.collection.objects.link(_o)
 # 吊り索と滑車、天井の穴
 for sx in (-0.05, 0.05):
     bar((sx, 0, TOP + 0.05), (sx, 0, 0.5), 0.008, ROPE)
@@ -172,7 +177,7 @@ def render(path):
     bpy.ops.render.render(write_still=True)
 
 if MODE == "test":
-    for dd, l, rel in [(1, 0, 0), (1, 0, 1), (2, 0, 0), (1, 1, 0), (2, -1, 3), (1, 0, 2)]:
+    for dd, l, rel in [(1, 0, 0), (1, 0, 2), (2, 1, 2)]:
         place(dd, l, rel); render(os.path.join(OUT, f"t_d{dd}_l{l}_r{rel}.png"))
 else:
     import numpy as np
