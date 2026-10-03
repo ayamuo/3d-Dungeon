@@ -293,8 +293,13 @@ else:
     import numpy as np
     man = {"w": RES[0], "h": RES[1], "items": {}}
     tmp = os.path.join(OUT, "_tmp.png")
+    # 枚数を減らす工夫（ゲーム側で補う）：
+    #   ・左側（l<0）は描かない。右側の絵を左右反転して使う
+    #   ・3〜4マス先は、2マス先の絵を縮めて使う。ただし横に3マス離れた位置は、2マス先では画面の外なので、そのまま描く
     for dd in DDS:
-        for l in (-3, -2, -1, 0, 1, 2, 3):
+        for l in (0, 1, 2, 3):
+            if dd >= 3 and l <= 2:
+                continue
             for rel in (0, 1, 2, 3):
                 place(dd, l, rel); render(tmp)
                 img = bpy.data.images.load(tmp, check_existing=False)

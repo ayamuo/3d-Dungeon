@@ -1427,12 +1427,17 @@ function procTex(kind) {
 /* ────────── 立体の絵（昇降機・上り階段・下り階段）──────────
    Blender で作ったモデルを、ゲームと同じ見え方で、位置と向きごとに描き出した絵（wizrpg/obj3d/。作り方は make_obj3d.py）。
    絵は必要になったときに読み込み、読み込めるまで（または絵が無いとき）は、今までの線画で描く。
+   枚数を減らすため、左側の位置は右側の絵を左右反転して使い、3〜4マス先は2マス先の絵を縮めて使う。
    明るさは均一に描き出してあるので、遠いほど暗くする処理はここでかける */
 const OBJ3D = { img: {}, shaded: {} };
 function objSprite(kind, dd, l, rel) {
   const man = window.OBJ3D_DATA && window.OBJ3D_DATA[kind]; if (!man) return null;
-  const it = man.items[dd + "," + l + "," + rel], key = kind + ":" + dd + "," + l + "," + rel;
-  if (!it) return dd >= (kind === "down" ? 0 : 1) && dd <= 4 ? "none" : null; // 描き出した範囲で絵が無い＝その位置からは見えない
+  if (dd < (kind === "down" ? 0 : 1) || dd > 4 || Math.abs(l) > 3) return null;
+  // 左側は、右側の絵の左右反転（向きも左右を入れ替える）。3〜4マス先は、2マス先の絵を縮める（横に3マスの位置は、その距離の絵がある）
+  const flip = l < 0, L = Math.abs(l), R = flip ? (rel === 1 ? 3 : rel === 3 ? 1 : rel) : rel;
+  const far = dd >= 3 && L <= 2, D = far ? 2 : dd, shrink = far ? (2 + 0.78) / (dd + 0.78) : 1;
+  const it = man.items[D + "," + L + "," + R], key = kind + ":" + D + "," + L + "," + R;
+  if (!it) return "none"; // 描き出した範囲で絵が無い＝その位置からは見えない
   let e = OBJ3D.img[key];
   if (!e) {
     e = OBJ3D.img[key] = { ok: false, im: new Image() };
@@ -1440,7 +1445,7 @@ function objSprite(kind, dd, l, rel) {
     e.im.onerror = () => { e.ng = true; };
     e.im.src = "wizrpg/obj3d/" + it[0];
   }
-  return e.ok ? { key, it, im: e.im, man } : null;
+  return e.ok ? { key, it, im: e.im, man, flip, shrink } : null;
 }
 function objShaded(sp, b) {
   const q = Math.round(clamp(b, 0, 1) * 16);
@@ -1567,8 +1572,11 @@ function drawView() {
     const dd3 = Math.round(zn - ZO), sp = objSprite(kind, dd3, l, rel);
     if (sp === "none") return true;
     if (!sp) return false;
-    const cz = dd3 + ZO + 0.5, s = W / sp.man.w * (cz / Math.max(0.2, cz + VA.dz));
-    g.drawImage(objShaded(sp, b), cx + (sp.it[1] - sp.man.w / 2) * s, cy + (sp.it[2] - sp.man.h / 2) * s, sp.it[3] * s, sp.it[4] * s);
+    const cz = dd3 + ZO + 0.5, s = W / sp.man.w * (cz / Math.max(0.2, cz + VA.dz)) * sp.shrink;
+    const left = sp.flip ? sp.man.w - (sp.it[1] + sp.it[3]) : sp.it[1];
+    const X = cx + (left - sp.man.w / 2) * s, Y = cy + (sp.it[2] - sp.man.h / 2) * s, w = sp.it[3] * s, h = sp.it[4] * s, img = objShaded(sp, b);
+    if (sp.flip) { g.save(); g.translate(X + w, Y); g.scale(-1, 1); g.drawImage(img, 0, 0, w, h); g.restore(); }
+    else g.drawImage(img, X, Y, w, h);
     return true;
   };
   const drawDownStairs = (l, zn, zf, b, rel) => {
