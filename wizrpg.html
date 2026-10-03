@@ -647,7 +647,8 @@ window.__boot = (() => {
       ※ブラウザの仕様で、音はマウスのクリックかキーボードを1回操作するまで鳴らない。
       <h3>キーボード（パソコン）</h3>
       迷宮：矢印キー（またはWASD）で移動、Enterで階段・昇降機、Fで調べる、Mで地図、Cでキャンプ<br>
-      メニュー：矢印キーで選ぶ、Enter／Space／Zで決定、Esc／Xで戻る
+      メニュー：矢印キーで選ぶ、Enter／Space／Zで決定、X／Esc／Backspaceで戻る<br>
+      ※全画面のときに Esc を押すと、ブラウザによっては全画面が終わってしまう。そのときは X で戻る。
     </div>
     <div class="hpage" data-t="呪文" id="helpSpells"></div>
   </div>
@@ -689,6 +690,9 @@ window.__boot = (() => {
         else { const p = req.call(el, { navigationUI: "hide" }); if (p && p.catch) p.catch(() => { }); }
       } catch (e) { }
     };
+    // 全画面のあいだ、Esc をゲームの「戻る」に使えるようにする（対応しているブラウザだけ。全画面をやめるのは Esc の長押しになる）
+    const fsch = () => { try { const kb = navigator.keyboard; if (!kb || !kb.lock) return; if (document.fullscreenElement) { const p = kb.lock(["Escape"]); if (p && p.catch) p.catch(() => { }); } else kb.unlock(); } catch (e) { } };
+    document.addEventListener("fullscreenchange", fsch);
   })();
   ov.onclick = e => { if (e.target === ov) ov.classList.remove("on"); };
   // 音のオン/オフ
