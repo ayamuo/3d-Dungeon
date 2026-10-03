@@ -1,5 +1,5 @@
 /* PLiCy に上げるためのフォルダ（plicy/）を作る。
-   使い方：このフォルダで  node make_plicy.js  を実行する（ゲームを直したら、そのたびに作り直す）。
+   使い方：このフォルダで  node make_plicy.js  を実行する（ゲームを直したら、そのたびに作り直す）。アップロード用の plicy.zip も一緒にできる。
    ・入口は plicy/index.html（wizrpg.html をもとに、PLiCy 向けに少し変えたもの）
    ・ゲームが実際に読み込むファイルだけを入れる（説明書き・作成用のスクリプト・使っていない素材は入れない）
    ・版の表記は下の VERSION を書き換える */
@@ -57,3 +57,13 @@ const missing = [...h.matchAll(/<script src="([^"]+)"/g)].map(m => m[1]).filter(
 if (missing.length) throw new Error("入口のページが読み込むのに、入っていないファイル: " + missing.join(", "));
 
 console.log(`plicy/ を作りました：${n}ファイル、${(bytes / 1024 / 1024).toFixed(1)}MB（${VERSION}）`);
+
+// アップロード用の plicy.zip も作る。Windows に入っている tar を使う
+// （PowerShell の Compress-Archive だと、中のフォルダの区切りが「\」になり、PLiCy 側でファイルが見つからなくなる）
+const ZIP = path.join(SRC, "plicy.zip");
+fs.rmSync(ZIP, { force: true });
+try {
+  require("child_process").execFileSync(path.join(process.env.SystemRoot || "C:\\Windows", "System32", "tar.exe"),
+    ["-a", "-cf", ZIP, "index.html", "wizrpg"], { cwd: OUT });
+  console.log(`plicy.zip を作りました：${(fs.statSync(ZIP).size / 1024 / 1024).toFixed(1)}MB`);
+} catch (e) { console.log("plicy.zip は作れませんでした（plicy フォルダを自分で圧縮してください）：" + e.message); }
