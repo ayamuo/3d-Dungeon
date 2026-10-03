@@ -35,7 +35,8 @@ function animate(T, draw) {
 }
 
 /* ────────── 効果音 ──────────
-   音はすべて wizrpg/se/ のファイルで鳴らす。ファイルが無い音・読み込めなかった音は、WebAudioで合成した音で代わりにする。
+   戦闘・呪文・罠などの音は wizrpg/se/ のファイルで鳴らす。決定・取り消し・足音・勝利などの操作の音は、WebAudioでその場で合成する
+   （ファイルが要らないので、どこに置いても同じ音が鳴る）。ファイルを読み込めなかった音も、合成した音で代わりにする。
    ミュートの設定は、あそびコレクションのほかのゲームと共通（localStorage の asobi_muted）。 */
 // 指で操作する端末（スマホ・タブレット）か。音まわりの軽い設定に使う
 const IS_TOUCH = (() => { try { return matchMedia("(pointer:coarse)").matches; } catch (e) { return false; } })();
@@ -113,9 +114,6 @@ const Snd = (() => {
     heal: "heal_s", heal_m: "heal_m", heal_l: "heal_l", raise: "raise", cure_poison: "cure_poison", cure_all: "cure_all",
     buff: "buff", buff_party: "buff_party", shield: "shield", debuff: "debuff", sleep: "sleep", darkspell: "darkspell", holy: "holy",
     drainspell: "drainspell", tele: "warp", light: "light",
-    // 画面の操作と、節目の音
-    click: "click", cancel: "cancel", walk: "walk", sparkle: "sparkle", buy: "register",
-    win: "success", lose: "warning", levelup: "shine",
     // 罠・迷宮
     stairs: "stairs", door: "door", elevator: "elevator", drip: "drip", clank: "clank",
     potion_l: "heal_l", // 上等な回復薬（呪文の大回復と同じ音を短くして使う）
@@ -173,13 +171,11 @@ const Snd = (() => {
     }
     return true;
   }
-  // 何度も鳴る操作の音は、戦闘の音より少し小さくする
-  const VOL = { click: 0.6, cancel: 0.6, walk: 0.6, sparkle: 0.6, buy: 0.6, win: 0.6, lose: 0.6, levelup: 0.6 };
   function play(name) {
     if (muted()) return;
     ac();
     const se = SE[name];
-    if (se && playFile(Array.isArray(se) ? se[rand(se.length)] : se, VOL[name], CUT[name])) return;
+    if (se && playFile(Array.isArray(se) ? se[rand(se.length)] : se, 0, CUT[name])) return;
     if (synth[name]) try { synth[name](); } catch (e) { }
   }
   return { play, muted, ac, preloadAll };

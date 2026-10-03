@@ -87,14 +87,4 @@
   door.mp3           ドアを開ける1　…（扉を開ける）
   elevator.mp3       バスのドアが開く1　…（昇降機の扉が開く・別の階に着く）
 
-■ 画面の操作と、節目の音（あそびコレクション共通の音。asobi_collection/se から同じ名前でコピーしたもの）
-  click.mp3          決定
-  cancel.mp3         取り消し・戻る
-  walk.mp3           迷宮を1歩あるく
-  register.mp3       店で買う・売る
-  success.mp3        戦闘に勝つ
-  warning.mp3        失敗・全滅
-  shine.mp3          レベルが上がる
-  sparkle.mp3        きらきら（宝・クリアなど）
-
   ※上等な回復薬は heal_l.mp3（大回復と同じ音）を1.2秒で自然に消して使う
