@@ -47,6 +47,8 @@ function rep(a, b) { if (h.split(a).length !== 2) throw new Error("見つから�
 // ・「← もどる」（行き先が無い）を、版の表記に替える
 rep(`<a href="index.html">← もどる</a>`, `<span class="vtag">${VERSION}</span>`);
 rep(`</style>`, `  header .vtag{font-size:11px;color:#9a9a9a;white-space:nowrap;}\n</style>`);
+// ・「大画面で遊ぶ」では、右上に PLiCy のリアクション用のボタンが重なるので、右上のボタンをその分だけ左へ寄せる（広い画面のときだけ）
+rep(`</style>`, `  @media (min-width:900px){header,body[data-mode="title"] header{padding-right:110px;}}\n</style>`);
 // ・ホーム画面に追加する設定（PLiCy の中では使えない）を外す
 h = h.split("\n").filter(l => !/rel="manifest"|mobile-web-app-capable|apple-touch-icon/.test(l)).join("\n");
 fs.writeFileSync(path.join(OUT, "index.html"), h);
