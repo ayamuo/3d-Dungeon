@@ -988,6 +988,8 @@ async function chestBody({ gold, items, trapLv }) {
   sc.innerHTML = `<div class="plc"><div class="pg">🧰</div><div class="pn">宝箱</div><div class="pd">罠が仕掛けられているかもしれない……</div></div>`;
   $("hud").innerHTML = "🧰 宝箱";
   const thiefLike = c => ["thi", "nin"].includes(c.cls);
+  const seen = []; // 調べる・罠見破りで出た罠の名前（外すときの候補にする）
+  const note = id => { if (!seen.includes(id)) seen.push(id); };
   while (true) {
     const canCalfa = partyChars().some(c => c.status === "ok" && c.known.includes("trapsense") && spellSlotsLeft(c, SPELL.trapsense) > 0);
     const k = await choose([
@@ -1008,7 +1010,7 @@ async function chestBody({ gold, items, trapLv }) {
       const skill = Math.min(0.97, (thiefLike(c) ? clamp(0.6 + c.lvl * 0.03 + (c.st.agi - 10) * 0.02, 0.5, 0.95) * CLASSES[c.cls].thief : clamp(0.15 + c.lvl * 0.02, 0.1, 0.4)) + (raceOf(c).trap || 0));
       if (!thiefLike(c) && chance(0.08)) { await tell(`${c.name}は罠を作動させてしまった！`); const r = await springTrap(trap, c, trapLv); if (r === "gone") return; break; }
       const guess = chance(skill) ? trap : pick(TRAPS.filter(t => t.min <= trapLv)).id;
-      Snd.play("move");
+      Snd.play("move"); note(guess);
       await tell(`${c.name}は宝箱を調べた。\n「${trapName(guess)}」のようだ。`);
       continue;
     }
@@ -1017,13 +1019,17 @@ async function chestBody({ gold, items, trapLv }) {
       if (!c) continue;
       c.mpP[SPELL.trapsense.lv - 1]--;
       Snd.play("light");
-      await tell(`${c.name}は「罠見破り」を唱えた。\n罠は「${trapName(chance(0.95) ? trap : pick(TRAPS).id)}」だ！`);
+      const told = chance(0.95) ? trap : pick(TRAPS).id; note(told);
+      await tell(`${c.name}は「罠見破り」を唱えた。\n罠は「${trapName(told)}」だ！`);
       continue;
     }
     if (k === "disarm") {
       const c = await pickMember("誰が罠を外す？", x => x.status === "ok");
       if (!c) continue;
-      const nm = await choose(TRAPS.filter(t => t.min <= Math.max(trapLv, 1)).map(t => ({ label: t.name, value: t.id })), { title: "罠の名前を選ぶ", cols: 2, cancel: true });
+      // 調べて出た名前があれば、まずそれだけを並べる（ほかの罠だと思うなら「ほかの罠」から全部の一覧へ）
+      const all = TRAPS.filter(t => t.min <= Math.max(trapLv, 1)).map(t => ({ label: t.name, value: t.id }));
+      let nm = seen.length ? await choose([...seen.map(id => ({ label: trapName(id), value: id })), { label: "ほかの罠", value: "other" }], { title: "罠の名前を選ぶ", cols: 2, cancel: true }) : "other";
+      if (nm === "other") nm = await choose(all, { title: "罠の名前を選ぶ", cols: 2, cancel: true });
       if (!nm) continue;
       if (nm !== trap) {
         await tell(`${c.name}は罠を外そうとした……\nしまった、罠の種類が違う！`);
